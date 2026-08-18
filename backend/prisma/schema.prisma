@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Category {
+  id           Int        @id @default(autoincrement())
+  name         String     @unique
+  description  String?
+  displayOrder Int?
+  status       String     @default("Active")
+  menuItems    MenuItem[]
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  price       Float
+  tax         Float?
+  sku         String?
+  prepTime    Int?
+  isAvailable Boolean  @default(true)
+  type        String   @default("Veg")
+  status      String   @default("Active")
+  
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  ingredients RecipeIngredient[]
+  orderItems  OrderItem[]
+}
+
+model InventoryItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  unit        String   // kg, L, pcs
+  stock       Float
+  threshold   Float
+  status      String   @default("Good")
+  
+  usedIn      RecipeIngredient[]
+  history     InventoryHistory[]
+}
+
+model RecipeIngredient {
+  id          Int           @id @default(autoincrement())
+  quantity    Float
+  
+  menuItemId  Int
+  menuItem    MenuItem      @relation(fields: [menuItemId], references: [id])
+  
+  inventoryId Int
+  inventory   InventoryItem @relation(fields: [inventoryId], references: [id])
+}
+
+model InventoryHistory {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  change      String   // e.g. "-1.5" or "+10"
+  type        String   // e.g. "Order: Burger x2" or "Restock"
+  
+  inventoryId Int
+  inventory   InventoryItem @relation(fields: [inventoryId], references: [id])
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  date          DateTime    @default(now())
+  paymentMethod String      // Cash, Card, UPI
+  subtotal      Float
+  tax           Float
+  total         Float
+  status        String      @default("Completed")
+  
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  quantity   Int
+  price      Float    // price at time of order
+  
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id])
+  
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Area {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  tables      Table[]
+}
+
+model Table {
+  id          Int      @id @default(autoincrement())
+  name        String
+  seats       Int      @default(4)
+  status      String   @default("Available")
+  
+  areaId      Int
+  area        Area     @relation(fields: [areaId], references: [id])
+}
