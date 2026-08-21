@@ -17,13 +17,14 @@ const inventory_module_1 = require("./inventory/inventory.module");
 const order_module_1 = require("./order/order.module");
 const area_module_1 = require("./area/area.module");
 const table_module_1 = require("./table/table.module");
+const addon_module_1 = require("./addon/addon.module");
 const prisma_service_1 = require("./prisma/prisma.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, category_module_1.CategoryModule, menu_module_1.MenuModule, inventory_module_1.InventoryModule, order_module_1.OrderModule, area_module_1.AreaModule, table_module_1.TableModule],
+        imports: [prisma_module_1.PrismaModule, category_module_1.CategoryModule, menu_module_1.MenuModule, inventory_module_1.InventoryModule, order_module_1.OrderModule, area_module_1.AreaModule, table_module_1.TableModule, addon_module_1.AddonModule],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, prisma_service_1.PrismaService],
     })

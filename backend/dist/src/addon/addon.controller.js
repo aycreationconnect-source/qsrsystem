@@ -12,51 +12,41 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MenuController = void 0;
+exports.AddonController = void 0;
 const common_1 = require("@nestjs/common");
-const menu_service_1 = require("./menu.service");
-let MenuController = class MenuController {
-    menuService;
-    constructor(menuService) {
-        this.menuService = menuService;
+const addon_service_1 = require("./addon.service");
+let AddonController = class AddonController {
+    addonService;
+    constructor(addonService) {
+        this.addonService = addonService;
     }
-    create(createMenuDto) {
-        return this.menuService.create(createMenuDto);
+    create(body) {
+        return this.addonService.create(body);
     }
     findAll() {
-        return this.menuService.findAll();
+        return this.addonService.findAll();
     }
-    findOne(id) {
-        return null;
-    }
-    update(id, updateMenuDto) {
-        return this.menuService.update(+id, updateMenuDto);
+    update(id, body) {
+        return this.addonService.update(+id, body);
     }
     remove(id) {
-        return this.menuService.remove(+id);
+        return this.addonService.remove(+id);
     }
 };
-exports.MenuController = MenuController;
+exports.AddonController = AddonController;
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], MenuController.prototype, "create", null);
+], AddonController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], MenuController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], MenuController.prototype, "findOne", null);
+], AddonController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
@@ -64,16 +54,16 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
-], MenuController.prototype, "update", null);
+], AddonController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
-], MenuController.prototype, "remove", null);
-exports.MenuController = MenuController = __decorate([
-    (0, common_1.Controller)('menu'),
-    __metadata("design:paramtypes", [menu_service_1.MenuService])
-], MenuController);
-//# sourceMappingURL=menu.controller.js.map
+], AddonController.prototype, "remove", null);
+exports.AddonController = AddonController = __decorate([
+    (0, common_1.Controller)('addon'),
+    __metadata("design:paramtypes", [addon_service_1.AddonService])
+], AddonController);
+//# sourceMappingURL=addon.controller.js.map

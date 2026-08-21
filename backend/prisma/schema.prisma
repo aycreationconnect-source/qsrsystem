@@ -27,12 +27,31 @@ model MenuItem {
   isAvailable Boolean  @default(true)
   type        String   @default("Veg")
   status      String   @default("Active")
+  isAddon     Boolean  @default(false)
+  addonIds    String?
   
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
   
   ingredients RecipeIngredient[]
   orderItems  OrderItem[]
+  taxes       ItemTax[]
+}
+
+model ItemTax {
+  id         Int      @id @default(autoincrement())
+  name       String
+  rate       Float
+  
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+}
+
+model Addon {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
 }
 
 model InventoryItem {

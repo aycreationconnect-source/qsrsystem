@@ -10,9 +10,9 @@ export declare class AreaService {
     findAll(): import("@prisma/client").Prisma.PrismaPromise<({
         tables: {
             name: string;
+            status: string;
             id: number;
             seats: number;
-            status: string;
             areaId: number;
         }[];
     } & {

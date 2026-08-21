@@ -14,6 +14,8 @@ export declare class MenuController {
         prepTime: number | null;
         isAvailable: boolean;
         type: string;
+        isAddon: boolean;
+        addonIds: string | null;
         categoryId: number;
     }>;
     findAll(): Promise<{
@@ -29,6 +31,12 @@ export declare class MenuController {
             status: string;
             id: number;
         };
+        taxes: {
+            name: string;
+            id: number;
+            menuItemId: number;
+            rate: number;
+        }[];
         name: string;
         description: string | null;
         status: string;
@@ -40,6 +48,8 @@ export declare class MenuController {
         prepTime: number | null;
         isAvailable: boolean;
         type: string;
+        isAddon: boolean;
+        addonIds: string | null;
         categoryId: number;
     }[]>;
     findOne(id: string): null;
@@ -55,7 +65,24 @@ export declare class MenuController {
         prepTime: number | null;
         isAvailable: boolean;
         type: string;
+        isAddon: boolean;
+        addonIds: string | null;
         categoryId: number;
     }>;
-    remove(id: string): null;
+    remove(id: string): Promise<{
+        name: string;
+        description: string | null;
+        status: string;
+        id: number;
+        imageUrl: string | null;
+        price: number;
+        tax: number | null;
+        sku: string | null;
+        prepTime: number | null;
+        isAvailable: boolean;
+        type: string;
+        isAddon: boolean;
+        addonIds: string | null;
+        categoryId: number;
+    }>;
 }

@@ -19,7 +19,7 @@ export class MenuService {
        categoryId = defaultCat ? defaultCat.id : 1;
     }
 
-    const { category, image, available, ingredients, ...itemData } = data; // Remove unmapped fields
+    const { category, image, available, ingredients, taxes, ...itemData } = data; // Remove unmapped fields
 
     const menuItem = await this.prisma.menuItem.create({
       data: {
@@ -27,7 +27,6 @@ export class MenuService {
         imageUrl: image,
         isAvailable: available !== undefined ? available : true,
         price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
-        tax: itemData.tax ? parseFloat(itemData.tax) : null,
         prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null,
         categoryId
       }
@@ -51,6 +50,18 @@ export class MenuService {
       }
     }
 
+    if (taxes && Array.isArray(taxes)) {
+      for (const tax of taxes) {
+        await this.prisma.itemTax.create({
+          data: {
+            name: tax.name,
+            rate: parseFloat(tax.rate) || 0,
+            menuItemId: menuItem.id
+          }
+        });
+      }
+    }
+
     return menuItem;
   }
 
@@ -58,7 +69,8 @@ export class MenuService {
     const items = await this.prisma.menuItem.findMany({ 
       include: { 
         category: true,
-        ingredients: { include: { inventory: true } }
+        ingredients: { include: { inventory: true } },
+        taxes: true
       } 
     });
 
@@ -73,7 +85,7 @@ export class MenuService {
   }
 
   async update(id: number, data: any) {
-    const { category, categoryId, id: itemId, image, available, ingredients, ...itemData } = data;
+    const { category, categoryId, id: itemId, image, available, ingredients, taxes, ...itemData } = data;
     
     const menuItem = await this.prisma.menuItem.update({
       where: { id },
@@ -82,7 +94,6 @@ export class MenuService {
         ...(image !== undefined && { imageUrl: image }),
         ...(available !== undefined && { isAvailable: available }),
         price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
-        tax: itemData.tax ? parseFloat(itemData.tax) : null,
         prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null,
       }
     });
@@ -106,6 +117,25 @@ export class MenuService {
       }
     }
 
+    if (taxes && Array.isArray(taxes)) {
+      await this.prisma.itemTax.deleteMany({ where: { menuItemId: id } });
+      for (const tax of taxes) {
+        await this.prisma.itemTax.create({
+          data: {
+            name: tax.name,
+            rate: parseFloat(tax.rate) || 0,
+            menuItemId: id
+          }
+        });
+      }
+    }
+
     return menuItem;
+  }
+
+  async remove(id: number) {
+    await this.prisma.recipeIngredient.deleteMany({ where: { menuItemId: id } });
+    await this.prisma.itemTax.deleteMany({ where: { menuItemId: id } });
+    return this.prisma.menuItem.delete({ where: { id } });
   }
 }

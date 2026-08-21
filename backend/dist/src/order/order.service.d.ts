@@ -33,6 +33,8 @@ export declare class OrderService {
                 prepTime: number | null;
                 isAvailable: boolean;
                 type: string;
+                isAddon: boolean;
+                addonIds: string | null;
                 categoryId: number;
             };
         } & {
@@ -65,6 +67,8 @@ export declare class OrderService {
                 prepTime: number | null;
                 isAvailable: boolean;
                 type: string;
+                isAddon: boolean;
+                addonIds: string | null;
                 categoryId: number;
             };
         } & {

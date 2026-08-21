@@ -28,14 +28,13 @@ let MenuService = class MenuService {
             const defaultCat = await this.prisma.category.findFirst();
             categoryId = defaultCat ? defaultCat.id : 1;
         }
-        const { category, image, available, ingredients, ...itemData } = data;
+        const { category, image, available, ingredients, taxes, ...itemData } = data;
         const menuItem = await this.prisma.menuItem.create({
             data: {
                 ...itemData,
                 imageUrl: image,
                 isAvailable: available !== undefined ? available : true,
                 price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
-                tax: itemData.tax ? parseFloat(itemData.tax) : null,
                 prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null,
                 categoryId
             }
@@ -57,13 +56,25 @@ let MenuService = class MenuService {
                 });
             }
         }
+        if (taxes && Array.isArray(taxes)) {
+            for (const tax of taxes) {
+                await this.prisma.itemTax.create({
+                    data: {
+                        name: tax.name,
+                        rate: parseFloat(tax.rate) || 0,
+                        menuItemId: menuItem.id
+                    }
+                });
+            }
+        }
         return menuItem;
     }
     async findAll() {
         const items = await this.prisma.menuItem.findMany({
             include: {
                 category: true,
-                ingredients: { include: { inventory: true } }
+                ingredients: { include: { inventory: true } },
+                taxes: true
             }
         });
         return items.map(item => ({
@@ -76,7 +87,7 @@ let MenuService = class MenuService {
         }));
     }
     async update(id, data) {
-        const { category, categoryId, id: itemId, image, available, ingredients, ...itemData } = data;
+        const { category, categoryId, id: itemId, image, available, ingredients, taxes, ...itemData } = data;
         const menuItem = await this.prisma.menuItem.update({
             where: { id },
             data: {
@@ -84,7 +95,6 @@ let MenuService = class MenuService {
                 ...(image !== undefined && { imageUrl: image }),
                 ...(available !== undefined && { isAvailable: available }),
                 price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
-                tax: itemData.tax ? parseFloat(itemData.tax) : null,
                 prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null,
             }
         });
@@ -106,7 +116,24 @@ let MenuService = class MenuService {
                 });
             }
         }
+        if (taxes && Array.isArray(taxes)) {
+            await this.prisma.itemTax.deleteMany({ where: { menuItemId: id } });
+            for (const tax of taxes) {
+                await this.prisma.itemTax.create({
+                    data: {
+                        name: tax.name,
+                        rate: parseFloat(tax.rate) || 0,
+                        menuItemId: id
+                    }
+                });
+            }
+        }
         return menuItem;
+    }
+    async remove(id) {
+        await this.prisma.recipeIngredient.deleteMany({ where: { menuItemId: id } });
+        await this.prisma.itemTax.deleteMany({ where: { menuItemId: id } });
+        return this.prisma.menuItem.delete({ where: { id } });
     }
 };
 exports.MenuService = MenuService;

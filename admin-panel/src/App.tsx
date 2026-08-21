@@ -6,24 +6,20 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('view') === 'pos' ? 'pos' : 'login';
   });
-  const [posMode, setPosMode] = useState<string | null>(() => {
+  const [posMode] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('mode');
   });
   const [cart, setCart] = useState<any[]>([]);
   const [posCategory, setPosCategory] = useState<string>('All Items');
   const [posSearchQuery, setPosSearchQuery] = useState('');
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentType, setPaymentType] = useState('Cash');
   const [discountType, setDiscountType] = useState<'percent'|'fixed'>('fixed');
   const [discountValue, setDiscountValue] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('Dashboard');
-  const [dashboardDate, setDashboardDate] = useState(() => {
-    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-    return (new Date(Date.now() - tzOffset)).toISOString().split('T')[0];
-  });
+
   const [tableOrders, setTableOrders] = useState<Record<string, { savedOrders: any[][], activeCart: any[] }>>({});
   const [tableStartTimes, setTableStartTimes] = useState<Record<string, number>>({});
   const [tablePrinted, setTablePrinted] = useState<Record<string, boolean>>({});
@@ -45,6 +41,7 @@ function App() {
     areas: [],
     tables: [],
     menu: [],
+    addons: [],
     inventory: [
       { item: 'Burger Buns', unit: 'pcs', stock: 120, used: 0, threshold: 20, status: 'Good', history: [] },
       { item: 'Chicken Patty', unit: 'pcs', stock: 85, used: 0, threshold: 15, status: 'Good', history: [] }
@@ -70,13 +67,17 @@ function App() {
       const orderRes = await fetch('http://localhost:3000/order');
       const orders = orderRes.ok ? await orderRes.json() : [];
 
-      setAppData(prev => ({
+      const addonRes = await fetch('http://localhost:3000/addon');
+      const addons = addonRes.ok ? await addonRes.json() : [];
+
+      setAppData((prev: any) => ({
         ...prev,
         categories: cats,
         areas: areas,
         tables: tables,
         orders: orders,
-        menu: Array.isArray(menus) ? menus.map((m: any) => ({ ...m, image: m.imageUrl, available: m.isAvailable, category: m.category?.name || 'Uncategorized', price: `₹${m.price.toFixed(2)}` })) : [],
+        addons: addons,
+        menu: Array.isArray(menus) ? menus.filter((m: any) => !m.isAddon).map((m: any) => ({ ...m, image: m.imageUrl, available: m.isAvailable, category: m.category?.name || 'Uncategorized', price: `₹${m.price.toFixed(2)}` })) : [],
         inventory: Array.isArray(inventory) && inventory.length > 0 ? inventory : prev.inventory
       }));
     } catch(e) { console.error('Backend connection failed:', e); }
@@ -84,6 +85,10 @@ function App() {
 
   useEffect(() => {
     fetchBackendData();
+    const intervalId = setInterval(() => {
+      fetchBackendData();
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const currentBranchData = appData;
@@ -95,10 +100,19 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState<any>({ name: '', description: '', displayOrder: '', status: 'Active' });
   const [editingCategoryName, setEditingCategoryName] = useState<string | null>(null);
-  const [newItem, setNewItem] = useState<any>({ name: '', category: '', description: '', image: '', price: '', tax: '', sku: '', prepTime: '', type: 'Veg', available: true, status: 'Active' });
+  const [menuManagementTab, setMenuManagementTab] = useState<'Menu Items' | 'Addons'>('Menu Items');
+  const [newItem, setNewItem] = useState<any>({ name: '', category: '', description: '', image: '', price: '', tax: '', sku: '', prepTime: '', type: 'Veg', available: true, status: 'Active', isAddon: false });
   const [ingredients, setIngredients] = useState([{ name: '', quantity: '', unit: 'pcs' }]);
+  const [taxes, setTaxes] = useState<any[]>([{ name: '', rate: '' }]);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const [showIngredientsList, setShowIngredientsList] = useState(true);
+
+  const [addonSelectionItem, setAddonSelectionItem] = useState<any>(null);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+
+  // Dedicated Addon CRUD state
+  const [showAddonModal, setShowAddonModal] = useState(false);
+  const [editingAddon, setEditingAddon] = useState<any>(null);
+  const [addonForm, setAddonForm] = useState({ name: '', description: '', price: '' });
 
   const [showUpdateStockModal, setShowUpdateStockModal] = useState(false);
   const [editingInventoryIndex, setEditingInventoryIndex] = useState<number | null>(null);
@@ -128,6 +142,7 @@ function App() {
       tax: item.tax || '',
     });
     setIngredients(item.ingredients && item.ingredients.length > 0 ? [...item.ingredients] : [{ name: '', quantity: '', unit: 'pcs' }]);
+    setTaxes(item.taxes && item.taxes.length > 0 ? [...item.taxes] : [{ name: '', rate: '' }]);
     setShowConfigModal(true);
   };
 
@@ -139,16 +154,31 @@ function App() {
       image: item.image || '',
       price: item.price ? item.price.replace('₹', '') : '',
       tax: item.tax || '',
+      taxName: item.taxName || '',
       sku: item.sku || '',
       prepTime: item.prepTime || '',
       type: item.type || 'Veg',
       available: item.available !== undefined ? item.available : true,
-      status: item.status || 'Active'
+      status: item.status || 'Active',
+      isAddon: item.isAddon || false,
+      addonIds: item.addonIds || ''
     });
     setIngredients(item.ingredients && item.ingredients.length > 0 ? [...item.ingredients] : [{ name: '', quantity: '', unit: 'pcs' }]);
     setEditingItemIndex(currentBranchData.menu.findIndex((m: any) => m.name === item.name));
-    setShowIngredientsList(true);
+
     setShowAddItemModal(true);
+  };
+
+  const handleDeleteItem = async (item: any) => {
+    if (window.confirm(`Are you sure you want to delete ${item.name}?`)) {
+      try {
+        await fetch(`http://localhost:3000/menu/${item.id}`, { method: 'DELETE' });
+        fetchBackendData();
+      } catch (err) {
+        console.error("Failed to delete item:", err);
+        alert("Failed to delete item.");
+      }
+    }
   };
 
   const handleEditInventory = (index: number) => {
@@ -274,12 +304,7 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAdminLoggedIn');
-    localStorage.removeItem('adminId');
-    setLoginData({ adminId: '', password: '' });
-    setView('login');
-  };
+
 
   const renderDashboardContent = () => {
     switch(activeTab) {
@@ -313,8 +338,14 @@ function App() {
         return (
           <div className="admin-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <div className="admin-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 24, backgroundColor: '#f8fafc' }}>
-              <div className="menu-layout">
-                {/* Left Side: Categories */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 20, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
+                <div onClick={() => setMenuManagementTab('Menu Items')} style={{ cursor: 'pointer', padding: '8px 16px', fontWeight: 600, color: menuManagementTab === 'Menu Items' ? '#2563eb' : '#64748b', borderBottom: menuManagementTab === 'Menu Items' ? '2px solid #2563eb' : 'none' }}>Menu Items</div>
+                <div onClick={() => setMenuManagementTab('Addons')} style={{ cursor: 'pointer', padding: '8px 16px', fontWeight: 600, color: menuManagementTab === 'Addons' ? '#2563eb' : '#64748b', borderBottom: menuManagementTab === 'Addons' ? '2px solid #2563eb' : 'none' }}>Add-ons</div>
+              </div>
+
+              {menuManagementTab === 'Menu Items' && (
+                <div className="menu-layout">
+                  {/* Left Side: Categories */}
                 <div className="category-sidebar">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h3 style={{ fontSize: '1.25rem', color: '#1e293b', fontWeight: 600 }}>Categories</h3>
@@ -326,7 +357,7 @@ function App() {
                       const catName = typeof catObj === 'string' ? catObj : catObj.name;
                       const isActiveCategory = typeof catObj === 'object' && catObj.status === 'Inactive' ? false : true;
                       const items = currentBranchData.menu.filter((m: any) => m.category === catName);
-                      const activeCount = items.filter((m) => m.available !== false && m.status === 'Active').length;
+                      const activeCount = items.filter((m: any) => m.available !== false && m.status === 'Active').length;
                       const inactiveCount = items.length - activeCount;
                       const isActiveCat = selectedCategory === catName;
                       
@@ -370,59 +401,131 @@ function App() {
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                         <h3 style={{ fontSize: '1.25rem', color: '#1e293b', fontWeight: 600 }}>{selectedCategory} Items</h3>
-                        <button className="btn btn-next" style={{ padding: '8px 16px', borderRadius: 20, backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 500 }} onClick={() => { setShowIngredientsList(true); setShowAddItemModal(true); }}>+ Add Item</button>
+                        <button className="btn btn-next" style={{ padding: '8px 16px', borderRadius: 20, backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 500 }} onClick={() => { setShowAddItemModal(true); }}>+ Add Item</button>
                       </div>
-                      <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                      <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 24 }}>
+                      {(() => {
+                        const items = currentBranchData.menu.filter((m:any) => m.category === selectedCategory && !m.isAddon);
 
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', color: 'var(--text-muted)' }}>
-                            <th style={{ padding: 12, width: 40 }}>#</th>
-                            <th style={{ padding: 12 }}>Name</th>
-                            <th style={{ padding: 12 }}>Price</th>
-                            <th style={{ padding: 12 }}>Status</th>
-                            <th style={{ padding: 12, textAlign: 'right' }}>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentBranchData.menu.filter((m:any) => m.category === selectedCategory).map((item: any, i: number) => {
-                            let typeColor = '#22c55e'; // Veg (Green)
-                            if (item.type === 'Non-Veg') typeColor = '#ef4444'; // Red
-                            if (item.type === 'Egg') typeColor = '#eab308'; // Yellow
+                        return (
+                          <div style={{ marginBottom: 32 }}>
+                            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', color: 'var(--text-muted)' }}>
+                                  <th style={{ padding: 12, width: 40 }}>#</th>
+                                  <th style={{ padding: 12 }}>Name</th>
+                                  <th style={{ padding: 12 }}>Price</th>
+                                  <th style={{ padding: 12 }}>Status</th>
+                                  <th style={{ padding: 12, textAlign: 'right' }}>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={5} style={{ padding: 12, textAlign: 'center', color: '#94a3b8' }}>No items found.</td>
+                                  </tr>
+                                ) : items.map((item: any, i: number) => {
+                                  let typeColor = '#22c55e'; // Veg (Green)
+                                  if (item.type === 'Non-Veg') typeColor = '#ef4444'; // Red
+                                  if (item.type === 'Egg') typeColor = '#eab308'; // Yellow
 
-                            return (
-                              <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <td style={{ padding: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{i + 1}</td>
-                                <td style={{ padding: 12 }}>
-                                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: typeColor, marginRight: 8, border: `1px solid ${typeColor}` }}></span>
-                                  {item.name}
-                                </td>
-                                <td style={{ padding: 12 }}>{item.price}</td>
-                                <td style={{ padding: 12 }}><span style={{ color: item.available ? 'var(--success)' : 'var(--primary-color)' }}>{item.available ? 'Available' : 'Unavailable'}</span></td>
-                                <td style={{ padding: 12, textAlign: 'right' }}>
-                                  <button 
-                                    className="btn btn-next" 
-                                    style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#f8fafc', border: '1px solid #94a3b8', color: '#475569', fontWeight: 600, marginRight: 8 }} 
-                                    onClick={() => handleConfigItem(item)}
-                                  >
-                                    ⚙ Config
-                                  </button>
-                                  <button 
-                                    className="btn btn-next" 
-                                    style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#eff6ff', border: '1px solid #3b82f6', color: '#1d4ed8', fontWeight: 600 }} 
-                                    onClick={() => handleEditItem(item)}
-                                  >
-                                    Edit
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                  return (
+                                    <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                      <td style={{ padding: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{i + 1}</td>
+                                      <td style={{ padding: 12 }}>
+                                        <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: typeColor, marginRight: 8, border: `1px solid ${typeColor}` }}></span>
+                                        {item.name}
+                                      </td>
+                                      <td style={{ padding: 12 }}>{item.price}</td>
+                                      <td style={{ padding: 12 }}><span style={{ color: item.available ? 'var(--success)' : 'var(--primary-color)' }}>{item.available ? 'Available' : 'Unavailable'}</span></td>
+                                      <td style={{ padding: 12, textAlign: 'right' }}>
+                                        <button 
+                                          className="btn btn-next" 
+                                          style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#f8fafc', border: '1px solid #94a3b8', color: '#475569', fontWeight: 600, marginRight: 8 }} 
+                                          onClick={() => handleConfigItem(item)}
+                                        >
+                                          ⚙ Config
+                                        </button>
+                                        <button 
+                                          className="btn btn-next" 
+                                          style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#eff6ff', border: '1px solid #3b82f6', color: '#1d4ed8', fontWeight: 600, marginRight: 8 }} 
+                                          onClick={() => handleEditItem(item)}
+                                        >
+                                          Edit
+                                        </button>
+                                        <button 
+                                          className="btn btn-next" 
+                                          style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#fef2f2', border: '1px solid #ef4444', color: '#b91c1c', fontWeight: 600 }} 
+                                          onClick={() => handleDeleteItem(item)}
+                                        >
+                                          Delete
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()}
+                      </div>
                     </>
                   )}
                 </div>
               </div>
+              )}
+
+              {menuManagementTab === 'Addons' && (
+                <div className="addons-layout" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                    <h3 style={{ fontSize: '1.25rem', color: '#1e293b', fontWeight: 600 }}>All Add-ons</h3>
+                    <button className="btn btn-next" style={{ padding: '8px 16px', borderRadius: 20, backgroundColor: '#3b82f6', color: '#fff', border: 'none', fontWeight: 500 }} onClick={() => {
+                      setEditingAddon(null);
+                      setAddonForm({ name: '', description: '', price: '' });
+                      setShowAddonModal(true);
+                    }}>+ Create Add-on</button>
+                  </div>
+                  <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 24 }}>
+                    <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', color: 'var(--text-muted)' }}>
+                          <th style={{ padding: 12, width: 40 }}>#</th>
+                          <th style={{ padding: 12 }}>Name</th>
+                          <th style={{ padding: 12 }}>Description</th>
+                          <th style={{ padding: 12 }}>Price</th>
+                          <th style={{ padding: 12, textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentBranchData.addons.length === 0 ? (
+                          <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#94a3b8' }}>No add-ons yet. Click "+ Create Add-on" to add one.</td></tr>
+                        ) : currentBranchData.addons.map((addon: any, i: number) => (
+                          <tr key={addon.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                            <td style={{ padding: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{i + 1}</td>
+                            <td style={{ padding: 12, fontWeight: 600 }}>{addon.name}</td>
+                            <td style={{ padding: 12, color: '#64748b', fontSize: '0.9rem' }}>{addon.description || '—'}</td>
+                            <td style={{ padding: 12 }}>₹{parseFloat(addon.price).toFixed(2)}</td>
+                            <td style={{ padding: 12, textAlign: 'right' }}>
+                              <button className="btn btn-next" style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#eff6ff', border: '1px solid #3b82f6', color: '#1d4ed8', fontWeight: 600, marginRight: 8 }} onClick={() => {
+                                setEditingAddon(addon);
+                                setAddonForm({ name: addon.name, description: addon.description || '', price: String(addon.price) });
+                                setShowAddonModal(true);
+                              }}>Edit</button>
+                              <button className="btn btn-next" style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#fef2f2', border: '1px solid #ef4444', color: '#b91c1c', fontWeight: 600 }} onClick={async () => {
+                                if (window.confirm(`Delete "${addon.name}"?`)) {
+                                  await fetch(`http://localhost:3000/addon/${addon.id}`, { method: 'DELETE' });
+                                  fetchBackendData();
+                                }
+                              }}>Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -606,11 +709,18 @@ function App() {
     setCart([]);
   };
 
-  const handleAddToCart = (item: any) => {
+  const handleAddToCart = (item: any, skipAddonCheck = false) => {
     if (posMode === 'table' && !selectedTableId) {
       alert("Please select a table from the left sidebar to add items.");
       return;
     }
+    
+    if (!skipAddonCheck && item.addonIds && item.addonIds.trim() !== '') {
+       setAddonSelectionItem(item);
+       setSelectedAddonIds([]);
+       return;
+    }
+
     setCart(prev => {
       let newCart;
       const existing = prev.find(i => i.name === item.name);
@@ -673,16 +783,33 @@ function App() {
         combinedItems = [...combinedItems, ...order];
       });
     }
-    const subtotal = combinedItems.reduce((total, item) => {
+    let subtotal = 0;
+    let tax = 0;
+    combinedItems.forEach(item => {
       const price = parseFloat(item.price.replace('₹', ''));
-      return total + (price * item.quantity);
-    }, 0);
-    const tax = subtotal * 0.05;
+      const itemSubtotal = price * item.quantity;
+      subtotal += itemSubtotal;
+      
+      let itemTaxRate = 0;
+      if (item.taxes && item.taxes.length > 0) {
+         itemTaxRate = item.taxes.reduce((sum: number, t: any) => sum + (parseFloat(t.rate) || 0), 0);
+      } else if (item.tax) {
+         itemTaxRate = parseFloat(item.tax);
+      }
+      tax += itemSubtotal * (itemTaxRate / 100);
+    });
     return { subtotal, tax, total: subtotal + tax };
   };
   
   const confirmPaymentAndOrder = async () => {
-    if (cart.length === 0) return;
+    let combinedItems = [...cart];
+    if (posMode === 'table' && selectedTableId && tableOrders[selectedTableId]) {
+      tableOrders[selectedTableId].savedOrders.forEach(order => {
+        combinedItems = [...combinedItems, ...order];
+      });
+    }
+
+    if (combinedItems.length === 0) return;
     
     const { subtotal, tax, total: baseTotal } = getCartTotals();
     const dVal = parseFloat(discountValue) || 0;
@@ -693,13 +820,6 @@ function App() {
       finalTotal = baseTotal - dVal;
     }
     if (finalTotal < 0) finalTotal = 0;
-
-    let combinedItems = [...cart];
-    if (posMode === 'table' && selectedTableId && tableOrders[selectedTableId]) {
-      tableOrders[selectedTableId].savedOrders.forEach(order => {
-        combinedItems = [...combinedItems, ...order];
-      });
-    }
 
     const orderDetails = {
       items: combinedItems.map(c => ({
@@ -862,38 +982,40 @@ function App() {
             <div className="modal-overlay">
               <div className="modal-content" style={{ width: 650, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                 <div className="modal-header">
-                  <h2>{editingItemIndex !== null ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
+                  <h2>{editingItemIndex !== null ? (newItem.isAddon ? 'Edit Add-on' : 'Edit Menu Item') : (newItem.isAddon ? 'Create Add-on' : 'Add New Menu Item')}</h2>
                   <button className="close-btn" onClick={() => { setShowAddItemModal(false); setEditingItemIndex(null); setNewItem({ name: '', category: '', description: '', image: '', price: '', type: 'Veg', available: true, status: 'Active', sku: '', prepTime: '' }); }}>&times;</button>
                 </div>
                 <div className="modal-body" style={{ overflowY: 'auto', paddingRight: 8 }}>
                   
-                  {/* Status & Availability Toggles */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '1rem' }}>Availability</span>
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Is this item currently available?</p>
+                  {/* Status & Availability & Addon Toggles */}
+                  {!newItem.isAddon && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ fontWeight: 600, fontSize: '1rem' }}>Availability</span>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Is this item currently available?</p>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
+                          <input type="checkbox" checked={newItem.available} onChange={(e) => setNewItem({...newItem, available: e.target.checked})} style={{ opacity: 0, width: 0, height: 0 }} />
+                          <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: newItem.available ? '#3b82f6' : '#cbd5e1', transition: '0.4s', borderRadius: 24 }}>
+                            <span style={{ position: 'absolute', height: 18, width: 18, left: 3, bottom: 3, backgroundColor: 'white', transition: '0.4s', borderRadius: '50%', transform: newItem.available ? 'translateX(20px)' : 'translateX(0px)' }}></span>
+                          </span>
+                        </label>
                       </div>
-                      <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
-                        <input type="checkbox" checked={newItem.available} onChange={(e) => setNewItem({...newItem, available: e.target.checked})} style={{ opacity: 0, width: 0, height: 0 }} />
-                        <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: newItem.available ? '#3b82f6' : '#cbd5e1', transition: '0.4s', borderRadius: 24 }}>
-                          <span style={{ position: 'absolute', height: 18, width: 18, left: 3, bottom: 3, backgroundColor: 'white', transition: '0.4s', borderRadius: '50%', transform: newItem.available ? 'translateX(20px)' : 'translateX(0px)' }}></span>
-                        </span>
-                      </label>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: '1rem' }}>Status</span>
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active or Inactive</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ fontWeight: 600, fontSize: '1rem' }}>Status</span>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Active or Inactive</p>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
+                          <input type="checkbox" checked={newItem.status === 'Active'} onChange={(e) => setNewItem({...newItem, status: e.target.checked ? 'Active' : 'Inactive'})} style={{ opacity: 0, width: 0, height: 0 }} />
+                          <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: newItem.status === 'Active' ? '#10b981' : '#cbd5e1', transition: '0.4s', borderRadius: 24 }}>
+                            <span style={{ position: 'absolute', height: 18, width: 18, left: 3, bottom: 3, backgroundColor: 'white', transition: '0.4s', borderRadius: '50%', transform: newItem.status === 'Active' ? 'translateX(20px)' : 'translateX(0px)' }}></span>
+                          </span>
+                        </label>
                       </div>
-                      <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
-                        <input type="checkbox" checked={newItem.status === 'Active'} onChange={(e) => setNewItem({...newItem, status: e.target.checked ? 'Active' : 'Inactive'})} style={{ opacity: 0, width: 0, height: 0 }} />
-                        <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: newItem.status === 'Active' ? '#10b981' : '#cbd5e1', transition: '0.4s', borderRadius: 24 }}>
-                          <span style={{ position: 'absolute', height: 18, width: 18, left: 3, bottom: 3, backgroundColor: 'white', transition: '0.4s', borderRadius: '50%', transform: newItem.status === 'Active' ? 'translateX(20px)' : 'translateX(0px)' }}></span>
-                        </span>
-                      </label>
                     </div>
-                  </div>
+                  )}
 
                   {/* Basic Info */}
                   <div className="form-group" style={{ marginBottom: 16 }}>
@@ -907,42 +1029,46 @@ function App() {
                   </div>
 
                   {/* Pricing & Prep */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: newItem.isAddon ? '1fr' : '1fr 1fr', gap: 16 }}>
                     <div className="form-group">
                       <label>Price (₹) <span style={{ color: 'red' }}>*</span></label>
                       <input type="number" placeholder="0.00" value={newItem.price} onChange={(e) => setNewItem({...newItem, price: e.target.value})} required />
                     </div>
-                    <div className="form-group">
-                      <label>Prep Time (min)</label>
-                      <input type="number" placeholder="15" value={newItem.prepTime} onChange={(e) => setNewItem({...newItem, prepTime: e.target.value})} />
-                    </div>
+                    {!newItem.isAddon && (
+                      <div className="form-group">
+                        <label>Prep Time (min)</label>
+                        <input type="number" placeholder="15" value={newItem.prepTime} onChange={(e) => setNewItem({...newItem, prepTime: e.target.value})} />
+                      </div>
+                    )}
                   </div>
 
                   {/* Classification & File */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                    <div className="form-group">
-                      <label>Dietary Type</label>
-                      <select style={{ width: '100%', padding: '12px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: 8 }} value={newItem.type} onChange={(e) => setNewItem({...newItem, type: e.target.value})}>
-                        <option value="Veg">🟢 Veg</option>
-                        <option value="Non-Veg">🔴 Non-Veg</option>
-                        <option value="Egg">🟡 Egg</option>
-                        <option value="Vegan">🌱 Vegan</option>
-                      </select>
+                  {!newItem.isAddon && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                      <div className="form-group">
+                        <label>Dietary Type</label>
+                        <select style={{ width: '100%', padding: '12px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: 8 }} value={newItem.type} onChange={(e) => setNewItem({...newItem, type: e.target.value})}>
+                          <option value="Veg">🟢 Veg</option>
+                          <option value="Non-Veg">🔴 Non-Veg</option>
+                          <option value="Egg">🟡 Egg</option>
+                          <option value="Vegan">🌱 Vegan</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Item Code / SKU</label>
+                        <input type="text" placeholder="e.g. PT-01" value={newItem.sku} onChange={(e) => setNewItem({...newItem, sku: e.target.value})} />
+                      </div>
+                      <div className="form-group">
+                        <label>Item Image</label>
+                        <input type="file" accept="image/*" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                             setNewItem({...newItem, image: URL.createObjectURL(file)});
+                          }
+                        }} style={{ padding: '8px 0' }} />
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label>Item Code / SKU</label>
-                      <input type="text" placeholder="e.g. PT-01" value={newItem.sku} onChange={(e) => setNewItem({...newItem, sku: e.target.value})} />
-                    </div>
-                    <div className="form-group">
-                      <label>Item Image</label>
-                      <input type="file" accept="image/*" onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                           setNewItem({...newItem, image: URL.createObjectURL(file)});
-                        }
-                      }} style={{ padding: '8px 0' }} />
-                    </div>
-                  </div>
+                  )}
 
                   <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
                     <button className="btn btn-prev" style={{ flex: 1 }} onClick={() => { setShowAddItemModal(false); setEditingItemIndex(null); setNewItem({ name: '', category: '', description: '', image: '', price: '', type: 'Veg', available: true, status: 'Active', sku: '', prepTime: '' }); }}>Cancel</button>
@@ -980,80 +1106,186 @@ function App() {
             </div>
           )}
 
+          {/* Addon Create/Edit Modal */}
+          {showAddonModal && (
+            <div className="modal-overlay" style={{ zIndex: 9999 }}>
+              <div className="modal-content" style={{ width: 480, borderRadius: 16, padding: 0, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #e5e7eb', background: '#f8fafc' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>{editingAddon ? 'Edit Add-on' : 'Create Add-on'}</h2>
+                  <button onClick={() => { setShowAddonModal(false); setEditingAddon(null); }} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+                </div>
+                <div style={{ padding: '24px' }}>
+                  <div className="form-group" style={{ marginBottom: 16 }}>
+                    <label>Name <span style={{ color: 'red' }}>*</span></label>
+                    <input type="text" placeholder="e.g. Extra Cheese" value={addonForm.name} onChange={(e) => setAddonForm({ ...addonForm, name: e.target.value })} style={{ width: '100%' }} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 16 }}>
+                    <label>Description</label>
+                    <textarea rows={2} placeholder="Short description..." value={addonForm.description} onChange={(e) => setAddonForm({ ...addonForm, description: e.target.value })} style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 8 }} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 24 }}>
+                    <label>Price (₹) <span style={{ color: 'red' }}>*</span></label>
+                    <input type="number" placeholder="0.00" value={addonForm.price} onChange={(e) => setAddonForm({ ...addonForm, price: e.target.value })} style={{ width: '100%' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button className="btn btn-prev" style={{ flex: 1 }} onClick={() => { setShowAddonModal(false); setEditingAddon(null); }}>Cancel</button>
+                    <button className="btn btn-next" style={{ flex: 1 }} onClick={async () => {
+                      if (!addonForm.name || !addonForm.price) return;
+                      if (editingAddon) {
+                        await fetch(`http://localhost:3000/addon/${editingAddon.id}`, {
+                          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(addonForm)
+                        });
+                      } else {
+                        await fetch('http://localhost:3000/addon', {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(addonForm)
+                        });
+                      }
+                      setShowAddonModal(false);
+                      setEditingAddon(null);
+                      setAddonForm({ name: '', description: '', price: '' });
+                      fetchBackendData();
+                    }}>{editingAddon ? 'Update Add-on' : 'Save Add-on'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Configuration Modal */}
           {showConfigModal && configItemIndex !== null && (
-            <div className="modal-overlay">
-              <div className="modal-content" style={{ width: 500, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-                <div className="modal-header">
-                  <h2>Configure: {appData.menu[configItemIndex].name}</h2>
-                  <button className="close-btn" onClick={() => { setShowConfigModal(false); setConfigItemIndex(null); }}>&times;</button>
+            <div className="modal-overlay" style={{ zIndex: 9999 }}>
+              <div className="modal-content" style={{ width: 1100, maxHeight: '90vh', display: 'flex', flexDirection: 'column', borderRadius: 16, overflow: 'hidden', padding: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 32px', borderBottom: '1px solid #e5e7eb' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#2563eb', fontWeight: 700 }}>Configure: {appData.menu[configItemIndex].name}</h2>
+                  <button onClick={() => { setShowConfigModal(false); setConfigItemIndex(null); }} style={{ background: 'none', border: 'none', fontSize: '1.5rem', color: '#4b5563', cursor: 'pointer', padding: 0 }}>&times;</button>
                 </div>
-                <div className="modal-body" style={{ overflowY: 'auto' }}>
+                <div className="modal-body" style={{ overflowY: 'auto', padding: '32px' }}>
                   
-                  <div className="form-group" style={{ marginBottom: 24 }}>
-                    <label>Tax (%)</label>
-                    <input type="number" placeholder="5" value={newItem.tax || ''} onChange={(e) => setNewItem({...newItem, tax: e.target.value})} />
-                  </div>
-
-                  <div className="form-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                       <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Recipe / Ingredients</h4>
-                       <button className="btn-outline" style={{ padding: '4px 8px', fontSize: '0.7rem' }} onClick={() => setIngredients([...ingredients, { name: '', quantity: '', unit: 'pcs' }])}>+ Add Ingredient</button>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Link raw materials. If a material doesn't exist, it will be auto-created in Inventory.</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '32px' }}>
                     
-                    <datalist id="inventory-items">
-                      {currentBranchData.inventory.map((inv: any, idx: number) => (
-                        <option key={idx} value={inv.item || inv.name} />
-                      ))}
-                    </datalist>
+                    {/* Column 1: Tax */}
+                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                         <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#111827' }}>Tax Setup</h4>
+                         <button style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 16, color: '#374151', fontWeight: 500, cursor: 'pointer' }} onClick={() => setTaxes([...taxes, { name: '', rate: '' }])}>+ Add Tax</button>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: 16 }}>Define multiple tax rates.</p>
+                      
+                      <div style={{ padding: 16, borderRadius: 12, border: '1px solid #e5e7eb', background: '#fafafa', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '50vh', overflowY: 'auto' }}>
+                        {taxes.map((t, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <input type="text" placeholder="Name (e.g. CGST)" value={t.name} onChange={(e) => {
+                              const newTaxes = [...taxes];
+                              newTaxes[i].name = e.target.value;
+                              setTaxes(newTaxes);
+                            }} style={{ flex: 2, padding: '12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.95rem' }} />
+                            <input type="number" placeholder="Rate (%)" value={t.rate} onChange={(e) => {
+                              const newTaxes = [...taxes];
+                              newTaxes[i].rate = e.target.value;
+                              setTaxes(newTaxes);
+                            }} style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.95rem' }} />
+                            <button onClick={() => setTaxes(taxes.filter((_, idx) => idx !== i))} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 6, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', padding: 0, flexShrink: 0 }}>&times;</button>
+                          </div>
+                        ))}
+                        {taxes.length === 0 && <p style={{ fontSize: '0.9rem', color: '#9ca3af', margin: 0 }}>No taxes added.</p>}
+                      </div>
+                    </div>
 
-                    <div className="ingredients-list" style={{ marginTop: 12, padding: 16, background: '#f8fafc', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-                      {ingredients.map((ing, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                          <input type="text" list="inventory-items" placeholder="Item Name" value={ing.name} onChange={(e) => {
-                            const newIng = [...ingredients];
-                            newIng[i].name = e.target.value;
-                            setIngredients(newIng);
-                          }} style={{ flex: 2 }} />
-                          <input type="number" placeholder="Qty" value={ing.quantity} onChange={(e) => {
-                            const newIng = [...ingredients];
-                            newIng[i].quantity = e.target.value;
-                            setIngredients(newIng);
-                          }} style={{ flex: 1 }} />
-                          <select value={ing.unit} onChange={(e) => {
-                            const newIng = [...ingredients];
-                            newIng[i].unit = e.target.value;
-                            setIngredients(newIng);
-                          }} style={{ flex: 1 }}>
-                            <option value="pcs">pcs</option>
-                            <option value="kg">kg</option>
-                            <option value="g">g</option>
-                            <option value="L">L</option>
-                            <option value="ml">ml</option>
-                          </select>
-                          <button onClick={() => setIngredients(ingredients.filter((_, idx) => idx !== i))} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 4, padding: '0 8px', cursor: 'pointer' }}>&times;</button>
-                        </div>
-                      ))}
-                      {ingredients.length === 0 && <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>No ingredients added.</p>}
+                    {/* Column 2: Ingredients */}
+                    <div className="form-group">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                         <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#111827' }}>Recipe / Ingredients</h4>
+                         <button style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 16, color: '#374151', fontWeight: 500, cursor: 'pointer' }} onClick={() => setIngredients([...ingredients, { name: '', quantity: '', unit: 'pcs' }])}>+ Add Ingredient</button>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: 16 }}>Link raw materials. If a material doesn't exist, it will be auto-created in Inventory.</p>
+                      
+                      <datalist id="inventory-items">
+                        {currentBranchData.inventory.map((inv: any, idx: number) => (
+                          <option key={idx} value={inv.item || inv.name} />
+                        ))}
+                      </datalist>
+
+                      <div style={{ padding: 16, borderRadius: 12, border: '1px solid #e5e7eb', background: '#fafafa', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '50vh', overflowY: 'auto' }}>
+                        {ingredients.map((ing, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <input type="text" list="inventory-items" placeholder="Ingredient Name" value={ing.name} onChange={(e) => {
+                              const newIng = [...ingredients];
+                              newIng[i].name = e.target.value;
+                              setIngredients(newIng);
+                            }} style={{ flex: 2, padding: '12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.95rem' }} />
+                            <input type="number" placeholder="Qty" value={ing.quantity} onChange={(e) => {
+                              const newIng = [...ingredients];
+                              newIng[i].quantity = e.target.value;
+                              setIngredients(newIng);
+                            }} style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.95rem' }} />
+                            <select value={ing.unit} onChange={(e) => {
+                              const newIng = [...ingredients];
+                              newIng[i].unit = e.target.value;
+                              setIngredients(newIng);
+                            }} style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.95rem', background: '#fff' }}>
+                              <option value="pcs">pcs</option>
+                              <option value="kg">kg</option>
+                              <option value="g">g</option>
+                              <option value="L">L</option>
+                              <option value="ml">ml</option>
+                            </select>
+                            <button onClick={() => setIngredients(ingredients.filter((_, idx) => idx !== i))} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 6, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.2rem', padding: 0, flexShrink: 0 }}>&times;</button>
+                          </div>
+                        ))}
+                        {ingredients.length === 0 && <p style={{ fontSize: '0.9rem', color: '#9ca3af', margin: 0 }}>No ingredients added.</p>}
+                      </div>
+                    </div>
+
+                    {/* Column 3: Add-ons */}
+                    <div className="form-group">
+                      <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#111827', marginBottom: 8 }}>Allowed Add-ons</h4>
+                      <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: 16 }}>Select which add-ons can be ordered with this item.</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '50vh', overflowY: 'auto', paddingRight: 8 }}>
+                        {currentBranchData.addons.length === 0 ? (
+                           <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>No add-ons available. Create some in the Add-ons tab first!</span>
+                        ) : currentBranchData.addons.map((addon: any) => {
+                           const currentAddonIds = newItem.addonIds ? newItem.addonIds.split(',') : [];
+                           const isSelected = currentAddonIds.includes(addon.id.toString());
+                           return (
+                             <label key={addon.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', padding: '12px 16px', borderRadius: 8, border: `1px solid ${isSelected ? '#2563eb' : '#e5e7eb'}`, cursor: 'pointer', boxShadow: isSelected ? '0 0 0 1px #2563eb' : 'none', transition: 'all 0.2s' }}>
+                               <input type="checkbox" checked={isSelected} onChange={(e) => {
+                                 let newIds = [...currentAddonIds];
+                                 if (e.target.checked) newIds.push(addon.id.toString());
+                                 else newIds = newIds.filter(id => id !== addon.id.toString());
+                                 setNewItem({...newItem, addonIds: newIds.join(',')});
+                               }} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                               <div style={{ flex: 1 }}>
+                                 <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#374151' }}>{addon.name}</span>
+                                 {addon.description && <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af' }}>{addon.description}</p>}
+                               </div>
+                               <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 500 }}>₹{parseFloat(addon.price).toFixed(2)}</span>
+                             </label>
+                           );
+                        })}
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 16, marginTop: 32 }}>
-                    <button className="btn btn-prev" style={{ flex: 1 }} onClick={() => { setShowConfigModal(false); setConfigItemIndex(null); }}>Cancel</button>
-                    <button className="btn btn-next" style={{ flex: 1 }} onClick={() => {
+                  <div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
+                    <button style={{ flex: 1, padding: '14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }} onClick={() => { setShowConfigModal(false); setConfigItemIndex(null); }}>Cancel</button>
+                    <button style={{ flex: 1, padding: '14px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }} onClick={() => {
                       const newAppData = {...appData};
                       const validIngredients = ingredients.filter(i => i.name && i.quantity);
+                      const validTaxes = taxes.filter(t => t.name && t.rate);
                       
                       newAppData.menu[configItemIndex].tax = newItem.tax;
+                      newAppData.menu[configItemIndex].taxName = newItem.taxName;
                       newAppData.menu[configItemIndex].ingredients = validIngredients;
+                      newAppData.menu[configItemIndex].taxes = validTaxes;
                       
                       const existingItem = newAppData.menu[configItemIndex];
                       if (existingItem && existingItem.id) {
                         fetch(`http://localhost:3000/menu/${existingItem.id}`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(existingItem)
+                          body: JSON.stringify({...existingItem, addonIds: newItem.addonIds, taxes: validTaxes})
                         }).then(() => fetchBackendData());
                       }
                       
@@ -1249,49 +1481,83 @@ function App() {
               <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#1e293b' }}>Tables</h3>
               <button className="btn-primary" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={() => setShowAddTableModal(true)}>+ Add</button>
             </div>
-            <div className="pos-tables-list">
-              {currentBranchData.tables.map((t: any) => {
-                 const orderData = tableOrders[t.id];
-                 const hasOrder = orderData && (orderData.activeCart.length > 0 || orderData.savedOrders.length > 0);
-                 const isSelected = selectedTableId === t.id;
-                 return (
-                   <div 
-                     key={t.id} 
-                     onClick={() => {
-                       setSelectedTableId(t.id);
-                       setCart(orderData?.activeCart || []);
-                     }}
-                     style={{ 
-                       padding: '16px', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
-                       background: isSelected ? '#eff6ff' : (hasOrder ? '#fff7ed' : '#ffffff'), 
-                       border: `2px solid ${isSelected ? '#3b82f6' : (hasOrder ? '#f97316' : '#e2e8f0')}`,
-                       cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                     }}
-                   >
-                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                       <span style={{ fontSize: '1.6rem' }}>{hasOrder ? '🍽️' : '🛋️'}</span>
-                       <span style={{ fontWeight: 600, fontSize: '1.1rem', color: isSelected ? '#1d4ed8' : (hasOrder ? '#c2410c' : '#475569') }}>{t.name}</span>
-                     </div>
-                     {hasOrder && (
-                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                         <span style={{ fontSize: '0.65rem', background: tablePrinted[t.id] ? '#10b981' : '#f97316', color: '#fff', padding: '2px 6px', borderRadius: 12, fontWeight: 700, textTransform: 'uppercase' }}>
-                           {tablePrinted[t.id] ? 'Bill Printed' : 'In Use'}
-                         </span>
-                         {tableStartTimes[t.id] && (
-                           <span style={{ fontSize: '0.8rem', color: '#f97316', fontWeight: 700, fontFamily: 'monospace' }}>
-                             {(() => {
-                               const diffSecs = Math.max(0, Math.floor((now - tableStartTimes[t.id]) / 1000));
-                               const m = Math.floor(diffSecs / 60).toString().padStart(2, '0');
-                               const s = (diffSecs % 60).toString().padStart(2, '0');
-                               return `${m}:${s}`;
-                             })()}
-                           </span>
-                         )}
-                       </div>
-                     )}
-                   </div>
-                 );
-              })}
+            <div className="pos-tables-list" style={{ padding: '0 16px' }}>
+              {(() => {
+                const tablesByArea: Record<string, any[]> = {};
+                const unassignedTables: any[] = [];
+                currentBranchData.tables.forEach((t: any) => {
+                  if (t.areaId) {
+                    if (!tablesByArea[t.areaId]) tablesByArea[t.areaId] = [];
+                    tablesByArea[t.areaId].push(t);
+                  } else {
+                    unassignedTables.push(t);
+                  }
+                });
+
+                const renderTableList = (tables: any[]) => tables.map((t: any) => {
+                  const orderData = tableOrders[t.id];
+                  const hasOrder = orderData && (orderData.activeCart.length > 0 || orderData.savedOrders.length > 0);
+                  const isSelected = selectedTableId === t.id;
+                  return (
+                    <div 
+                      key={t.id} 
+                      onClick={() => {
+                        setSelectedTableId(t.id);
+                        setCart(orderData?.activeCart || []);
+                      }}
+                      style={{ 
+                        padding: '16px', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
+                        background: isSelected ? '#eff6ff' : (hasOrder ? '#fff7ed' : '#ffffff'), 
+                        border: `2px solid ${isSelected ? '#3b82f6' : (hasOrder ? '#f97316' : '#e2e8f0')}`,
+                        cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: '1.6rem' }}>{hasOrder ? '🍽️' : '🛋️'}</span>
+                        <span style={{ fontWeight: 600, fontSize: '1.1rem', color: isSelected ? '#1d4ed8' : (hasOrder ? '#c2410c' : '#475569') }}>{t.name}</span>
+                      </div>
+                      {hasOrder && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                          <span style={{ fontSize: '0.65rem', background: tablePrinted[t.id] ? '#10b981' : '#f97316', color: '#fff', padding: '2px 6px', borderRadius: 12, fontWeight: 700, textTransform: 'uppercase' }}>
+                            {tablePrinted[t.id] ? 'Bill Printed' : 'In Use'}
+                          </span>
+                          {tableStartTimes[t.id] && (
+                            <span style={{ fontSize: '0.8rem', color: '#f97316', fontWeight: 700, fontFamily: 'monospace' }}>
+                              {(() => {
+                                const diffSecs = Math.max(0, Math.floor((now - tableStartTimes[t.id]) / 1000));
+                                const m = Math.floor(diffSecs / 60).toString().padStart(2, '0');
+                                const s = (diffSecs % 60).toString().padStart(2, '0');
+                                return `${m}:${s}`;
+                              })()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+
+                return (
+                  <>
+                    {currentBranchData.areas?.map((area: any) => {
+                      const areaTables = tablesByArea[area.id] || [];
+                      if (areaTables.length === 0) return null;
+                      return (
+                        <div key={area.id} style={{ marginBottom: 24 }}>
+                          <h4 style={{ margin: '0 0 12px 4px', fontSize: '1.1rem', color: '#b91c1c' }}>{area.name}</h4>
+                          {renderTableList(areaTables)}
+                        </div>
+                      );
+                    })}
+                    {unassignedTables.length > 0 && (
+                      <div style={{ marginBottom: 24 }}>
+                        <h4 style={{ margin: '0 0 12px 4px', fontSize: '1.1rem', color: '#b91c1c' }}>Unassigned</h4>
+                        {renderTableList(unassignedTables)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </aside>
         )}
@@ -1339,6 +1605,7 @@ function App() {
             
             <div className="pos-items-grid">
               {currentBranchData.menu.filter((m: any) => 
+                 !m.isAddon &&
                  m.available !== false && m.status === 'Active' && 
                  (posCategory === 'All Items' || m.category === posCategory) && 
                  m.name.toLowerCase().includes(posSearchQuery.toLowerCase())
@@ -1367,7 +1634,7 @@ function App() {
                   return (
                     <div key={i} className="pos-item-card" onClick={() => {
                       if (qty === 0) {
-                        if (displayStock <= 0) {
+                        if (typeof displayStock === 'number' && displayStock <= 0) {
                           alert(`Warning: ${item.name} is currently out of stock!`);
                         }
                         handleAddToCart(item);
@@ -1396,7 +1663,7 @@ function App() {
                             placeholder="0"
                             onChange={(e) => {
                               let val = parseInt(e.target.value);
-                              if (val > qty && displayStock <= 0) {
+                              if (val > qty && typeof displayStock === 'number' && displayStock <= 0) {
                                 alert(`Warning: ${item.name} is currently out of stock!`);
                               }
                               if (!isNaN(val)) updateCartQtyExact(item, val);
@@ -1405,7 +1672,7 @@ function App() {
                             style={{ width: 40, height: 28, textAlign: 'center', border: '1px solid var(--border-color)', borderRadius: 2, padding: '0 2px', fontWeight: 600 }}
                           />
                           <button className="cart-qty-btn" onClick={() => {
-                            if (displayStock <= 0) {
+                            if (typeof displayStock === 'number' && displayStock <= 0) {
                               alert(`Warning: ${item.name} is currently out of stock!`);
                             }
                             updateCartQty(item, 1);
@@ -1563,7 +1830,7 @@ function App() {
               <span>₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="summary-row">
-              <span>Tax (5%)</span>
+              <span>Tax</span>
               <span>₹{tax.toFixed(2)}</span>
             </div>
             <div className="summary-row total">
@@ -1630,7 +1897,7 @@ function App() {
                      <span>₹{getCartTotals().subtotal.toFixed(2)}</span>
                    </div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, color: 'var(--text-muted)' }}>
-                     <span>Tax (5%)</span>
+                     <span>Tax</span>
                      <span>₹{getCartTotals().tax.toFixed(2)}</span>
                    </div>
                    
@@ -1714,6 +1981,66 @@ function App() {
           </div>
         )}
 
+
+
+
+        {addonSelectionItem && (
+          <div className="modal-overlay" style={{ zIndex: 9999 }}>
+            <div className="modal-content" style={{ width: 450, padding: 24, borderRadius: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Select Add-ons</h3>
+                <button onClick={() => { setAddonSelectionItem(null); setSelectedAddonIds([]); }} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>&times;</button>
+              </div>
+              <div style={{ color: 'var(--text-muted)', marginBottom: 20, fontSize: '0.9rem' }}>
+                Customize your {addonSelectionItem.name}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24, maxHeight: '50vh', overflowY: 'auto' }}>
+                {addonSelectionItem.addonIds.split(',').map((id: string) => {
+                  const addon = currentBranchData.menu.find((m: any) => m.id.toString() === id);
+                  if (!addon) return null;
+                  const isSelected = selectedAddonIds.includes(id);
+                  return (
+                    <label key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isSelected ? '#eff6ff' : '#f8fafc', border: `1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`, padding: '12px 16px', borderRadius: 8, cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <input type="checkbox" checked={isSelected} onChange={(e) => {
+                          if (e.target.checked) setSelectedAddonIds([...selectedAddonIds, id]);
+                          else setSelectedAddonIds(selectedAddonIds.filter(x => x !== id));
+                        }} style={{ cursor: 'pointer' }} />
+                        <span style={{ fontWeight: 500, color: isSelected ? '#1d4ed8' : '#334155' }}>{addon.name}</span>
+                      </div>
+                      <span style={{ color: '#64748b', fontSize: '0.9rem' }}>+ ₹{parseFloat(addon.price.toString().replace('₹', '')).toFixed(2)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn-prev" style={{ flex: 1, padding: 12, borderRadius: 8, border: '1px solid #cbd5e1', background: '#f1f5f9', cursor: 'pointer' }} onClick={() => { setAddonSelectionItem(null); setSelectedAddonIds([]); }}>Cancel</button>
+                <button className="btn-next" style={{ flex: 1, padding: 12, borderRadius: 8, background: '#3b82f6', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }} onClick={() => {
+                  let totalAddonPrice = 0;
+                  const addonNames: string[] = [];
+                  selectedAddonIds.forEach(id => {
+                    const addon = currentBranchData.menu.find((m: any) => m.id.toString() === id);
+                    if (addon) {
+                      totalAddonPrice += parseFloat(addon.price.toString().replace('₹', ''));
+                      addonNames.push(addon.name);
+                    }
+                  });
+
+                  const originalPrice = parseFloat(addonSelectionItem.price.toString().replace('₹', ''));
+                  const modifiedItem = {
+                    ...addonSelectionItem,
+                    name: addonNames.length > 0 ? `${addonSelectionItem.name} (${addonNames.join(', ')})` : addonSelectionItem.name,
+                    price: `₹${(originalPrice + totalAddonPrice).toFixed(2)}`
+                  };
+
+                  setAddonSelectionItem(null);
+                  setSelectedAddonIds([]);
+                  handleAddToCart(modifiedItem, true);
+                }}>Add to Cart</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Success Modal */}
         {orderSuccess && (
