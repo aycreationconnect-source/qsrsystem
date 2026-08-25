@@ -20,7 +20,7 @@ function App() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('Dashboard');
 
-  const [tableOrders, setTableOrders] = useState<Record<string, { savedOrders: any[][], activeCart: any[] }>>({});
+  const [tableOrders, setTableOrders] = useState<Record<string, { savedOrders: { items: any[], time: number }[], activeCart: any[] }>>({});
   const [tableStartTimes, setTableStartTimes] = useState<Record<string, number>>({});
   const [tablePrinted, setTablePrinted] = useState<Record<string, boolean>>({});
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -45,30 +45,37 @@ function App() {
     inventory: [
       { item: 'Burger Buns', unit: 'pcs', stock: 120, used: 0, threshold: 20, status: 'Good', history: [] },
       { item: 'Chicken Patty', unit: 'pcs', stock: 85, used: 0, threshold: 15, status: 'Good', history: [] }
-    ]
+    ],
+    settings: {
+      globalTaxName: '',
+      globalTaxRate: '0',
+    }
   });
 
   const fetchBackendData = async () => {
     try {
-      const catRes = await fetch('http://localhost:3000/category');
+      const catRes = await fetch('http://10.163.212.241:3000/category');
       const cats = catRes.ok ? await catRes.json() : [];
       
-      const menuRes = await fetch('http://localhost:3000/menu');
+      const menuRes = await fetch('http://10.163.212.241:3000/menu');
       const menus = menuRes.ok ? await menuRes.json() : [];
       
-      const invRes = await fetch('http://localhost:3000/inventory');
+      const invRes = await fetch('http://10.163.212.241:3000/inventory');
       const inventory = invRes.ok ? await invRes.json() : [];
 
-      const areaRes = await fetch('http://localhost:3000/area');
+      const areaRes = await fetch('http://10.163.212.241:3000/area');
       const areas = areaRes.ok ? await areaRes.json() : [];
-      const tableRes = await fetch('http://localhost:3000/table');
+      const tableRes = await fetch('http://10.163.212.241:3000/table');
       const tables = tableRes.ok ? await tableRes.json() : [];
 
-      const orderRes = await fetch('http://localhost:3000/order');
+      const orderRes = await fetch('http://10.163.212.241:3000/order');
       const orders = orderRes.ok ? await orderRes.json() : [];
 
-      const addonRes = await fetch('http://localhost:3000/addon');
+      const addonRes = await fetch('http://10.163.212.241:3000/addon');
       const addons = addonRes.ok ? await addonRes.json() : [];
+
+      const settingRes = await fetch('http://10.163.212.241:3000/setting');
+      const settings = settingRes.ok ? await settingRes.json() : {};
 
       setAppData((prev: any) => ({
         ...prev,
@@ -77,6 +84,7 @@ function App() {
         tables: tables,
         orders: orders,
         addons: addons,
+        settings: settings,
         menu: Array.isArray(menus) ? menus.filter((m: any) => !m.isAddon).map((m: any) => ({ ...m, image: m.imageUrl, available: m.isAvailable, category: m.category?.name || 'Uncategorized', price: `₹${m.price.toFixed(2)}` })) : [],
         inventory: Array.isArray(inventory) && inventory.length > 0 ? inventory : prev.inventory
       }));
@@ -172,7 +180,7 @@ function App() {
   const handleDeleteItem = async (item: any) => {
     if (window.confirm(`Are you sure you want to delete ${item.name}?`)) {
       try {
-        await fetch(`http://localhost:3000/menu/${item.id}`, { method: 'DELETE' });
+        await fetch(`http://10.163.212.241:3000/menu/${item.id}`, { method: 'DELETE' });
         fetchBackendData();
       } catch (err) {
         console.error("Failed to delete item:", err);
@@ -223,13 +231,13 @@ function App() {
   const handleSaveArea = async () => {
     try {
       if (editingAreaId) {
-        await fetch(`http://localhost:3000/area/${editingAreaId}`, {
+        await fetch(`http://10.163.212.241:3000/area/${editingAreaId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newArea)
         });
       } else {
-        await fetch('http://localhost:3000/area', {
+        await fetch('http://10.163.212.241:3000/area', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newArea)
@@ -244,13 +252,13 @@ function App() {
     try {
       const payload = { ...newTableConfig, seats: parseInt(newTableConfig.seats), areaId: parseInt(newTableConfig.areaId) };
       if (editingTableId) {
-        await fetch(`http://localhost:3000/table/${editingTableId}`, {
+        await fetch(`http://10.163.212.241:3000/table/${editingTableId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else {
-        await fetch('http://localhost:3000/table', {
+        await fetch('http://10.163.212.241:3000/table', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -282,7 +290,7 @@ function App() {
     e.preventDefault();
     alert(`Connecting to MySQL at ${registerData.dbHost}... Saving Admin ${registerData.adminId}...`);
     try {
-      const res = await fetch('http://localhost:3000/init', { method: 'POST' });
+      const res = await fetch('http://10.163.212.241:3000/init', { method: 'POST' });
       if (res.ok) {
         setAppData({
           categories: [],
@@ -308,32 +316,114 @@ function App() {
 
   const renderDashboardContent = () => {
     switch(activeTab) {
-      case 'Dashboard':
+      case 'Dashboard': {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        const todayOrders = (currentBranchData.orders || []).filter((o: any) => new Date(o.date).toDateString() === today.toDateString());
+        const yesterdayOrders = (currentBranchData.orders || []).filter((o: any) => new Date(o.date).toDateString() === yesterday.toDateString());
+        
+        const ordersTodayCount = todayOrders.length;
+        const ordersYesterdayCount = yesterdayOrders.length;
+        let ordersTrend = ordersYesterdayCount === 0 ? (ordersTodayCount > 0 ? 100 : 0) : Math.round(((ordersTodayCount - ordersYesterdayCount) / ordersYesterdayCount) * 100);
+        
+        const revenueToday = todayOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+        const revenueYesterday = yesterdayOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+        let revenueTrend = revenueYesterday === 0 ? (revenueToday > 0 ? 100 : 0) : Math.round(((revenueToday - revenueYesterday) / revenueYesterday) * 100);
+
+        const activeTablesCount = (currentBranchData.tables || []).filter((t: any) => tableOrders[t.id] && (tableOrders[t.id].activeCart?.length > 0 || tableOrders[t.id].savedOrders?.length > 0)).length;
+        const totalTables = currentBranchData.tables?.length || 0;
+
+        const last7Days = Array.from({ length: 7 }).map((_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (6 - i));
+          return d;
+        });
+        const revenueByDay = last7Days.map(d => {
+          const dayOrders = (currentBranchData.orders || []).filter((o: any) => new Date(o.date).toDateString() === d.toDateString());
+          return dayOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+        });
+        const maxRev = Math.max(...revenueByDay, 1);
+
+        const recentOrders = [...(currentBranchData.orders || [])].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
+
         return (
           <div className="admin-content">
             <div className="stats-grid">
               <div className="stat-card">
+                <div className="stat-icon">📦</div>
                 <div className="stat-title">Total Orders Today</div>
-                <div className="stat-value">{currentBranchData.stats.orders}</div>
+                <div className="stat-value">{ordersTodayCount}</div>
+                <div className={`stat-trend ${ordersTrend >= 0 ? 'positive' : 'neutral'}`}>{ordersTrend >= 0 ? '↑' : '↓'} {Math.abs(ordersTrend)}% vs yesterday</div>
               </div>
               <div className="stat-card">
+                <div className="stat-icon">💰</div>
                 <div className="stat-title">Total Revenue</div>
-                <div className="stat-value">{currentBranchData.stats.revenue}</div>
+                <div className="stat-value">₹{revenueToday.toFixed(2)}</div>
+                <div className={`stat-trend ${revenueTrend >= 0 ? 'positive' : 'neutral'}`}>{revenueTrend >= 0 ? '↑' : '↓'} {Math.abs(revenueTrend)}% vs yesterday</div>
               </div>
               <div className="stat-card">
+                <div className="stat-icon">🍽️</div>
                 <div className="stat-title">Active Tables</div>
-                <div className="stat-value">{currentBranchData.stats.tables}</div>
+                <div className="stat-value">{activeTablesCount} / {totalTables}</div>
+                <div className="stat-trend neutral">Live</div>
               </div>
             </div>
-            <div className="admin-card" style={{ marginTop: 24 }}>
-              <h3>Recent Activity</h3>
-              <ul style={{ marginTop: 12, listStyle: 'none', color: 'var(--text-muted)' }}>
-                <li style={{ padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>Order completed</li>
-                <li style={{ padding: '8px 0', borderBottom: '1px solid var(--border-color)' }}>Table status updated</li>
-              </ul>
+
+            <div className="dashboard-grid-main">
+              <div className="admin-card">
+                <h3>Revenue Overview</h3>
+                <div className="chart-placeholder">
+                  {revenueByDay.map((val, i) => (
+                    <div key={i} className="chart-bar" style={{ height: `${(val / maxRev) * 100}%`, minHeight: '5%' }} data-val={`₹${val.toFixed(0)}`}></div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>
+                  {last7Days.map((d, i) => <span key={i}>{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>)}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div className="admin-card">
+                  <h3>Quick Actions</h3>
+                  <div className="quick-actions-grid">
+                    <button className="quick-action-btn" onClick={() => setActiveTab('Menu Management')}>
+                      <span className="quick-action-icon">🍔</span>
+                      Add Menu Item
+                    </button>
+                    <button className="quick-action-btn" onClick={() => setActiveTab('Table Setup')}>
+                      <span className="quick-action-icon">🪑</span>
+                      New Table
+                    </button>
+                    <button className="quick-action-btn" onClick={() => setActiveTab('Inventory')}>
+                      <span className="quick-action-icon">📦</span>
+                      Update Stock
+                    </button>
+                    <button className="quick-action-btn" onClick={() => setActiveTab('Settings')}>
+                      <span className="quick-action-icon">⚙️</span>
+                      Settings
+                    </button>
+                  </div>
+                </div>
+
+                <div className="admin-card" style={{ flex: 1 }}>
+                  <h3>Recent Activity</h3>
+                  <ul style={{ marginTop: 12, listStyle: 'none', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    {recentOrders.length > 0 ? recentOrders.map((o: any, i: number) => (
+                      <li key={i} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: 12 }}>
+                        <span style={{ color: '#059669' }}>●</span> Order #{o.id} completed (₹{o.total?.toFixed(2)})
+                      </li>
+                    )) : (
+                      <li style={{ padding: '12px 0', display: 'flex', gap: 12 }}>No recent activity.</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         );
+      }
             case 'Menu Management':
         return (
           <div className="admin-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -514,7 +604,7 @@ function App() {
                               }}>Edit</button>
                               <button className="btn btn-next" style={{ padding: '4px 12px', fontSize: '0.8rem', background: '#fef2f2', border: '1px solid #ef4444', color: '#b91c1c', fontWeight: 600 }} onClick={async () => {
                                 if (window.confirm(`Delete "${addon.name}"?`)) {
-                                  await fetch(`http://localhost:3000/addon/${addon.id}`, { method: 'DELETE' });
+                                  await fetch(`http://10.163.212.241:3000/addon/${addon.id}`, { method: 'DELETE' });
                                   fetchBackendData();
                                 }
                               }}>Delete</button>
@@ -665,6 +755,63 @@ function App() {
             </div>
           </div>
         );
+      case 'Settings':
+        return (
+          <div className="admin-content">
+            <div className="admin-card">
+              <h3 style={{ marginBottom: 24, fontSize: '1.25rem' }}>Global Settings</h3>
+              
+              <div style={{ maxWidth: 500, padding: 24, border: '1px solid var(--border-color)', borderRadius: 12, backgroundColor: '#f8fafc' }}>
+                <h4 style={{ marginBottom: 16, color: '#334155' }}>Global Tax Settings</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                  <div className="form-group">
+                    <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Tax Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. GST" 
+                      value={currentBranchData.settings?.globalTaxName || ''} 
+                      onChange={(e) => setAppData({...appData, settings: {...appData.settings, globalTaxName: e.target.value}})} 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Tax Rate (%)</label>
+                    <input 
+                      type="number" 
+                      placeholder="e.g. 5" 
+                      value={currentBranchData.settings?.globalTaxRate || ''} 
+                      onChange={(e) => setAppData({...appData, settings: {...appData.settings, globalTaxRate: e.target.value}})} 
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                </div>
+                <button 
+                  className="btn btn-next" 
+                  style={{ width: '100%', padding: 12, fontSize: '1rem', fontWeight: 600 }}
+                  onClick={async () => {
+                    try {
+                      await fetch('http://10.163.212.241:3000/setting', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          globalTaxName: appData.settings.globalTaxName,
+                          globalTaxRate: appData.settings.globalTaxRate
+                        })
+                      });
+                      alert('Settings saved successfully!');
+                      fetchBackendData();
+                    } catch (err) {
+                      console.error(err);
+                      alert('Failed to save settings.');
+                    }
+                  }}
+                >
+                  Save Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return (
           <div className="admin-content">
@@ -701,7 +848,7 @@ function App() {
       return {
         ...prev,
         [selectedTableId]: {
-          savedOrders: [...existing.savedOrders, existing.activeCart],
+          savedOrders: [...existing.savedOrders, { items: existing.activeCart, time: Date.now() }],
           activeCart: []
         }
       };
@@ -780,7 +927,7 @@ function App() {
     let combinedItems = [...cart];
     if (posMode === 'table' && selectedTableId && tableOrders[selectedTableId]) {
       tableOrders[selectedTableId].savedOrders.forEach(order => {
-        combinedItems = [...combinedItems, ...order];
+        combinedItems = [...combinedItems, ...(order.items || order as any)];
       });
     }
     let subtotal = 0;
@@ -798,6 +945,13 @@ function App() {
       }
       tax += itemSubtotal * (itemTaxRate / 100);
     });
+
+    let globalTaxRate = 0;
+    if (appData.settings && appData.settings.globalTaxRate) {
+        globalTaxRate = parseFloat(appData.settings.globalTaxRate) || 0;
+    }
+    tax += subtotal * (globalTaxRate / 100);
+
     return { subtotal, tax, total: subtotal + tax };
   };
   
@@ -805,7 +959,7 @@ function App() {
     let combinedItems = [...cart];
     if (posMode === 'table' && selectedTableId && tableOrders[selectedTableId]) {
       tableOrders[selectedTableId].savedOrders.forEach(order => {
-        combinedItems = [...combinedItems, ...order];
+        combinedItems = [...combinedItems, ...(order.items || order as any)];
       });
     }
 
@@ -834,7 +988,7 @@ function App() {
     };
     
     try {
-      const res = await fetch('http://localhost:3000/order', {
+      const res = await fetch('http://10.163.212.241:3000/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderDetails)
@@ -1086,12 +1240,12 @@ function App() {
                       if (editingItemIndex !== null) {
                         const existingItem = newAppData.menu[editingItemIndex];
                         if (existingItem && existingItem.id) {
-                          fetch(`http://localhost:3000/menu/${existingItem.id}`, {
+                          fetch(`http://10.163.212.241:3000/menu/${existingItem.id}`, {
                             method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(finalItem)
                           }).then(() => fetchBackendData());
                         }
                       } else {
-                        fetch('http://localhost:3000/menu', {
+                        fetch('http://10.163.212.241:3000/menu', {
                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(finalItem)
                         }).then(() => fetchBackendData());
                       }
@@ -1132,12 +1286,12 @@ function App() {
                     <button className="btn btn-next" style={{ flex: 1 }} onClick={async () => {
                       if (!addonForm.name || !addonForm.price) return;
                       if (editingAddon) {
-                        await fetch(`http://localhost:3000/addon/${editingAddon.id}`, {
+                        await fetch(`http://10.163.212.241:3000/addon/${editingAddon.id}`, {
                           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(addonForm)
                         });
                       } else {
-                        await fetch('http://localhost:3000/addon', {
+                        await fetch('http://10.163.212.241:3000/addon', {
                           method: 'POST', headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(addonForm)
                         });
@@ -1282,7 +1436,7 @@ function App() {
                       
                       const existingItem = newAppData.menu[configItemIndex];
                       if (existingItem && existingItem.id) {
-                        fetch(`http://localhost:3000/menu/${existingItem.id}`, {
+                        fetch(`http://10.163.212.241:3000/menu/${existingItem.id}`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({...existingItem, addonIds: newItem.addonIds, taxes: validTaxes})
@@ -1356,12 +1510,12 @@ function App() {
                       if (editingCategoryName) {
                         const existingCat = newAppData.categories.find((c:any) => c.name === editingCategoryName);
                         if (existingCat && existingCat.id) {
-                           fetch(`http://localhost:3000/category/${existingCat.id}`, {
+                           fetch(`http://10.163.212.241:3000/category/${existingCat.id}`, {
                              method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(catObj)
                            }).then(() => fetchBackendData());
                         }
                       } else {
-                        fetch('http://localhost:3000/category', {
+                        fetch('http://10.163.212.241:3000/category', {
                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(catObj)
                         }).then(() => fetchBackendData());
                       }
@@ -1406,7 +1560,7 @@ function App() {
                       const item = newAppData.inventory[editingInventoryIndex];
                       
                       if (item.id) {
-                        fetch(`http://localhost:3000/inventory/${item.id}`, {
+                        fetch(`http://10.163.212.241:3000/inventory/${item.id}`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ stock: stockVal, threshold: threshVal })
@@ -1603,85 +1757,132 @@ function App() {
                />
             </div>
             
-            <div className="pos-items-grid">
-              {currentBranchData.menu.filter((m: any) => 
-                 !m.isAddon &&
-                 m.available !== false && m.status === 'Active' && 
-                 (posCategory === 'All Items' || m.category === posCategory) && 
-                 m.name.toLowerCase().includes(posSearchQuery.toLowerCase())
-              ).map((item: any, i: number) => {
-                  const cartItem = cart.find(c => c.name === item.name);
-                  const qty = cartItem ? cartItem.quantity : 0;
-                  
-                  let isLowStock = false;
-                  const availableStock = (() => {
-                    if (!item.ingredients || item.ingredients.length === 0) return '∞';
-                    let minPortions = Infinity;
-                    for (const ing of item.ingredients) {
-                      const invItem = currentBranchData.inventory.find((inv: any) => inv.item === ing.name);
-                      if (!invItem) return 0;
-                      const reqQty = parseFloat(ing.quantity);
-                      if (reqQty <= 0) continue;
-                      const portions = Math.floor(invItem.stock / reqQty);
-                      if (portions < minPortions) minPortions = portions;
-                    }
-                    if (minPortions !== Infinity && minPortions <= 5) isLowStock = true;
-                    return minPortions === Infinity ? '∞' : minPortions;
-                  })();
+            <div style={{ overflowY: 'auto', flex: 1, padding: '24px' }}>
+              {(() => {
+                const categoriesToRender = posCategory === 'All Items' 
+                  ? ['Uncategorized', ...currentBranchData.categories.map((c:any) => typeof c === 'string' ? c : c.name)]
+                  : [posCategory];
+                
+                return categoriesToRender.map((catName: string) => {
+                  const itemsInCat = currentBranchData.menu.filter((m: any) => 
+                     !m.isAddon &&
+                     m.available !== false && m.status === 'Active' && 
+                     m.category === catName && 
+                     m.name.toLowerCase().includes(posSearchQuery.toLowerCase())
+                  );
 
-                  const displayStock = (typeof availableStock === 'number' && availableStock < 0) ? 0 : availableStock;
+                  if (itemsInCat.length === 0) return null;
 
                   return (
-                    <div key={i} className="pos-item-card" onClick={() => {
-                      if (qty === 0) {
-                        if (typeof displayStock === 'number' && displayStock <= 0) {
-                          alert(`Warning: ${item.name} is currently out of stock!`);
-                        }
-                        handleAddToCart(item);
-                      }
-                    }} style={{ position: 'relative', border: isLowStock ? '1px solid #fca5a5' : '', background: isLowStock ? '#fef2f2' : '' }}>
-                      <div style={{ position: 'absolute', top: 12, right: 12, fontSize: '0.8rem', color: isLowStock ? '#ef4444' : 'var(--text-muted)', fontWeight: isLowStock ? 600 : 400 }}>Stock: {displayStock}</div>
-                      <div className="pos-item-name" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, paddingRight: 60 }}>
-                        <div style={{
-                          width: 12, height: 12, border: `1px solid ${item.type === 'Non-Veg' ? '#ef4444' : item.type === 'Egg' ? '#eab308' : '#22c55e'}`, 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2, flexShrink: 0
-                        }}>
-                          <div style={{
-                            width: 6, height: 6, borderRadius: '50%', background: item.type === 'Non-Veg' ? '#ef4444' : item.type === 'Egg' ? '#eab308' : '#22c55e'
-                          }}></div>
-                        </div>
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-                        <div className="pos-item-price">₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={(e) => e.stopPropagation()}>
-                          <button className="cart-qty-btn" onClick={() => updateCartQty(item, -1)} style={{ width: 28, height: 28, padding: 0, borderRadius: 2, background: '#f8fafc', border: '1px solid var(--border-color)', color: '#334155' }}>-</button>
-                          <input 
-                            type="number" 
-                            min="0"
-                            value={qty === 0 ? '' : qty} 
-                            placeholder="0"
-                            onChange={(e) => {
-                              let val = parseInt(e.target.value);
-                              if (val > qty && typeof displayStock === 'number' && displayStock <= 0) {
-                                alert(`Warning: ${item.name} is currently out of stock!`);
-                              }
-                              if (!isNaN(val)) updateCartQtyExact(item, val);
-                              else if (e.target.value === '') updateCartQtyExact(item, 0);
-                            }}
-                            style={{ width: 40, height: 28, textAlign: 'center', border: '1px solid var(--border-color)', borderRadius: 2, padding: '0 2px', fontWeight: 600 }}
-                          />
-                          <button className="cart-qty-btn" onClick={() => {
-                            if (typeof displayStock === 'number' && displayStock <= 0) {
-                              alert(`Warning: ${item.name} is currently out of stock!`);
+                    <div key={catName} style={{ marginBottom: 32 }}>
+                      <h3 style={{ marginBottom: 16, fontSize: '1.2rem', color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: 8 }}>{catName}</h3>
+                      <div className="pos-items-grid" style={{ padding: 0, overflowY: 'visible' }}>
+                        {itemsInCat.map((item: any, i: number) => {
+                          const qty = cart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.quantity, 0);
+                          
+                          let isLowStock = false;
+                          const availableStock = (() => {
+                            if (!item.ingredients || item.ingredients.length === 0) return '∞';
+                            let minPortions = Infinity;
+                            for (const ing of item.ingredients) {
+                              const invItem = currentBranchData.inventory.find((inv: any) => inv.item === ing.name);
+                              if (!invItem) return 0;
+                              const reqQty = parseFloat(ing.quantity);
+                              if (reqQty <= 0) continue;
+                              const portions = Math.floor(invItem.stock / reqQty);
+                              if (portions < minPortions) minPortions = portions;
                             }
-                            updateCartQty(item, 1);
-                          }} style={{ width: 28, height: 28, padding: 0, borderRadius: 2, background: '#f8fafc', border: '1px solid var(--border-color)', color: '#334155' }}>+</button>
-                        </div>
+                            if (minPortions !== Infinity && minPortions <= 5) isLowStock = true;
+                            return minPortions === Infinity ? '∞' : minPortions;
+                          })();
+
+                          const displayStock = (typeof availableStock === 'number' && availableStock < 0) ? 0 : availableStock;
+
+                          return (
+                            <div key={item.id || i} className="pos-item-card" onClick={() => {
+                              if (qty === 0 || (item.addonIds && item.addonIds.trim() !== '')) {
+                                if (typeof displayStock === 'number' && displayStock <= 0) {
+                                  alert(`Warning: ${item.name} is currently out of stock!`);
+                                }
+                                handleAddToCart(item);
+                              }
+                            }} style={{ position: 'relative', border: isLowStock ? '1px solid #fca5a5' : '', background: isLowStock ? '#fef2f2' : '' }}>
+                              <div style={{ position: 'absolute', top: 12, right: 12, fontSize: '0.8rem', color: isLowStock ? '#ef4444' : 'var(--text-muted)', fontWeight: isLowStock ? 600 : 400 }}>Stock: {displayStock}</div>
+                              <div className="pos-item-name" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, paddingRight: 60 }}>
+                                <div style={{
+                                  width: 12, height: 12, border: `1px solid ${item.type === 'Non-Veg' ? '#ef4444' : item.type === 'Egg' ? '#eab308' : '#22c55e'}`, 
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2, flexShrink: 0
+                                }}>
+                                  <div style={{
+                                    width: 6, height: 6, borderRadius: '50%', background: item.type === 'Non-Veg' ? '#ef4444' : item.type === 'Egg' ? '#eab308' : '#22c55e'
+                                  }}></div>
+                                </div>
+                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
+                              </div>
+                              {item.description && (
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.4' }}>
+                                  {item.description}
+                                </div>
+                              )}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
+                                <div className="pos-item-price">₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                                  <button className="cart-qty-btn" onClick={() => {
+                                    if (item.addonIds && item.addonIds.trim() !== '') {
+                                      const firstConfig = cart.find(c => c.id === item.id);
+                                      if (firstConfig) updateCartQty(firstConfig.name, -1);
+                                    } else {
+                                      updateCartQty(item, -1);
+                                    }
+                                  }} style={{ width: 28, height: 28, padding: 0, borderRadius: 2, background: '#f8fafc', border: '1px solid var(--border-color)', color: '#334155' }}>-</button>
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={qty === 0 ? '' : qty} 
+                                    placeholder="0"
+                                    onChange={(e) => {
+                                      let val = parseInt(e.target.value);
+                                      if (val > qty && typeof displayStock === 'number' && displayStock <= 0) {
+                                        alert(`Warning: ${item.name} is currently out of stock!`);
+                                      }
+                                      if (!isNaN(val)) {
+                                        if (item.addonIds && item.addonIds.trim() !== '') {
+                                          const firstConfig = cart.find(c => c.id === item.id);
+                                          if (firstConfig) updateCartQtyExact(firstConfig.name, val);
+                                        } else {
+                                          updateCartQtyExact(item, val);
+                                        }
+                                      } else if (e.target.value === '') {
+                                        if (item.addonIds && item.addonIds.trim() !== '') {
+                                          const firstConfig = cart.find(c => c.id === item.id);
+                                          if (firstConfig) updateCartQtyExact(firstConfig.name, 0);
+                                        } else {
+                                          updateCartQtyExact(item, 0);
+                                        }
+                                      }
+                                    }}
+                                    style={{ width: 40, height: 28, textAlign: 'center', border: '1px solid var(--border-color)', borderRadius: 2, padding: '0 2px', fontWeight: 600 }}
+                                  />
+                                  <button className="cart-qty-btn" onClick={() => {
+                                    if (typeof displayStock === 'number' && displayStock <= 0) {
+                                      alert(`Warning: ${item.name} is currently out of stock!`);
+                                    }
+                                    if (item.addonIds && item.addonIds.trim() !== '') {
+                                      handleAddToCart(item);
+                                    } else {
+                                      updateCartQty(item, 1);
+                                    }
+                                  }} style={{ width: 28, height: 28, padding: 0, borderRadius: 2, background: '#f8fafc', border: '1px solid var(--border-color)', color: '#334155' }}>+</button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
-              })}
+                });
+              })()}
             </div>
               </main>
             </>
@@ -1690,33 +1891,69 @@ function App() {
 
         {showShiftTableModal && posMode === 'table' && selectedTableId && (
           <div className="modal-overlay" style={{ zIndex: 100 }}>
-            <div className="modal-content" style={{ maxWidth: 400 }}>
-              <h2>Shift Table</h2>
-              <p>Select an empty table to shift the current order to:</p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 16 }}>
-                {currentBranchData.tables.filter((t:any) => t.id !== selectedTableId && (!tableOrders[t.id] || (tableOrders[t.id].activeCart.length === 0 && tableOrders[t.id].savedOrders.length === 0))).map((t: any) => (
-                  <button key={t.id} className="btn-outline" onClick={() => {
-                    setTableOrders(prev => {
-                      const newOrders = { ...prev };
-                      newOrders[t.id] = newOrders[selectedTableId];
-                      delete newOrders[selectedTableId];
-                      return newOrders;
-                    });
-                    setTableStartTimes(prev => {
-                      const newTimes = { ...prev };
-                      if (newTimes[selectedTableId]) {
-                        newTimes[t.id] = newTimes[selectedTableId];
-                        delete newTimes[selectedTableId];
-                      }
-                      return newTimes;
-                    });
-                    setSelectedTableId(t.id);
-                    setShowShiftTableModal(false);
-                  }}>{t.name}</button>
-                ))}
+            <div className="modal-content" style={{ maxWidth: 500, padding: 0 }}>
+              <div className="modal-header">
+                <h2>Shift Table</h2>
+                <button className="close-btn" onClick={() => setShowShiftTableModal(false)}>×</button>
               </div>
-              <div className="modal-actions" style={{ marginTop: 24 }}>
-                <button className="btn-outline" onClick={() => setShowShiftTableModal(false)}>Cancel</button>
+              <div className="modal-body">
+                <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>Select an empty table to shift the current order to:</p>
+                
+                {(() => {
+                  const emptyTables = currentBranchData.tables.filter((t:any) => t.id !== selectedTableId && (!tableOrders[t.id] || (tableOrders[t.id].activeCart.length === 0 && tableOrders[t.id].savedOrders.length === 0)));
+                  
+                  if (emptyTables.length === 0) {
+                    return <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>No empty tables available.</div>;
+                  }
+
+                  const areas = currentBranchData.areas || [];
+                  const tablesByArea = emptyTables.reduce((acc: any, table: any) => {
+                    const area = areas.find((a: any) => a.id === table.areaId) || { name: 'Main Area' };
+                    if (!acc[area.name]) acc[area.name] = [];
+                    acc[area.name].push(table);
+                    return acc;
+                  }, {});
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                      {Object.entries(tablesByArea).map(([areaName, tables]: [string, any]) => (
+                        <div key={areaName}>
+                          <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{areaName}</h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
+                            {tables.map((t: any) => (
+                              <button key={t.id} style={{ padding: '12px 8px', borderRadius: 8, border: '1px solid var(--border-color)', backgroundColor: '#f8fafc', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary-color)'; e.currentTarget.style.backgroundColor = '#eff6ff'; e.currentTarget.style.color = 'var(--primary-color)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = 'var(--text-main)'; }}
+                                onClick={() => {
+                                setTableOrders(prev => {
+                                  const newOrders = { ...prev };
+                                  newOrders[t.id] = newOrders[selectedTableId];
+                                  delete newOrders[selectedTableId];
+                                  return newOrders;
+                                });
+                                setTableStartTimes(prev => {
+                                  const newTimes = { ...prev };
+                                  if (newTimes[selectedTableId]) {
+                                    newTimes[t.id] = newTimes[selectedTableId];
+                                    delete newTimes[selectedTableId];
+                                  }
+                                  return newTimes;
+                                });
+                                setSelectedTableId(t.id);
+                                setShowShiftTableModal(false);
+                              }}>
+                                {t.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="modal-actions" style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', backgroundColor: '#f8fafc', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
+                <button className="btn-outline" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-color)', backgroundColor: '#fff', cursor: 'pointer' }} onClick={() => setShowShiftTableModal(false)}>Cancel</button>
               </div>
             </div>
           </div>
@@ -1769,10 +2006,11 @@ function App() {
           <div className="pos-cart-items">
             {posMode === 'table' && selectedTableId && tableOrders[selectedTableId]?.savedOrders.map((order, orderIdx) => (
               <div key={orderIdx} style={{ marginBottom: 16 }}>
-                <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', color: '#475569', marginBottom: 8 }}>
-                  Order {orderIdx + 1}
+                <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', color: '#475569', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Order {orderIdx + 1}</span>
+                  {order.time && <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 500 }}>{new Date(order.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                 </div>
-                {order.map((item:any, i:number) => (
+                {(order.items || (Array.isArray(order) ? order : [])).map((item:any, i:number) => (
                   <div key={i} className="cart-item" style={{ opacity: 0.85, paddingBottom: 12, marginBottom: 12 }}>
                     <div className="cart-item-info">
                       <div className="cart-item-name">{item.name}</div>
@@ -1830,7 +2068,7 @@ function App() {
               <span>₹{subtotal.toFixed(2)}</span>
             </div>
             <div className="summary-row">
-              <span>Tax</span>
+              <span>Tax {currentBranchData.settings?.globalTaxName ? `(${currentBranchData.settings.globalTaxName})` : ''}</span>
               <span>₹{tax.toFixed(2)}</span>
             </div>
             <div className="summary-row total">
@@ -1859,10 +2097,11 @@ function App() {
                    <h3 style={{ marginTop: 0, marginBottom: 16 }}>Order Summary</h3>
                    {posMode === 'table' && selectedTableId && tableOrders[selectedTableId]?.savedOrders.map((order, orderIdx) => (
                      <div key={`saved-${orderIdx}`} style={{ marginBottom: 16 }}>
-                       <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', color: '#475569', marginBottom: 8 }}>
-                         Order {orderIdx + 1}
+                       <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', color: '#475569', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                         <span>Order {orderIdx + 1}</span>
+                         {order.time && <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 500 }}>{new Date(order.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                        </div>
-                       {order.map((item:any, i:number) => (
+                       {(order.items || (Array.isArray(order) ? order : [])).map((item:any, i:number) => (
                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 12, borderBottom: '1px dashed #e2e8f0', opacity: 0.85 }}>
                            <div>
                              <div style={{ fontWeight: 600 }}>{item.name}</div>
@@ -1897,7 +2136,7 @@ function App() {
                      <span>₹{getCartTotals().subtotal.toFixed(2)}</span>
                    </div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, color: 'var(--text-muted)' }}>
-                     <span>Tax</span>
+                     <span>Tax {currentBranchData.settings?.globalTaxName ? `(${currentBranchData.settings.globalTaxName})` : ''}</span>
                      <span>₹{getCartTotals().tax.toFixed(2)}</span>
                    </div>
                    
@@ -1996,15 +2235,15 @@ function App() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24, maxHeight: '50vh', overflowY: 'auto' }}>
                 {addonSelectionItem.addonIds.split(',').map((id: string) => {
-                  const addon = currentBranchData.menu.find((m: any) => m.id.toString() === id);
+                  const addon = currentBranchData.addons.find((a: any) => a.id.toString() === id.trim());
                   if (!addon) return null;
-                  const isSelected = selectedAddonIds.includes(id);
+                  const isSelected = selectedAddonIds.includes(id.trim());
                   return (
                     <label key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isSelected ? '#eff6ff' : '#f8fafc', border: `1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`, padding: '12px 16px', borderRadius: 8, cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <input type="checkbox" checked={isSelected} onChange={(e) => {
-                          if (e.target.checked) setSelectedAddonIds([...selectedAddonIds, id]);
-                          else setSelectedAddonIds(selectedAddonIds.filter(x => x !== id));
+                          if (e.target.checked) setSelectedAddonIds([...selectedAddonIds, id.trim()]);
+                          else setSelectedAddonIds(selectedAddonIds.filter(x => x !== id.trim()));
                         }} style={{ cursor: 'pointer' }} />
                         <span style={{ fontWeight: 500, color: isSelected ? '#1d4ed8' : '#334155' }}>{addon.name}</span>
                       </div>
@@ -2015,11 +2254,17 @@ function App() {
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn-prev" style={{ flex: 1, padding: 12, borderRadius: 8, border: '1px solid #cbd5e1', background: '#f1f5f9', cursor: 'pointer' }} onClick={() => { setAddonSelectionItem(null); setSelectedAddonIds([]); }}>Cancel</button>
-                <button className="btn-next" style={{ flex: 1, padding: 12, borderRadius: 8, background: '#3b82f6', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }} onClick={() => {
+                <button className="btn-prev" style={{ flex: 1, padding: 12, borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }} onClick={() => { 
+                  const baseItem = { ...addonSelectionItem };
+                  setAddonSelectionItem(null); 
+                  setSelectedAddonIds([]); 
+                  handleAddToCart(baseItem, true);
+                }}>Skip Add-ons</button>
+                <button className="btn-next" style={{ flex: 1.5, padding: 12, borderRadius: 8, background: '#3b82f6', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }} onClick={() => {
                   let totalAddonPrice = 0;
                   const addonNames: string[] = [];
                   selectedAddonIds.forEach(id => {
-                    const addon = currentBranchData.menu.find((m: any) => m.id.toString() === id);
+                    const addon = currentBranchData.addons.find((a: any) => a.id.toString() === id.trim());
                     if (addon) {
                       totalAddonPrice += parseFloat(addon.price.toString().replace('₹', ''));
                       addonNames.push(addon.name);

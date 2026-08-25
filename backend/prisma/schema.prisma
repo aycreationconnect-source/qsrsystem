@@ -127,3 +127,7 @@ model Table {
   areaId      Int
   area        Area     @relation(fields: [areaId], references: [id])
 }
+model Setting {
+  key   String @id
+  value String
+}

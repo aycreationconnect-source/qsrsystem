@@ -19,11 +19,12 @@ export class MenuService {
        categoryId = defaultCat ? defaultCat.id : 1;
     }
 
-    const { category, image, available, ingredients, taxes, ...itemData } = data; // Remove unmapped fields
+    const { category, image, available, ingredients, taxes, taxName, ...itemData } = data; // Remove unmapped fields
 
     const menuItem = await this.prisma.menuItem.create({
       data: {
         ...itemData,
+        tax: itemData.tax ? parseFloat(itemData.tax) : null,
         imageUrl: image,
         isAvailable: available !== undefined ? available : true,
         price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
@@ -85,16 +86,24 @@ export class MenuService {
   }
 
   async update(id: number, data: any) {
-    const { category, categoryId, id: itemId, image, available, ingredients, taxes, ...itemData } = data;
+    let updatedCategoryId: number | undefined = undefined;
+    if (data.category) {
+      const cat = await this.prisma.category.findUnique({ where: { name: data.category }});
+      if (cat) updatedCategoryId = cat.id;
+    }
+
+    const { category, categoryId, id: itemId, image, available, ingredients, taxes, taxName, ...itemData } = data;
     
     const menuItem = await this.prisma.menuItem.update({
       where: { id },
       data: {
         ...itemData,
+        ...(updatedCategoryId !== undefined && { categoryId: updatedCategoryId }),
+        ...(itemData.tax !== undefined && { tax: itemData.tax ? parseFloat(itemData.tax) : null }),
         ...(image !== undefined && { imageUrl: image }),
         ...(available !== undefined && { isAvailable: available }),
-        price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
-        prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null,
+        ...(itemData.price !== undefined && { price: parseFloat(String(itemData.price).replace('₹', '') || "0") }),
+        ...(itemData.prepTime !== undefined && { prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null }),
       }
     });
 

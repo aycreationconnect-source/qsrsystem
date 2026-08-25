@@ -9,10 +9,11 @@ import { OrderModule } from './order/order.module';
 import { AreaModule } from './area/area.module';
 import { TableModule } from './table/table.module';
 import { AddonModule } from './addon/addon.module';
+import { SettingModule } from './setting/setting.module';
 import { PrismaService } from './prisma/prisma.service';
 
 @Module({
-  imports: [PrismaModule, CategoryModule, MenuModule, InventoryModule, OrderModule, AreaModule, TableModule, AddonModule],
+  imports: [PrismaModule, CategoryModule, MenuModule, InventoryModule, OrderModule, AreaModule, TableModule, AddonModule, SettingModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
