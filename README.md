@@ -1,6 +1,6 @@
 # 🍽️ QSR & Restaurant Management POS System
 
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-11.x-red.svg)](https://nestjs.com/)
 [![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
@@ -8,9 +8,9 @@
 [![Prisma ORM](https://img.shields.io/badge/Prisma-7.x-2D3748.svg)](https://www.prisma.io/)
 [![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20MariaDB-orange.svg)](https://mariadb.org/)
 
-A full-stack, enterprise-grade **Quick Service Restaurant (QSR) & Dine-In Management System** built with **NestJS**, **React 19**, **TypeScript**, **Prisma ORM**, and **MySQL/MariaDB**.
+A full-stack, enterprise-grade **Quick Service Restaurant (QSR) & Dine-In Management System** built with **NestJS**, **React 19**, **TypeScript**, **Prisma ORM (v7)**, and **MySQL / MariaDB**.
 
-The platform provides an end-to-end solution for modern food businesses, featuring real-time POS terminals (Counter & Table dine-in), automated recipe-based inventory deduction, floor and table management, menu engineering, and analytical dashboards.
+The platform provides a modular, production-ready solution for modern food businesses, featuring real-time POS terminals (Counter & Dine-In Table flow), automated recipe-based inventory deduction, floor and table management, menu catalog engineering, authentication, and an executive analytical dashboard.
 
 ---
 
@@ -18,15 +18,17 @@ The platform provides an end-to-end solution for modern food businesses, featuri
 
 - [✨ Key Features](#-key-features)
 - [🏗️ System Architecture](#️-system-architecture)
+  - [Frontend Architecture & State Management](#frontend-architecture--state-management)
+  - [Backend Architecture & Data Flow](#backend-architecture--data-flow)
 - [💻 Tech Stack](#-tech-stack)
 - [🗄️ Database Schema & Models](#️-database-schema--models)
 - [🛠️ Required Tools & Prerequisites](#️-required-tools--prerequisites)
 - [🚀 Installation & Setup Guide](#-installation--setup-guide)
   - [1. Database Setup](#1-database-setup)
   - [2. Backend Setup](#2-backend-setup)
-  - [3. Frontend Setup (Admin Panel & POS)](#3-frontend-setup-admin-panel--pos)
+  - [3. Frontend Setup](#3-frontend-setup)
 - [🖥️ How to Run & Access the System](#️-how-to-run--access-the-system)
-- [📡 API Documentation](#-api-documentation)
+- [📡 API Documentation & Service Layer](#-api-documentation--service-layer)
 - [📁 Project Directory Structure](#-project-directory-structure)
 - [🔧 Helper Scripts & Maintenance](#-helper-scripts--maintenance)
 - [❓ Troubleshooting & FAQs](#-troubleshooting--faqs)
@@ -37,18 +39,18 @@ The platform provides an end-to-end solution for modern food businesses, featuri
 
 ### 1. 📊 Executive Admin Dashboard
 - **Live Sales & Performance Metrics**: Real-time tracking of daily orders, revenue, active tables, and comparison trends vs. previous days.
-- **7-Day Revenue Analytics**: Interactive visual bar charts showing weekly revenue distribution.
+- **7-Day Revenue Analytics**: Interactive visual bar charts displaying weekly revenue distributions.
 - **Recent Activity Stream**: Live feed of incoming orders and transaction values.
 - **Quick Actions**: One-click shortcuts for rapid item addition, stock replenishment, and table configurations.
 
-### 2. 🍔 Menu & Catalog Management
-- **Category Hierarchy**: Organize items into categorized groups with custom display ordering and status toggling (Active/Inactive).
+### 2. 🍔 Menu & Catalog Engineering
+- **Category Hierarchy**: Organize items into categorized groups with custom display ordering and status toggling (`Active`/`Inactive`).
 - **Comprehensive Item Configuration**: Support for Veg/Non-Veg badges, SKU codes, preparation times, tax rates, base pricing, and image URLs.
-- **Add-on / Modifier System**: Create custom extras and add-ons attachable to menu items.
+- **Add-on / Modifier System**: Create custom extras and attach them dynamically to menu items with pricing rules.
 - **Live Availability Switch**: Instantly toggle out-of-stock items off POS screens.
 
 ### 3. 📦 Recipe-Linked Inventory & Automated Stock Tracking
-- **Raw Material Stock Control**: Track raw ingredients with units (`kg`, `L`, `pcs`, etc.) and safety threshold limits.
+- **Raw Material Stock Control**: Track raw ingredients with unit metrics (`kg`, `L`, `pcs`, etc.) and safety threshold limits.
 - **Automated Recipe Deduction**: When orders are placed at POS, the backend atomically deducts exact raw material quantities based on recipe ingredient ratios.
 - **Inventory Audit History**: Automatic immutable logging of stock changes per order and manual stock reconciliations.
 - **Low Stock Alerts**: Real-time status indicators flagging items nearing replenishment thresholds.
@@ -57,18 +59,18 @@ The platform provides an end-to-end solution for modern food businesses, featuri
 - **Multi-Area Seating Layouts**: Group tables by areas/floors (e.g., Main Dining, Rooftop, Patio, AC Hall).
 - **Table Capacity & Statuses**: Manage seat capacity per table with dynamic status tracking (`Available`, `In Use`, `Bill Printed`).
 - **Live Occupancy Timers**: Real-time elapsed time counters showing how long guests have occupied each table.
+- **Table Shifting & Merging**: Reassign or shift orders between active tables effortlessly.
 
-### 5. ⚡ Fast-Casual & Counter POS Terminal (`/?view=pos`)
-- **High-Velocity Checkout**: Built for fast cashiers with keyboard-friendly workflows, category quick-filters, and search.
-- **Add-on Selection Modal**: Customise items with modifiers and notes.
-- **Discount & Tax Engine**: Apply percentage-based or flat cash discounts with automatic tax computations.
-- **Multi-Payment Gateway Support**: Cash, Credit/Debit Card, and UPI payments.
+### 5. ⚡ Fast-Casual & Counter POS Terminal
+- **High-Velocity Checkout**: Built for fast cashier workflows with keyboard shortcuts, category quick-filters, and search.
+- **Add-on Selection Modal**: Customise items with modifiers, custom notes, and variant extras.
+- **Discount & Tax Engine**: Apply percentage-based or flat cash discounts with automatic itemized tax computations.
+- **Multi-Payment Support**: Cash, Credit/Debit Card, and UPI payments.
 - **Instant Thermal Receipt Formatting**: Printable digital bill layouts.
 
-### 6. 🍽️ Dine-In Table POS Terminal (`/?view=pos&mode=table`)
-- **Visual Table Picker**: Interactive floorplan selector with area tabs.
-- **Order Staging & KOT Flow**: Manage active carts, save incremental KOT rounds to tables, print intermediate bills, and final checkout.
-- **Table Shifting & Merging**: Seamless table reassignment capabilities.
+### 6. 🔐 Authentication & Role Views
+- **Clean Auth State**: Built-in login and registration views with decoupled context management.
+- **Seamless View Switching**: Instant switching between Admin Dashboard, POS Counter, and POS Dine-In modes.
 
 ---
 
@@ -76,21 +78,26 @@ The platform provides an end-to-end solution for modern food businesses, featuri
 
 ```mermaid
 graph TD
-    Client[React 19 Frontend + Vite SPA]
-    
-    subgraph "POS & Admin Interface"
-        Admin[Admin Dashboard]
-        CPOS[Counter QSR POS]
-        TPOS[Dine-In Table POS]
+    subgraph "Frontend Layer (React 19 + TypeScript + Vite)"
+        App[App Root]
+        AuthView[Auth: Login / Register]
+        AdminLayout[Admin Layout]
+        POSLayout[POS Layout]
+        
+        AppCtx[AppContext: Global State & Tabs]
+        POSCtx[POSContext: Cart & Order Engine]
+        
+        APILayer[Modular API Client Layer]
     end
 
-    subgraph "Backend Layer (NestJS 11)"
+    subgraph "Backend Layer (NestJS 11 + Express)"
         API[NestJS REST API Server :3000]
-        Auth[App / Setting Module]
-        MenuMod[Menu & Category Module]
-        InvMod[Inventory & Recipe Service]
+        CatMod[Category Module]
+        MenuMod[Menu & Addon Module]
+        InvMod[Inventory & History Service]
         OrdMod[Transactional Order Engine]
         TableMod[Floor & Table Module]
+        SetMod[Settings Module]
     end
 
     subgraph "Database & Storage"
@@ -98,28 +105,37 @@ graph TD
         DB[(MySQL / MariaDB: 3306 `qsr_db`)]
     end
 
-    Client --> Admin
-    Client --> CPOS
-    Client --> TPOS
-
-    Admin & CPOS & TPOS -->|REST HTTP / JSON| API
+    App --> AuthView & AdminLayout & POSLayout
+    AdminLayout & POSLayout --> AppCtx & POSCtx
+    AppCtx & POSCtx --> APILayer
+    APILayer -->|HTTP / JSON via fetch| API
     
-    API --> MenuMod & InvMod & OrdMod & TableMod & Auth
-    MenuMod & InvMod & OrdMod & TableMod & Auth --> Prisma
+    API --> CatMod & MenuMod & InvMod & OrdMod & TableMod & SetMod
+    CatMod & MenuMod & InvMod & OrdMod & TableMod & SetMod --> Prisma
     Prisma --> DB
 ```
+
+### Frontend Architecture & State Management
+The frontend is completely refactored and modularized into decoupled layers:
+- **`src/views/`**: Top-level layouts (`AdminLayout`, `POSLayout`).
+- **`src/context/`**:
+  - `AppContext`: Global app state, active tab (`dashboard`, `menu`, `inventory`, `tables`, `settings`), active view (`login`, `register`, `dashboard`, `pos`), theme, notifications.
+  - `POSContext`: POS state machine handling active carts, table assignment, search/filter queries, discounts, add-ons, and payment processing.
+- **`src/api/`**: Centralized HTTP client (`client.ts`) with service modules (`menuApi.ts`, `orderApi.ts`, `inventoryApi.ts`, `tableApi.ts`, `settingsApi.ts`).
+- **`src/components/`**: Domain-grouped component modules (`auth/`, `common/`, `dashboard/`, `menu/`, `inventory/`, `tables/`, `pos/`, `settings/`).
+- **`src/types/`**: Shared TypeScript contracts (`app.types.ts`).
 
 ---
 
 ## 💻 Tech Stack
 
-### Frontend (`admin-panel`)
+### Frontend (`frontend`)
 | Technology | Version | Purpose |
 | :--- | :--- | :--- |
 | **React** | `^19.2.8` | Modern UI library with declarative components and hooks |
 | **TypeScript** | `~6.0.2` | Strong static typing across state, props, and API payloads |
 | **Vite** | `^8.2.0` | Ultra-fast next-gen build tool and HMR dev server |
-| **CSS3 / Variables** | Native | Clean, responsive design system with theme tokens |
+| **CSS3 / Variables** | Native | Responsive design system with custom CSS tokens |
 | **Oxlint** | `^1.75.0` | High-performance JavaScript/TypeScript linter |
 
 ### Backend (`backend`)
@@ -176,15 +192,15 @@ erDiagram
 
 Before setting up and running the project, ensure you have the following installed on your machine:
 
-1. **Node.js**: `v18.x` or higher (Recommended: `v20.x` LTS or `v22.x`)
+1. **Node.js**: `v20.x` LTS or `v22.x` (Recommended: `v22.18.0` via nvm)
    - Verify: `node -v`
-2. **npm** (or `pnpm` / `yarn`): `v9.x` or higher
+2. **npm**: `v10.x` or higher
    - Verify: `npm -v`
 3. **MySQL Server** or **MariaDB Server**:
    - Ensure the service is running on port `3306`.
    - Accessible with a user that has database creation/read/write privileges.
 4. **Git**: For source version control.
-5. **Browser**: Chrome, Firefox, Safari, or Edge.
+5. **Browser**: Modern web browser (Chrome, Edge, Firefox, Safari).
 
 ---
 
@@ -197,12 +213,16 @@ Before setting up and running the project, ensure you have the following install
    ```sql
    CREATE DATABASE IF NOT EXISTS qsr_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
-3. Ensure user credentials match your local setup. By default, the backend connects using:
-   - **Host**: `localhost`
-   - **Port**: `3306`
-   - **User**: `root`
-   - **Password**: *(Configured in `backend/src/prisma/prisma.service.ts`)*
-   - **Database**: `qsr_db`
+3. Configure the environment variables in `backend/.env`:
+   ```env
+   DATABASE_HOST="localhost"
+   DATABASE_PORT=3306
+   DATABASE_USER="root"
+   DATABASE_PASSWORD="your_password_here"
+   DATABASE_NAME="qsr_db"
+   DATABASE_CONNECTION_LIMIT=10
+   PORT=3000
+   ```
 
 ---
 
@@ -218,7 +238,7 @@ Before setting up and running the project, ensure you have the following install
    npm install
    ```
 
-3. Generate the Prisma Client and push schema migrations to your database:
+3. Generate the Prisma Client and push schema to your database:
    ```bash
    npx prisma generate
    npx prisma db push
@@ -233,30 +253,35 @@ Before setting up and running the project, ensure you have the following install
    ```bash
    npm run start:dev
    ```
-   *The backend will be running on `http://localhost:3000` (listening on all interfaces `0.0.0.0:3000`).*
+   *The backend will start on `http://localhost:3000` (listening on all interfaces `0.0.0.0:3000`).*
 
 ---
 
-### 3. Frontend Setup (Admin Panel & POS)
+### 3. Frontend Setup
 
-1. Open a new terminal and navigate to the `admin-panel` directory:
+1. Open a second terminal and navigate to the `frontend` directory:
    ```bash
-   cd admin-panel
+   cd frontend
    ```
 
-2. Install dependencies:
+2. *(Optional)* Create a `.env` file in `frontend/` if you want to override the backend API endpoint:
+   ```env
+   VITE_API_URL="http://localhost:3000"
+   ```
+
+3. Install dependencies:
    ```bash
    npm install
    ```
 
-3. Start the Vite development server:
+4. Start the Vite development server:
    ```bash
    npm run dev
    ```
-   *The frontend will start at `http://localhost:5173`.*
+   *The frontend will start on `http://localhost:5173`.*
 
 > [!NOTE]
-> If testing across devices on your local network (e.g. tablet POS / mobile order taking), ensure the backend IP in `admin-panel/src/App.tsx` or Vite proxy points to your machine's LAN IP address or `localhost`.
+> If testing across devices on your local network (e.g. tablet POS / mobile order taking), set `VITE_API_URL` to your machine's LAN IP address (e.g., `http://192.168.1.100:3000`).
 
 ---
 
@@ -266,42 +291,43 @@ Once both the backend and frontend servers are running, access the various views
 
 | Interface | URL | Purpose |
 | :--- | :--- | :--- |
-| **Admin Dashboard & Management** | `http://localhost:5173/` | Analytics, Menu setup, Inventory, Table configuration, Settings |
-| **Quick Service POS (Counter)** | `http://localhost:5173/?view=pos` | Fast order processing, cashier billing, discounts & receipts |
-| **Dine-In Table POS** | `http://localhost:5173/?view=pos&mode=table` | Floor-plan view, live table timers, table order staging & billing |
+| **Authentication & Portal** | `http://localhost:5173/` | Login, user registration, and view routing |
+| **Admin Dashboard & Management** | Select "Dashboard" in Portal | Analytics, Menu catalog, Inventory stock, Floor tables, Settings |
+| **Quick Service POS (Counter)** | Select "POS" in Portal | Fast order processing, cashier billing, discounts & receipts |
+| **Dine-In Table POS** | Select "POS" -> Dine-In Mode | Floor-plan view, live table timers, table order staging & billing |
 | **Backend REST API** | `http://localhost:3000/` | NestJS REST API root & endpoints |
 
 ---
 
-## 📡 API Documentation
+## 📡 API Documentation & Service Layer
 
-The backend exposes a modular RESTful API:
+The frontend consumes the NestJS REST API via the modular service layer in `frontend/src/api/`:
 
-### Categories (`/category`)
+### Categories (`/category`) — `menuApi.ts`
 - `GET /category` — Retrieve all categories ordered by `displayOrder`.
 - `POST /category` — Create a new menu category.
 - `PATCH /category/:id` — Update category details (name, displayOrder, status).
 - `DELETE /category/:id` — Delete category.
 
-### Menu Items (`/menu`)
+### Menu Items (`/menu`) — `menuApi.ts`
 - `GET /menu` — Retrieve all menu items with category relation.
 - `POST /menu` — Create menu item (auto-resolves category name or ID).
 - `PATCH /menu/:id` — Update menu item (price, availability, prep time, taxes, image).
 - `DELETE /menu/:id` — Remove menu item.
 
-### Add-ons (`/addon`)
+### Add-ons (`/addon`) — `menuApi.ts`
 - `GET /addon` — List all modifiers/add-ons.
 - `POST /addon` — Create an add-on item.
 - `PATCH /addon/:id` — Update add-on.
 - `DELETE /addon/:id` — Remove add-on.
 
-### Inventory (`/inventory`)
+### Inventory (`/inventory`) — `inventoryApi.ts`
 - `GET /inventory` — Fetch inventory items with stock audit history logs.
 - `POST /inventory` — Add raw ingredient / stock item.
 - `PATCH /inventory/:id` — Adjust stock/threshold (auto-logs manual stock changes).
 - `DELETE /inventory/:id` — Delete inventory item.
 
-### Orders (`/order`)
+### Orders (`/order`) — `orderApi.ts`
 - `GET /order` — List order history with item breakdown.
 - `GET /order/:id` — Get single order details.
 - `POST /order` — **Place order with automatic transactional inventory deduction**.
@@ -323,11 +349,11 @@ The backend exposes a modular RESTful API:
 - `PATCH /order/:id` — Update order status.
 - `DELETE /order/:id` — Delete order.
 
-### Areas & Tables (`/area`, `/table`)
+### Areas & Tables (`/area`, `/table`) — `tableApi.ts`
 - `GET /area` / `POST /area` / `PATCH /area/:id` / `DELETE /area/:id` — Manage seating sections.
 - `GET /table` / `POST /table` / `PATCH /table/:id` / `DELETE /table/:id` — Manage tables and seat counts.
 
-### Settings (`/setting`)
+### Settings (`/setting`) — `settingsApi.ts`
 - `GET /setting` — Retrieve key-value configuration pairs (tax rules, store details).
 - `POST /setting` — Upsert application settings.
 
@@ -337,41 +363,68 @@ The backend exposes a modular RESTful API:
 
 ```text
 qsrsystem/
-├── README.md                      # Complete system documentation (This file)
-├── package.json                   # Root project definition
-├── admin-panel/                   # Frontend Application (React 19 + TypeScript + Vite)
-│   ├── index.html                 # Single page application HTML entrypoint
-│   ├── package.json               # Frontend dependencies & scripts
-│   ├── vite.config.ts             # Vite configuration
-│   ├── tsconfig.json              # TypeScript configuration
-│   └── src/
-│       ├── main.tsx               # React application mounting
-│       ├── App.tsx                # Main application component & routes (POS & Admin)
-│       ├── App.css                # Component styling
-│       ├── index.css              # Global styles, variables, typography & layout
-│       └── assets/                # Static assets & icons
+├── README.md                          # Complete system documentation (This file)
+├── package.json                       # Root project definition
 │
-├── backend/                       # Backend Application (NestJS 11 + Prisma ORM)
-│   ├── package.json               # Backend dependencies & scripts
-│   ├── tsconfig.json              # TypeScript server config
-│   ├── nest-cli.json              # NestJS CLI configuration
-│   ├── fix-auto-increment.js      # Utility script for database sequence adjustments
+├── frontend/                          # Refactored Frontend (React 19 + TypeScript + Vite)
+│   ├── index.html                     # Single-page application HTML root
+│   ├── package.json                   # Frontend dependencies & scripts
+│   ├── vite.config.ts                 # Vite bundler configuration
+│   ├── tsconfig.json                  # TypeScript project references
+│   ├── tsconfig.app.json              # TypeScript application config
+│   └── src/
+│       ├── main.tsx                   # React root mount
+│       ├── App.tsx                    # Top-level routing & provider root
+│       ├── App.css                    # Component-level styles
+│       ├── index.css                  # Design tokens, typography & global layouts
+│       ├── api/                       # Decoupled REST API Client layer
+│       │   ├── client.ts              # Base fetch wrapper with VITE_API_URL
+│       │   ├── menuApi.ts             # Categories, Menu Items & Addons API
+│       │   ├── orderApi.ts            # Orders API
+│       │   ├── inventoryApi.ts        # Inventory items & stock history API
+│       │   ├── tableApi.ts            # Floor areas & tables API
+│       │   └── settingsApi.ts         # Application settings API
+│       ├── context/                   # Global state management providers
+│       │   ├── AppContext.tsx         # User auth, tabs, views & notifications
+│       │   └── POSContext.tsx         # Cart, POS tables, discounts & calculations
+│       ├── types/                     # Shared TypeScript data models & contracts
+│       │   └── app.types.ts           # Types for categories, items, orders, tables, etc.
+│       ├── views/                     # Layout orchestrators
+│       │   ├── AdminLayout.tsx        # Dashboard layout with sidebar navigation
+│       │   └── POSLayout.tsx          # POS terminal layout (Counter & Dine-In)
+│       └── components/                # Modular domain components
+│           ├── auth/                  # LoginView, RegisterView
+│           ├── common/                # Header, Sidebar
+│           ├── dashboard/             # DashboardView, StatCards, RevenueChart, RecentActivity, QuickActions
+│           ├── menu/                  # MenuView, MenuItemsGrid, CategorySidebar, Modals, AddonsManagement
+│           ├── inventory/             # InventoryView, InventoryTable, UpdateStockModal, HistoryModal
+│           ├── tables/                # FloorManagement, AreaModal, TableModal
+│           ├── pos/                   # POSTopNav, CategoryTabs, ProductGrid, CartSidebar, CheckoutModal, Modals
+│           └── settings/              # SettingsView
+│
+├── backend/                           # Backend Application (NestJS 11 + Prisma ORM 7)
+│   ├── .env                           # Environment variables (DB credentials & Port)
+│   ├── package.json                   # Backend dependencies & scripts
+│   ├── tsconfig.json                  # TypeScript server config
+│   ├── nest-cli.json                  # NestJS CLI configuration
+│   ├── prisma.config.ts               # Prisma datasource configuration
+│   ├── fix-auto-increment.js          # Utility script for database sequence adjustments
 │   ├── prisma/
-│   │   └── schema.prisma          # Database schema definition (MySQL / MariaDB)
+│   │   └── schema.prisma              # Database schema definition (MySQL / MariaDB)
 │   └── src/
-│       ├── main.ts                # Server bootstrap with CORS & port binding
-│       ├── app.module.ts          # Root NestJS module wiring all feature modules
-│       ├── prisma/                # Prisma service with MariaDB adapter
-│       ├── category/              # Category management module
-│       ├── menu/                  # Menu items and recipe management module
-│       ├── addon/                 # Addons and modifiers module
-│       ├── inventory/             # Inventory and stock audit history module
-│       ├── order/                 # Order engine with transactional recipe deduction
-│       ├── area/                  # Dining floor / area management module
-│       ├── table/                 # Table configuration module
-│       └── setting/               # Store settings & configuration module
+│       ├── main.ts                    # Server bootstrap with CORS, port & void promise handler
+│       ├── app.module.ts              # Root NestJS module wiring all feature modules
+│       ├── prisma/                    # Prisma service with MariaDB adapter
+│       ├── category/                  # Category management module
+│       ├── menu/                      # Menu items and recipe management module
+│       ├── addon/                     # Addons and modifiers module
+│       ├── inventory/                 # Inventory and stock audit history module
+│       ├── order/                     # Order engine with transactional recipe deduction
+│       ├── area/                      # Dining floor / area management module
+│       ├── table/                     # Table configuration module
+│       └── setting/                   # Store settings & configuration module
 │
-└── local-backend/                 # Auxiliary / lightweight fallback backend workspace
+└── local-backend/                     # Auxiliary / lightweight fallback backend workspace
 ```
 
 ---
@@ -396,7 +449,7 @@ qsrsystem/
 - **Lint Codebase**:
   ```bash
   # Frontend
-  cd admin-panel && npm run lint
+  cd frontend && npm run lint
 
   # Backend
   cd backend && npm run lint
@@ -407,14 +460,18 @@ qsrsystem/
 ## ❓ Troubleshooting & FAQs
 
 ### Q1: `PrismaClientInitializationError: Can't reach database server`
-- **Cause**: MySQL/MariaDB is not running or credentials in `PrismaService` do not match.
-- **Fix**: Verify MySQL service status (e.g. `services.msc` or `systemctl status mysql`), test connectivity with `node test-mariadb.js` in `backend`, and verify your password in `backend/src/prisma/prisma.service.ts`.
+- **Cause**: MySQL/MariaDB is not running or credentials in `backend/.env` do not match.
+- **Fix**: Verify MySQL service status (e.g. `services.msc` on Windows or `systemctl status mysql`), test connectivity with `node test-mariadb.js` in `backend`, and check credentials in `backend/.env`.
 
-### Q2: Frontend fails to connect to backend (`Backend connection failed`)
-- **Cause**: Backend server is not running or frontend is attempting to fetch from a different network IP.
-- **Fix**: Ensure `npm run start:dev` is running in `backend`. In `admin-panel/src/App.tsx`, check `fetchBackendData()` and update the fetch URL to `http://localhost:3000` if not using local LAN IP.
+### Q2: `✘ [CLI.UNKNOWN_COMMAND] No command registered for generate`
+- **Cause**: An unstable release candidate or incompatible CLI version of Prisma (e.g., Prisma 8 RC) is installed in `devDependencies`.
+- **Fix**: Ensure `prisma` and `@prisma/client` versions match `^7.9.1` in `backend/package.json`, then run `npm install` and `npx prisma generate`.
 
-### Q3: Auto-increment primary key collision on fresh import
+### Q3: Frontend fails to connect to backend (`API Error / Failed to fetch`)
+- **Cause**: Backend server is not running or frontend is attempting to fetch from an incorrect URL.
+- **Fix**: Ensure `npm run start:dev` is running in `backend` on port `3000`. By default, the API client points to `http://localhost:3000`. If you need a custom host or LAN IP, define `VITE_API_URL="http://<YOUR_IP>:3000"` in `frontend/.env`.
+
+### Q4: Auto-increment primary key collision on fresh import
 - **Fix**: Run `node fix-auto-increment.js` in the `backend` directory to reset table sequence pointers to `MAX(id) + 1`.
 
 ---
