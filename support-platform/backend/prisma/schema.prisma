@@ -1,0 +1,103 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum PlanType {
+  FREE_TRIAL
+  PAID
+  EXTENSION
+}
+
+enum LicenseStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+model PlanTemplate {
+  id             String         @id // e.g. 202609021788342526604
+  planCode       String         @unique // e.g. TRIAL_3M, TRIAL_1M, EXTEND_15D, PAID_1Y
+  name           String         // e.g. "3 Months Free Trial"
+  planType       PlanType       @default(FREE_TRIAL)
+  durationDays   Int            @default(90) // 90, 30, 15, 365, etc.
+  price          Decimal        @default(0.00) @db.Decimal(10, 2)
+  isDefault      Boolean        @default(false)
+  isActive       Boolean        @default(true)
+  maxTerminals   Int            @default(10)
+  allowedModules Json?          // ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY", "GDRIVE_BACKUP"]
+  description    String?        @db.VarChar(255)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  cafes            CafeMaster[]
+  licenseHistories LicenseHistory[]
+
+  @@map("plan_templates")
+}
+
+model CafeMaster {
+  id                 String         @id // e.g. 202609021788342526604
+  cafeCode           String         @unique // e.g. CF-001, CF-MUM-001
+  businessName       String         @db.VarChar(191)
+  ownerName          String         @db.VarChar(191)
+  ownerPhone         String         @unique @db.VarChar(50)
+  ownerEmail         String?        @db.VarChar(191)
+  city               String         @db.VarChar(100)
+  state              String         @db.VarChar(100)
+  address            String?        @db.Text
+  
+  planId             String
+  plan               PlanTemplate   @relation(fields: [planId], references: [id])
+  
+  licenseStatus      LicenseStatus  @default(TRIAL)
+  currentLicenseKey  String         @db.Text
+  trialStartedAt     DateTime       @default(now())
+  licenseExpiresAt   DateTime
+  
+  gdriveLinked       Boolean        @default(false)
+  appVersion         String         @default("1.0.0") @db.VarChar(20)
+  notes              String?        @db.Text
+  
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  licenseHistories   LicenseHistory[]
+
+  @@map("cafe_masters")
+}
+
+model LicenseHistory {
+  id               String        @id // e.g. 202609021788342526604
+  cafeId           String
+  cafe             CafeMaster    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  
+  planId           String?
+  plan             PlanTemplate? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  
+  action           String        @db.VarChar(50) // "TRIAL_ISSUED", "RENEWED", "EXTENDED", "SUSPENDED"
+  issuedLicenseKey String        @db.Text
+  previousExpiry   DateTime?
+  newExpiry        DateTime
+  issuedByAdmin    String        @default("Developer Admin") @db.VarChar(100)
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now())
+
+  @@map("license_histories")
+}
+
+model AdminUser {
+  id           String   @id // e.g. 202609021788342526604
+  username     String   @unique @db.VarChar(100)
+  passwordHash String   @db.VarChar(255)
+  fullName     String   @db.VarChar(100)
+  role         String   @default("SUPER_ADMIN") @db.VarChar(50)
+  createdAt    DateTime @default(now())
+
+  @@map("admin_users")
+}
