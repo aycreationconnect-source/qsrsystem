@@ -60,12 +60,22 @@ export class LicenseVerifierService {
     }
 
     // 2. Signature verification with HMAC-SHA256
-    const hmac = crypto.createHmac('sha256', MASTER_SALT);
-    hmac.update(payloadJson);
+    const secret = process.env.MASTER_LICENSE_SECRET || MASTER_SALT;
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(b64Payload);
     const expectedSig = hmac.digest('hex').substring(0, 16).toUpperCase();
 
     if (signature !== expectedSig) {
-      throw new BadRequestException('Tampered license token! Mathematical signature mismatch.');
+      // Check fallback legacy hashing against JSON payload if applicable
+      const legacyHmac = crypto.createHmac('sha256', secret);
+      legacyHmac.update(payloadJson);
+      const legacySig = legacyHmac.digest('hex').substring(0, 16).toUpperCase();
+
+      if (signature !== legacySig) {
+        throw new BadRequestException(
+          'Tampered license token! Mathematical signature mismatch.',
+        );
+      }
     }
 
     // 3. Expiration check
