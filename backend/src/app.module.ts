@@ -10,11 +10,25 @@ import { AreaModule } from './area/area.module';
 import { TableModule } from './table/table.module';
 import { AddonModule } from './addon/addon.module';
 import { SettingModule } from './setting/setting.module';
+import { LicenseModule } from './license/license.module';
+import { AuthModule } from './auth/auth.module';
 import { PrismaService } from './prisma/prisma.service';
 
 @Module({
-  imports: [PrismaModule, CategoryModule, MenuModule, InventoryModule, OrderModule, AreaModule, TableModule, AddonModule, SettingModule],
+  imports: [
+    PrismaModule,
+    LicenseModule,
+    AuthModule,
+    CategoryModule,
+    MenuModule,
+    InventoryModule,
+    OrderModule,
+    AreaModule,
+    TableModule,
+    AddonModule,
+    SettingModule,
+  ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService],
 })
 export class AppModule {}

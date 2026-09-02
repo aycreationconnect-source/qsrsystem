@@ -3,12 +3,12 @@ import './index.css';
 import { AppProvider, useApp } from './context/AppContext';
 import { POSProvider } from './context/POSContext';
 import { LoginView } from './components/auth/LoginView';
-import { RegisterView } from './components/auth/RegisterView';
+import { ActivateLicenseView } from './components/auth/ActivateLicenseView';
 import { AdminLayout } from './views/AdminLayout';
 import { POSLayout } from './views/POSLayout';
 
 const AppContent: React.FC = () => {
-  const { view } = useApp();
+  const { view, checkLicenseStatus } = useApp();
 
   switch (view) {
     case 'pos':
@@ -24,7 +24,7 @@ const AppContent: React.FC = () => {
         </POSProvider>
       );
     case 'register':
-      return <RegisterView />;
+      return <ActivateLicenseView onActivationSuccess={checkLicenseStatus} />;
     case 'login':
     default:
       return <LoginView />;

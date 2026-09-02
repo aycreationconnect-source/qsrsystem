@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
-import { PlanType, LicenseStatus } from '../common/enums';
-import { generateNumericId } from '../common/id-generator';
+import { PlanType, LicenseStatus } from './common/enums';
+import { generateNumericId } from './common/id-generator';
 import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
+// HMAC-SHA256 Secret for signing license
 const SECRET_SALT = 'QSR_MASTER_GOLDEN_SECRET_2026_AY_CONNECT';
 
 function signLicense(payload: any): string {
@@ -18,9 +19,19 @@ function signLicense(payload: any): string {
 }
 
 async function main() {
-  console.log('🌱 Seeding Golden DB...');
+  console.log('🧹 [1/4] Clearing all tables in golden_qsr_db except admin_users...');
+  
+  // 1. Delete in reverse dependency order
+  const deletedHistories = await prisma.licenseHistory.deleteMany({});
+  console.log(`   - Deleted ${deletedHistories.count} license_histories`);
 
-  // Ensure Admin User
+  const deletedCafes = await prisma.cafeMaster.deleteMany({});
+  console.log(`   - Deleted ${deletedCafes.count} cafe_masters`);
+
+  const deletedPlans = await prisma.planTemplate.deleteMany({});
+  console.log(`   - Deleted ${deletedPlans.count} plan_templates`);
+
+  console.log('👤 [2/4] Verifying/Ensuring Admin User (aycreationconnect)...');
   const salt = 'qsr_master_admin_salt_2026';
   const passwordHash = crypto.pbkdf2Sync('ay@creationconnect123$', salt, 1000, 64, 'sha512').toString('hex');
 
@@ -39,8 +50,9 @@ async function main() {
       role: 'SUPER_ADMIN',
     },
   });
+  console.log(`   - Super-Admin User ready: ${admin.username} (ID: ${admin.id})`);
 
-  // Seed Plans
+  console.log('📦 [3/4] Creating Clean Plan Templates with Numeric IDs...');
   const defaultPlans = [
     {
       planCode: 'TRIAL_3M',
@@ -121,29 +133,89 @@ async function main() {
     },
   ];
 
+  const createdPlans = [];
   for (const plan of defaultPlans) {
-    await prisma.planTemplate.upsert({
-      where: { planCode: plan.planCode },
-      update: {
-        name: plan.name,
-        durationDays: plan.durationDays,
-        price: plan.price,
-        description: plan.description,
-        isDefault: plan.isDefault,
-      },
-      create: {
+    const p = await prisma.planTemplate.create({
+      data: {
         id: generateNumericId(),
         ...plan,
       },
     });
+    createdPlans.push(p);
+    console.log(`   - Created Plan: ${p.name} (${p.planCode}) [ID: ${p.id}]`);
   }
 
-  console.log('✅ Golden DB Seed complete!');
+  console.log('🏪 [4/4] Creating 1 Single Dummy Cafe in cafe_masters...');
+  const defaultTrialPlan = createdPlans.find((p) => p.isDefault) || createdPlans[0];
+  const now = new Date();
+  const expiresAt = new Date();
+  expiresAt.setDate(now.getDate() + defaultTrialPlan.durationDays);
+
+  const cafeId = generateNumericId();
+  const cafeCode = 'CF-MUM-001';
+
+  const licensePayload = {
+    cafeCode,
+    businessName: 'The Urban Bistro',
+    planCode: defaultTrialPlan.planCode,
+    durationDays: defaultTrialPlan.durationDays,
+    issuedAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    maxTerminals: defaultTrialPlan.maxTerminals,
+    modules: defaultTrialPlan.allowedModules,
+  };
+
+  const licenseKey = signLicense(licensePayload);
+
+  const cafe = await prisma.cafeMaster.create({
+    data: {
+      id: cafeId,
+      cafeCode,
+      businessName: 'The Urban Bistro',
+      ownerName: 'Rajesh Sharma',
+      ownerPhone: '9876543210',
+      ownerEmail: 'rajesh@urbanbistro.com',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      address: 'Shop 4, Bandra West, Mumbai',
+      planId: defaultTrialPlan.id,
+      licenseStatus: LicenseStatus.TRIAL,
+      currentLicenseKey: licenseKey,
+      trialStartedAt: now,
+      licenseExpiresAt: expiresAt,
+      gdriveLinked: false,
+      appVersion: '1.0.0',
+      notes: 'Initial dummy onboarded cafe with 3-Month Free Trial',
+    },
+  });
+
+  // Create initial history record
+  const historyId = generateNumericId();
+  await prisma.licenseHistory.create({
+    data: {
+      id: historyId,
+      cafeId: cafe.id,
+      planId: defaultTrialPlan.id,
+      action: 'INITIAL_REGISTRATION',
+      issuedLicenseKey: licenseKey,
+      newExpiry: expiresAt,
+      issuedByAdmin: admin.username,
+      notes: 'Initial 90-day Free Trial license issued.',
+    },
+  });
+
+  console.log(`   - Created Dummy Cafe: "${cafe.businessName}" (${cafe.cafeCode})`);
+  console.log(`   - Cafe Master ID: ${cafe.id}`);
+  console.log(`   - License Status: ${cafe.licenseStatus}`);
+  console.log(`   - License Key: ${cafe.currentLicenseKey}`);
+  console.log(`   - Expiry Date: ${expiresAt.toDateString()}`);
+
+  console.log('\n✨ GOLDEN DB RESET & SEED COMPLETE! ✨');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error during seeding:', e);
+    console.error('❌ Error during Golden DB reset:', e);
     process.exit(1);
   })
   .finally(async () => {

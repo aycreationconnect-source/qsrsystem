@@ -3,27 +3,27 @@ export declare class AddonService {
     private prisma;
     constructor(prisma: PrismaService);
     create(data: any): Promise<{
+        id: number;
         name: string;
         description: string | null;
-        id: number;
         price: number;
     }>;
     findAll(): Promise<{
+        id: number;
         name: string;
         description: string | null;
-        id: number;
         price: number;
     }[]>;
     update(id: number, data: any): Promise<{
+        id: number;
         name: string;
         description: string | null;
-        id: number;
         price: number;
     }>;
     remove(id: number): Promise<{
+        id: number;
         name: string;
         description: string | null;
-        id: number;
         price: number;
     }>;
 }

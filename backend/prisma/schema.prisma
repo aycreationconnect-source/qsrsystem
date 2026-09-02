@@ -131,3 +131,48 @@ model Setting {
   key   String @id
   value String
 }
+
+model StoreProfile {
+  id             String    @id
+  cafeCode       String    @unique
+  businessName   String
+  ownerName      String
+  phone          String
+  email          String?
+  city           String    @default("Mumbai")
+  state          String    @default("Maharashtra")
+  address        String?
+  gstin          String?
+  currencySymbol String    @default("₹")
+  receiptFooter  String?   @default("Thank you for visiting! Please visit again.")
+  isActivated    Boolean   @default(false)
+  activatedAt    DateTime?
+  updatedAt      DateTime  @updatedAt
+}
+
+model LocalLicense {
+  id             String   @id
+  licenseKey     String   @db.Text
+  planCode       String
+  durationDays   Int
+  issuedAt       DateTime
+  expiresAt      DateTime
+  maxTerminals   Int      @default(10)
+  allowedModules Json
+  status         String   @default("ACTIVE")
+  lastKnownClock DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model LocalUser {
+  id           String   @id
+  username     String   @unique
+  fullName     String
+  pinCodeHash  String
+  passwordHash String?
+  role         String   @default("CASHIER")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+

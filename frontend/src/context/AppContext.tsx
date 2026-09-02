@@ -5,6 +5,33 @@ import { inventoryApi } from '../api/inventoryApi';
 import { tableApi } from '../api/tableApi';
 import { orderApi } from '../api/orderApi';
 import { settingsApi } from '../api/settingsApi';
+import { licenseApi } from '../api/licenseApi';
+import { authApi } from '../api/authApi';
+
+interface StoreProfileState {
+  cafeCode: string;
+  businessName: string;
+  currencySymbol: string;
+  receiptFooter?: string;
+}
+
+interface LicenseStatusState {
+  planCode: string;
+  durationDays: number;
+  expiresAt: string;
+  daysRemaining: number;
+  isExpired: boolean;
+  isExpiringSoon: boolean;
+  allowedModules: string[];
+  status: string;
+}
+
+interface CurrentUserState {
+  id: string;
+  username: string;
+  fullName: string;
+  role: string;
+}
 
 interface AppContextType {
   view: 'login' | 'register' | 'dashboard' | 'pos';
@@ -16,33 +43,13 @@ interface AppContextType {
   setAppData: React.Dispatch<React.SetStateAction<AppData>>;
   fetchBackendData: () => Promise<void>;
 
-  // Auth state
-  loginData: { adminId: string; password: string };
-  setLoginData: React.Dispatch<React.SetStateAction<{ adminId: string; password: string }>>;
-  registerData: {
-    dbHost: string;
-    dbPort: string;
-    dbUser: string;
-    dbPassword: string;
-    dbName: string;
-    adminId: string;
-    adminPassword: string;
-    restaurantName: string;
-  };
-  setRegisterData: React.Dispatch<
-    React.SetStateAction<{
-      dbHost: string;
-      dbPort: string;
-      dbUser: string;
-      dbPassword: string;
-      dbName: string;
-      adminId: string;
-      adminPassword: string;
-      restaurantName: string;
-    }>
-  >;
-  handleLogin: (e: React.FormEvent) => void;
-  handleRegister: (e: React.FormEvent) => Promise<void>;
+  // Store & License & Staff Auth State
+  storeProfile: StoreProfileState | null;
+  licenseStatus: LicenseStatusState | null;
+  currentUser: CurrentUserState | null;
+  checkLicenseStatus: () => Promise<void>;
+  handlePinLogin: (pin: string) => Promise<void>;
+  handlePasswordLogin: (username: string, pass: string) => Promise<void>;
   handleLogout: () => void;
 }
 
@@ -66,10 +73,7 @@ const initialAppData: AppData = {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [view, setView] = useState<'login' | 'register' | 'dashboard' | 'pos'>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('view') === 'pos' ? 'pos' : 'login';
-  });
+  const [view, setView] = useState<'login' | 'register' | 'dashboard' | 'pos'>('login');
 
   const [posMode] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,17 +83,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [appData, setAppData] = useState<AppData>(initialAppData);
 
-  const [loginData, setLoginData] = useState({ adminId: '', password: '' });
-  const [registerData, setRegisterData] = useState({
-    dbHost: 'localhost',
-    dbPort: '3306',
-    dbUser: 'root',
-    dbPassword: '',
-    dbName: 'qsr_local',
-    adminId: '',
-    adminPassword: '',
-    restaurantName: '',
+  // Store & License & Staff Auth
+  const [storeProfile, setStoreProfile] = useState<StoreProfileState | null>(null);
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatusState | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUserState | null>(() => {
+    const saved = localStorage.getItem('pos_current_user');
+    return saved ? JSON.parse(saved) : null;
   });
+
+  // Check Local License Status on startup
+  const checkLicenseStatus = useCallback(async () => {
+    try {
+      const res = await licenseApi.getStatus();
+      if (!res.isActivated) {
+        setView('register');
+        return;
+      }
+
+      setStoreProfile(res.store);
+      setLicenseStatus(res.license);
+
+      const token = localStorage.getItem('pos_jwt_token');
+      if (token && localStorage.getItem('pos_current_user')) {
+        const params = new URLSearchParams(window.location.search);
+        setView(params.get('view') === 'pos' ? 'pos' : 'dashboard');
+      } else {
+        setView('login');
+      }
+    } catch (e) {
+      console.warn('License check returned offline or unactivated state:', e);
+      setView('register');
+    }
+  }, []);
 
   const fetchBackendData = useCallback(async () => {
     try {
@@ -151,55 +176,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    fetchBackendData();
-    const intervalId = setInterval(fetchBackendData, 5000);
-    return () => clearInterval(intervalId);
-  }, [fetchBackendData]);
+    checkLicenseStatus();
+  }, [checkLicenseStatus]);
 
-  // Persist Login
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isAdminLoggedIn');
-    const savedAdminId = localStorage.getItem('adminId');
-    if (isLoggedIn === 'true') {
-      if (savedAdminId) setLoginData((prev) => ({ ...prev, adminId: savedAdminId }));
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('view') !== 'pos') {
-        setView('dashboard');
-      }
+    if (view === 'dashboard' || view === 'pos') {
+      fetchBackendData();
+      const intervalId = setInterval(fetchBackendData, 5000);
+      return () => clearInterval(intervalId);
     }
-  }, []);
+  }, [view, fetchBackendData]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('isAdminLoggedIn', 'true');
-    localStorage.setItem('adminId', loginData.adminId || 'admin');
+  // Handle Staff PIN Login
+  const handlePinLogin = async (pin: string) => {
+    const res = await authApi.login({ pin });
+    localStorage.setItem('pos_jwt_token', res.token);
+    localStorage.setItem('pos_current_user', JSON.stringify(res.user));
+    setCurrentUser(res.user);
+    setStoreProfile(res.store);
+    setLicenseStatus({
+      ...res.license,
+      durationDays: 90,
+      isExpired: res.license.daysRemaining <= 0,
+      isExpiringSoon: res.license.daysRemaining <= 15,
+    });
     setView('dashboard');
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Connecting to MySQL at ${registerData.dbHost}... Saving Admin ${registerData.adminId}...`);
-    try {
-      setAppData((prev) => ({
-        ...prev,
-        categories: [],
-        areas: [],
-        tables: [],
-        orders: [],
-        menu: [],
-        inventory: [],
-      }));
-      localStorage.setItem('isAdminLoggedIn', 'true');
-      localStorage.setItem('adminId', registerData.adminId);
-      setView('dashboard');
-    } catch (e) {
-      console.error(e);
-      alert('Error connecting to backend for initialization.');
-    }
+  // Handle Owner Password Login
+  const handlePasswordLogin = async (username: string, pass: string) => {
+    const res = await authApi.login({ username, password: pass });
+    localStorage.setItem('pos_jwt_token', res.token);
+    localStorage.setItem('pos_current_user', JSON.stringify(res.user));
+    setCurrentUser(res.user);
+    setStoreProfile(res.store);
+    setLicenseStatus({
+      ...res.license,
+      durationDays: 90,
+      isExpired: res.license.daysRemaining <= 0,
+      isExpiringSoon: res.license.daysRemaining <= 15,
+    });
+    setView('dashboard');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('pos_jwt_token');
+    localStorage.removeItem('pos_current_user');
+    setCurrentUser(null);
     setView('login');
   };
 
@@ -214,12 +237,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         appData,
         setAppData,
         fetchBackendData,
-        loginData,
-        setLoginData,
-        registerData,
-        setRegisterData,
-        handleLogin,
-        handleRegister,
+        storeProfile,
+        licenseStatus,
+        currentUser,
+        checkLicenseStatus,
+        handlePinLogin,
+        handlePasswordLogin,
         handleLogout,
       }}
     >

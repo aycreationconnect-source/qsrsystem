@@ -3,36 +3,36 @@ export declare class TableService {
     private prisma;
     constructor(prisma: PrismaService);
     create(data: any): import("@prisma/client").Prisma.Prisma__TableClient<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         seats: number;
         areaId: number;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     findAll(): import("@prisma/client").Prisma.PrismaPromise<({
         area: {
+            id: number;
             name: string;
             description: string | null;
-            id: number;
         };
     } & {
+        id: number;
         name: string;
         status: string;
-        id: number;
         seats: number;
         areaId: number;
     })[]>;
     update(id: number, data: any): import("@prisma/client").Prisma.Prisma__TableClient<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         seats: number;
         areaId: number;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     remove(id: number): import("@prisma/client").Prisma.Prisma__TableClient<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         seats: number;
         areaId: number;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;

@@ -3,9 +3,9 @@ export declare class InventoryService {
     private prisma;
     constructor(prisma: PrismaService);
     create(data: any): import("@prisma/client").Prisma.Prisma__InventoryItemClient<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         unit: string;
         stock: number;
         threshold: number;
@@ -26,25 +26,25 @@ export declare class InventoryService {
         }[];
     }[]>;
     findOne(id: number): import("@prisma/client").Prisma.Prisma__InventoryItemClient<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         unit: string;
         stock: number;
         threshold: number;
     } | null, null, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     update(id: number, data: any): Promise<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         unit: string;
         stock: number;
         threshold: number;
     }>;
     remove(id: number): import("@prisma/client").Prisma.Prisma__InventoryItemClient<{
+        id: number;
         name: string;
         status: string;
-        id: number;
         unit: string;
         stock: number;
         threshold: number;

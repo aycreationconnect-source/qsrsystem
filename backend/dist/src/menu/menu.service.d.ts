@@ -3,10 +3,10 @@ export declare class MenuService {
     private prisma;
     constructor(prisma: PrismaService);
     create(data: any): Promise<{
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;
@@ -25,22 +25,22 @@ export declare class MenuService {
             unit: string;
         }[];
         category: {
+            id: number;
             name: string;
+            status: string;
             description: string | null;
             displayOrder: number | null;
-            status: string;
-            id: number;
         };
         taxes: {
-            name: string;
             id: number;
+            name: string;
             menuItemId: number;
             rate: number;
         }[];
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;
@@ -53,10 +53,10 @@ export declare class MenuService {
         categoryId: number;
     }[]>;
     update(id: number, data: any): Promise<{
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;
@@ -69,10 +69,10 @@ export declare class MenuService {
         categoryId: number;
     }>;
     remove(id: number): Promise<{
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;

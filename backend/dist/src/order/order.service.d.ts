@@ -11,8 +11,8 @@ export declare class OrderService {
             orderId: number;
         }[];
     } & {
-        status: string;
         id: number;
+        status: string;
         tax: number;
         date: Date;
         paymentMethod: string;
@@ -22,10 +22,10 @@ export declare class OrderService {
     findAll(): import("@prisma/client").Prisma.PrismaPromise<({
         items: ({
             menuItem: {
-                name: string;
-                description: string | null;
-                status: string;
                 id: number;
+                name: string;
+                status: string;
+                description: string | null;
                 imageUrl: string | null;
                 price: number;
                 tax: number | null;
@@ -45,8 +45,8 @@ export declare class OrderService {
             orderId: number;
         })[];
     } & {
-        status: string;
         id: number;
+        status: string;
         tax: number;
         date: Date;
         paymentMethod: string;
@@ -56,10 +56,10 @@ export declare class OrderService {
     findOne(id: number): import("@prisma/client").Prisma.Prisma__OrderClient<({
         items: ({
             menuItem: {
-                name: string;
-                description: string | null;
-                status: string;
                 id: number;
+                name: string;
+                status: string;
+                description: string | null;
                 imageUrl: string | null;
                 price: number;
                 tax: number | null;
@@ -79,8 +79,8 @@ export declare class OrderService {
             orderId: number;
         })[];
     } & {
-        status: string;
         id: number;
+        status: string;
         tax: number;
         date: Date;
         paymentMethod: string;
@@ -88,8 +88,8 @@ export declare class OrderService {
         total: number;
     }) | null, null, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     update(id: number, data: any): import("@prisma/client").Prisma.Prisma__OrderClient<{
-        status: string;
         id: number;
+        status: string;
         tax: number;
         date: Date;
         paymentMethod: string;
@@ -97,8 +97,8 @@ export declare class OrderService {
         total: number;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     remove(id: number): import("@prisma/client").Prisma.Prisma__OrderClient<{
-        status: string;
         id: number;
+        status: string;
         tax: number;
         date: Date;
         paymentMethod: string;

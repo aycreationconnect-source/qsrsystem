@@ -2,12 +2,12 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, registerData, handleLogout } = useApp();
+  const { activeTab, setActiveTab, storeProfile, handleLogout } = useApp();
   const tabs = ['Dashboard', 'Menu Management', 'Inventory', 'Table Setup', 'Settings'];
 
   return (
     <aside className="admin-sidebar">
-      <div className="admin-brand">{registerData.restaurantName || 'QSR Admin'}</div>
+      <div className="admin-brand">{storeProfile?.businessName || 'QSR POS'}</div>
       <div className="admin-nav">
         {tabs.map((tab) => (
           <div

@@ -3,10 +3,10 @@ export declare class MenuController {
     private readonly menuService;
     constructor(menuService: MenuService);
     create(createMenuDto: any): Promise<{
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;
@@ -25,22 +25,22 @@ export declare class MenuController {
             unit: string;
         }[];
         category: {
+            id: number;
             name: string;
+            status: string;
             description: string | null;
             displayOrder: number | null;
-            status: string;
-            id: number;
         };
         taxes: {
-            name: string;
             id: number;
+            name: string;
             menuItemId: number;
             rate: number;
         }[];
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;
@@ -54,10 +54,10 @@ export declare class MenuController {
     }[]>;
     findOne(id: string): null;
     update(id: string, updateMenuDto: any): Promise<{
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;
@@ -70,10 +70,10 @@ export declare class MenuController {
         categoryId: number;
     }>;
     remove(id: string): Promise<{
-        name: string;
-        description: string | null;
-        status: string;
         id: number;
+        name: string;
+        status: string;
+        description: string | null;
         imageUrl: string | null;
         price: number;
         tax: number | null;

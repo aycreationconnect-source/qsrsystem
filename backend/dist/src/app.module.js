@@ -19,15 +19,28 @@ const area_module_1 = require("./area/area.module");
 const table_module_1 = require("./table/table.module");
 const addon_module_1 = require("./addon/addon.module");
 const setting_module_1 = require("./setting/setting.module");
-const prisma_service_1 = require("./prisma/prisma.service");
+const license_module_1 = require("./license/license.module");
+const auth_module_1 = require("./auth/auth.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, category_module_1.CategoryModule, menu_module_1.MenuModule, inventory_module_1.InventoryModule, order_module_1.OrderModule, area_module_1.AreaModule, table_module_1.TableModule, addon_module_1.AddonModule, setting_module_1.SettingModule],
+        imports: [
+            prisma_module_1.PrismaModule,
+            license_module_1.LicenseModule,
+            auth_module_1.AuthModule,
+            category_module_1.CategoryModule,
+            menu_module_1.MenuModule,
+            inventory_module_1.InventoryModule,
+            order_module_1.OrderModule,
+            area_module_1.AreaModule,
+            table_module_1.TableModule,
+            addon_module_1.AddonModule,
+            setting_module_1.SettingModule,
+        ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService, prisma_service_1.PrismaService],
+        providers: [app_service_1.AppService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
