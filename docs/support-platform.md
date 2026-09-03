@@ -175,6 +175,24 @@ The system supports creating and customizing any plan tier dynamically.
    - If expired, it locks billing and displays the **Renewal & Backup** screen.
    - Includes **anti-rollback sentinel**: POS remembers the latest recorded transaction timestamp to prevent Windows clock rollbacks.
 
+### 5.1 Calendar-Day License Expiry Calculation
+To ensure that days-left counters are intuitive and accurate across the UI, both Support Platform and Local POS backends use a centralized `calculateDaysRemaining()` helper (`common/date-util.ts`):
+
+$$\text{Days Remaining} = \text{round}\left(\frac{\text{Expiry Date (Midnight)} - \text{Current Date (Midnight)}}{86{,}400{,}000\text{ ms}}\right)$$
+
+#### Why Calendar-Day Normalization?
+- **Previous Approach (`Math.ceil((expiresAt - now) / msPerDay)`)**: Because `Math.ceil()` operates on raw millisecond differences, a 90-day plan registered yesterday at 12:15 PM and viewed today at 11:30 AM (23 hours later) had `89.03` days remaining, which rounded *up* to `90 Days Left`.
+- **Current Approach (Normalized Calendar Midnight)**: Comparing the calendar dates directly ensures that:
+  - **Registration Day (Day 0)**: Displays full plan duration (e.g. `90 Days Left` / `30 Days Left`).
+  - **Next Calendar Day (Day 1)**: Displays exact elapsed count (e.g. `89 Days Left` / `29 Days Left`), regardless of the time of day.
+  - **Expiry Day**: Displays `0 Days Left` (`Expires today`).
+  - **Post-Expiry**: Evaluates to $< 0$ (`🛑 Expired`).
+
+### 5.2 Onboarding Date vs First-Time POS Activation
+- **Fixed Cryptographic Anchor**: When a cafe is onboarded in the Support Platform, `issuedAt` and `expiresAt` are cryptographically embedded inside the HMAC token.
+- **Client Handover Delay**: If a cafe owner is onboarded on Day 0 but only opens/activates their local POS terminal on Day 2, the remaining validity reflects the time elapsed since token issuance.
+- **Admin Extension**: If an owner requires their full duration starting from a delayed go-live date, the Admin can click **"Renew / Extend"** in the Support Platform dashboard to issue a +15 Day grace extension or a freshly dated license key with 1 click.
+
 ---
 
 ## 6. Backend API Specification (`localhost:3001`)
@@ -245,21 +263,37 @@ The system supports creating and customizing any plan tier dynamically.
 
 ## 9. Environment Configuration & Setup Guide
 
-### Backend (`support-platform/backend/.env`):
+### 1. Support Platform Backend (`support-platform/backend/.env`):
 ```env
 PORT=3001
-DATABASE_HOST="localhost"
-DATABASE_PORT=3306
-DATABASE_USER="aycreationconnect"
-DATABASE_PASSWORD="ay@creationconnect123$"
-DATABASE_NAME="golden_qsr_db"
-DATABASE_CONNECTION_LIMIT=10
 
-DATABASE_URL="mysql://aycreationconnect:ay%40creationconnect123%24@localhost:3306/golden_qsr_db"
-MASTER_LICENSE_SECRET="qsr_super_secret_master_signing_key_2026_aycreationconnect"
+# Prisma Database Connection URL (MySQL / MariaDB for Support Platform Golden DB)
+DATABASE_URL="mysql://root:root@localhost:3306/qsr_support_db"
+
+# Master Secret for Cryptographic Licensing Engine (Must match local POS secret)
+MASTER_LICENSE_SECRET="QSR_MASTER_GOLDEN_SECRET_2026_AY_CONNECT"
 ```
 
-### Frontend (`support-platform/frontend/.env`):
+> [!NOTE]
+> Run `npx prisma generate` after installing dependencies or making schema changes to regenerate `@prisma/client`.
+
+### 2. Local POS Backend (`backend/.env`):
+```env
+PORT=3000
+
+# Database Configuration (MySQL / MariaDB)
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_USER=root
+DATABASE_PASSWORD=root
+DATABASE_NAME=qsr_db
+DATABASE_CONNECTION_LIMIT=10
+
+# Prisma Database Connection URL
+DATABASE_URL="mysql://root:root@localhost:3306/qsr_db"
+```
+
+### 3. Support Platform Frontend (`support-platform/frontend/.env`):
 ```env
 VITE_API_BASE_URL="http://localhost:3001/api"
 VITE_APP_TITLE="QSR Developer & Support Platform"

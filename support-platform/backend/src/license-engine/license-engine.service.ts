@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { calculateDaysRemaining } from '../common/date-util';
 
 export interface LicensePayload {
   cafeCode: string;
@@ -100,10 +101,8 @@ export class LicenseEngineService {
       const payload: LicensePayload = JSON.parse(payloadString);
 
       const now = new Date();
-      const expiry = new Date(payload.expiresAt);
-      const diffMs = expiry.getTime() - now.getTime();
-      const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      const isExpired = daysRemaining <= 0;
+      const daysRemaining = calculateDaysRemaining(payload.expiresAt, now);
+      const isExpired = daysRemaining < 0;
 
       return {
         isValid: true,

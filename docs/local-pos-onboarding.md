@@ -15,6 +15,7 @@ Comprehensive technical guide and architectural documentation for the **On-Premi
 8. [Local JWT Authentication & Role-Based Access](#8-local-jwt-authentication--role-based-access)
 9. [Frontend User Experience & Flow](#9-frontend-user-experience--flow)
 10. [Developer Testing & Verification Guide](#10-developer-testing--verification-guide)
+11. [Environment Setup & Prisma Generation](#11-environment-setup--prisma-generation)
 
 ---
 
@@ -170,6 +171,22 @@ LIC-CFMUM001-90D-89B24C797D9EE8EF-eyJjYWZlQ29kZSI6IkNGLU1VTS...
    - $\text{Token Cafe Code} == \text{Entered Cafe Code}$ (Prevents sharing licenses between cafes).
    - $\text{Current Date} < \text{Payload ExpiresAt}$ (Ensures valid date range).
 
+### 5.1 Calendar-Day License Expiration Calculation
+The local POS calculates live days remaining using the calendar midnight difference (`src/common/date-util.ts`):
+```typescript
+export function calculateDaysRemaining(expiresAt: Date | string, fromDate: Date | string = new Date()): number {
+  const expiry = new Date(expiresAt);
+  const current = new Date(fromDate);
+
+  const expiryMidnight = new Date(expiry.getFullYear(), expiry.getMonth(), expiry.getDate()).getTime();
+  const currentMidnight = new Date(current.getFullYear(), current.getMonth(), current.getDate()).getTime();
+
+  return Math.round((expiryMidnight - currentMidnight) / (1000 * 60 * 60 * 24));
+}
+```
+- Normalizing to midnight prevents raw millisecond rounding artifacts (e.g. 23 hours elapsed no longer shows the full original duration).
+- Displays exact calendar days left to the user: Day 0 = full duration, Day 1 = `duration - 1`, Expiry Day = 0 (`Expires today`), Post-Expiry = Expired.
+
 ---
 
 ## 6. Anti-Clock-Tampering Guard
@@ -257,6 +274,34 @@ The local JWT token issued on login has a 12-hour validity and contains:
   ```
 * **Default Owner PIN**: `1234`
 * **Default Owner Password**: `admin123`
+
+---
+
+## 11. Environment Setup & Prisma Generation
+
+### Local POS Backend (`backend/.env`):
+```env
+# Server Port
+PORT=3000
+
+# Database Configuration (MySQL / MariaDB)
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_USER=root
+DATABASE_PASSWORD=root
+DATABASE_NAME=qsr_db
+DATABASE_CONNECTION_LIMIT=10
+
+# Prisma Database Connection URL
+DATABASE_URL="mysql://root:root@localhost:3306/qsr_db"
+```
+
+### Initial Prisma Client Setup:
+Before starting the backend or running unit/E2E tests, generate the Prisma client:
+```bash
+cd backend
+npx prisma generate
+```
 
 ---
 *Created by AyCreationConnect Engineering Team for QSR On-Premise Suite.*

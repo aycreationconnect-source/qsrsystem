@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateNumericId } from '../common/id-generator';
+import { calculateDaysRemaining } from '../common/date-util';
 import * as crypto from 'crypto';
 
 export class LoginDto {
@@ -98,11 +99,8 @@ export class AuthService {
     });
 
     // 3. Expiration Check
-    const isExpired = now > expiresAt;
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-    );
+    const daysRemaining = calculateDaysRemaining(expiresAt, now);
+    const isExpired = daysRemaining < 0;
 
     if (isExpired) {
       throw new ForbiddenException({

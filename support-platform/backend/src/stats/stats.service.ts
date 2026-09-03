@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LicenseStatus, PlanType } from '../common/enums';
+import { calculateDaysRemaining } from '../common/date-util';
 
 @Injectable()
 export class StatsService {
@@ -23,12 +24,11 @@ export class StatsService {
 
     allCafes.forEach((cafe) => {
       const isSuspended = (cafe.licenseStatus as unknown as LicenseStatus) === LicenseStatus.SUSPENDED;
-      const diffMs = new Date(cafe.licenseExpiresAt).getTime() - now.getTime();
-      const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const daysRemaining = calculateDaysRemaining(cafe.licenseExpiresAt, now);
 
       if (isSuspended) {
         suspended++;
-      } else if (daysRemaining <= 0 || (cafe.licenseStatus as unknown as LicenseStatus) === LicenseStatus.EXPIRED) {
+      } else if (daysRemaining < 0 || (cafe.licenseStatus as unknown as LicenseStatus) === LicenseStatus.EXPIRED) {
         expired++;
       } else {
         if (cafe.plan.planType === PlanType.FREE_TRIAL) {

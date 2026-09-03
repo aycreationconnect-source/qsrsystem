@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { LicenseVerifierService } from './license-verifier.service';
 import { generateNumericId } from '../common/id-generator';
+import { calculateDaysRemaining } from '../common/date-util';
 import * as crypto from 'crypto';
 
 export class ActivateStoreDto {
@@ -180,10 +181,7 @@ export class LicenseService {
       },
     });
 
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-    );
+    const daysRemaining = Math.max(0, calculateDaysRemaining(expiresAt, now));
 
     return {
       success: true,
@@ -224,11 +222,8 @@ export class LicenseService {
 
     const now = new Date();
     const expiresAt = new Date(license.expiresAt);
-    const isExpired = now > expiresAt;
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-    );
+    const daysRemaining = calculateDaysRemaining(expiresAt, now);
+    const isExpired = daysRemaining < 0;
 
     return {
       isActivated: true,
@@ -238,7 +233,7 @@ export class LicenseService {
         planCode: license.planCode,
         durationDays: license.durationDays,
         expiresAt: license.expiresAt,
-        daysRemaining,
+        daysRemaining: Math.max(0, daysRemaining),
         isExpired,
         isExpiringSoon: !isExpired && daysRemaining <= 15,
         allowedModules: license.allowedModules,
@@ -289,10 +284,7 @@ export class LicenseService {
     });
 
     const now = new Date();
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-    );
+    const daysRemaining = Math.max(0, calculateDaysRemaining(expiresAt, now));
 
     return {
       success: true,

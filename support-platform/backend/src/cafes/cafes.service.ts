@@ -6,6 +6,7 @@ import { RegisterCafeDto } from './dto/register-cafe.dto';
 import { RenewCafeDto } from './dto/renew-cafe.dto';
 import { LicenseStatus, PlanType } from '../common/enums';
 import { generateNumericId } from '../common/id-generator';
+import { calculateDaysRemaining } from '../common/date-util';
 
 @Injectable()
 export class CafesService {
@@ -166,9 +167,8 @@ export class CafesService {
     // Map and enrich with live expiry countdown & suspension status
     return cafes.map((cafe) => {
       const isSuspended = (cafe.licenseStatus as unknown as LicenseStatus) === LicenseStatus.SUSPENDED;
-      const diffMs = new Date(cafe.licenseExpiresAt).getTime() - now.getTime();
-      const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      const isExpired = daysRemaining <= 0;
+      const daysRemaining = calculateDaysRemaining(cafe.licenseExpiresAt, now);
+      const isExpired = daysRemaining < 0;
       const isExpiringSoon = !isExpired && !isSuspended && daysRemaining <= 15;
 
       let computedStatus: LicenseStatus = cafe.licenseStatus as unknown as LicenseStatus;
@@ -204,15 +204,15 @@ export class CafesService {
     if (!cafe) throw new NotFoundException(`Cafe with ID ${id} not found`);
 
     const now = new Date();
-    const diffMs = new Date(cafe.licenseExpiresAt).getTime() - now.getTime();
-    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const daysRemaining = calculateDaysRemaining(cafe.licenseExpiresAt, now);
+    const isExpired = daysRemaining < 0;
     const isSuspended = (cafe.licenseStatus as unknown as LicenseStatus) === LicenseStatus.SUSPENDED;
 
     return {
       ...cafe,
       daysRemaining: Math.max(0, daysRemaining),
-      isExpired: daysRemaining <= 0,
-      isExpiringSoon: !isSuspended && daysRemaining > 0 && daysRemaining <= 15,
+      isExpired,
+      isExpiringSoon: !isSuspended && !isExpired && daysRemaining <= 15,
       isSuspended,
       whatsappMessage: this.generateWhatsAppMessage(cafe, cafe.plan, cafe.currentLicenseKey),
     };
@@ -343,8 +343,7 @@ export class CafesService {
     if (!cafe) throw new NotFoundException(`Cafe with ID ${id} not found`);
 
     const now = new Date();
-    const diffMs = new Date(cafe.licenseExpiresAt).getTime() - now.getTime();
-    const durationDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    const durationDays = Math.max(1, calculateDaysRemaining(cafe.licenseExpiresAt, now));
 
     const newKey = this.licenseEngine.generateLicenseKey({
       cafeCode: cafe.cafeCode,
