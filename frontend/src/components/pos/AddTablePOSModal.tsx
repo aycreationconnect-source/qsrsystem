@@ -1,6 +1,8 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
+import { Modal, Button, Input } from '../ui';
+import { Armchair } from 'lucide-react';
 
 export const AddTablePOSModal: React.FC = () => {
   const { setAppData } = useApp();
@@ -8,40 +10,44 @@ export const AddTablePOSModal: React.FC = () => {
 
   if (!showAddTableModal) return null;
 
+  const handleAddTable = () => {
+    if (!newTableName.trim()) return;
+    const newId = `T${Date.now()}`;
+    setAppData((prev: any) => ({
+      ...prev,
+      tables: [...prev.tables, { id: newId, name: newTableName.trim(), seats: 4 }],
+    }));
+    setNewTableName('');
+    setShowAddTableModal(false);
+  };
+
   return (
-    <div className="modal-overlay" style={{ zIndex: 100 }}>
-      <div className="modal-content" style={{ maxWidth: 400 }}>
-        <h2>Add Custom Table</h2>
-        <div className="form-group">
-          <label>Table Name (e.g. VIP-1)</label>
-          <input
-            type="text"
-            value={newTableName}
-            onChange={(e) => setNewTableName(e.target.value)}
-            placeholder="Enter table name"
-          />
-        </div>
-        <div className="modal-actions">
-          <button className="btn-outline" onClick={() => setShowAddTableModal(false)}>
+    <Modal
+      isOpen={showAddTableModal}
+      onClose={() => setShowAddTableModal(false)}
+      title="Add Custom Table"
+      description="Quickly register a temporary or extra dining table"
+      maxWidth="sm"
+    >
+      <div className="space-y-4 py-2">
+        <Input
+          label="Table Name / Code"
+          placeholder="e.g. T-12 or VIP-1"
+          value={newTableName}
+          onChange={(e) => setNewTableName(e.target.value)}
+          leftIcon={<Armchair className="w-4 h-4" />}
+          autoFocus
+        />
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-stone-100 dark:border-stone-800">
+          <Button variant="outline" size="sm" onClick={() => setShowAddTableModal(false)}>
             Cancel
-          </button>
-          <button
-            className="btn-primary"
-            onClick={() => {
-              if (!newTableName.trim()) return;
-              const newId = `T${Date.now()}`;
-              setAppData((prev: any) => ({
-                ...prev,
-                tables: [...prev.tables, { id: newId, name: newTableName.trim() }],
-              }));
-              setNewTableName('');
-              setShowAddTableModal(false);
-            }}
-          >
-            Add Table
-          </button>
+          </Button>
+          <Button variant="primary" size="md" onClick={handleAddTable} className="font-bold">
+            Create Table
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

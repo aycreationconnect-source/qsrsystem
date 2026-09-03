@@ -13,6 +13,13 @@ interface StoreProfileState {
   businessName: string;
   currencySymbol: string;
   receiptFooter?: string;
+  logoUrl?: string | null;
+  ownerName?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  address?: string;
+  gstin?: string;
 }
 
 interface LicenseStatusState {
@@ -45,6 +52,7 @@ interface AppContextType {
 
   // Store & License & Staff Auth State
   storeProfile: StoreProfileState | null;
+  setStoreProfile: React.Dispatch<React.SetStateAction<StoreProfileState | null>>;
   licenseStatus: LicenseStatusState | null;
   currentUser: CurrentUserState | null;
   checkLicenseStatus: () => Promise<void>;
@@ -238,6 +246,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setAppData,
         fetchBackendData,
         storeProfile,
+        setStoreProfile,
         licenseStatus,
         currentUser,
         checkLicenseStatus,

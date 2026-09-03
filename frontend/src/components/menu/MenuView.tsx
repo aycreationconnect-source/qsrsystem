@@ -9,12 +9,17 @@ import { ConfigItemModal } from './ConfigItemModal';
 import { AddonModal } from './AddonModal';
 import { menuApi } from '../../api/menuApi';
 import type { Addon } from '../../types/app.types';
+import { Utensils, Layers } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export const MenuView: React.FC = () => {
   const { appData, fetchBackendData } = useApp();
 
   const [menuManagementTab, setMenuManagementTab] = useState<'Menu Items' | 'Addons'>('Menu Items');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(() => {
+    const firstCat = appData.categories?.[0];
+    return firstCat ? (typeof firstCat === 'string' ? firstCat : firstCat.name) : null;
+  });
 
   // Item Modal State
   const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -59,107 +64,108 @@ export const MenuView: React.FC = () => {
     setConfigItemIndex(appData.menu.findIndex((m: any) => m.name === item.name));
     setNewItem({
       ...item,
-      tax: item.tax || '',
-    });
-    setIngredients(
-      item.ingredients && item.ingredients.length > 0
-        ? [...item.ingredients]
-        : [{ name: '', quantity: '', unit: 'pcs' }]
-    );
-    setTaxes(item.taxes && item.taxes.length > 0 ? [...item.taxes] : [{ name: '', rate: '' }]);
-    setShowConfigModal(true);
-  };
-
-  const handleEditItem = (item: any) => {
-    setNewItem({
-      name: item.name || '',
-      category: item.category || '',
-      description: item.description || '',
-      image: item.image || '',
-      price: item.price ? item.price.replace('₹', '') : '',
-      tax: item.tax || '',
-      taxName: item.taxName || '',
-      sku: item.sku || '',
-      prepTime: item.prepTime || '',
-      type: item.type || 'Veg',
-      available: item.available !== undefined ? item.available : true,
-      status: item.status || 'Active',
-      isAddon: item.isAddon || false,
       addonIds: item.addonIds || '',
     });
     setIngredients(
       item.ingredients && item.ingredients.length > 0
-        ? [...item.ingredients]
+        ? item.ingredients.map((ing: any) => ({
+            name: ing.name || '',
+            quantity: ing.quantity || '',
+            unit: ing.unit || 'pcs',
+          }))
         : [{ name: '', quantity: '', unit: 'pcs' }]
     );
-    setEditingItemIndex(appData.menu.findIndex((m: any) => m.name === item.name));
+    setTaxes(
+      item.taxes && item.taxes.length > 0
+        ? item.taxes.map((t: any) => ({
+            name: t.name || '',
+            rate: t.rate || '',
+          }))
+        : [{ name: '', rate: '' }]
+    );
+    setShowConfigModal(true);
+  };
+
+  const handleEditItem = (item: any) => {
+    const idx = appData.menu.findIndex((m: any) => m.name === item.name);
+    setEditingItemIndex(idx);
+    setNewItem({
+      name: item.name,
+      category: item.category,
+      description: item.description || '',
+      image: item.image || '',
+      price: item.price,
+      type: item.type || 'Veg',
+      available: item.available !== false,
+      status: item.status || 'Active',
+      sku: item.sku || '',
+      prepTime: item.prepTime || '',
+      isAddon: item.isAddon || false,
+    });
     setShowAddItemModal(true);
   };
 
   const handleDeleteItem = async (item: any) => {
-    if (window.confirm(`Are you sure you want to delete ${item.name}?`)) {
-      try {
+    if (!confirm(`Are you sure you want to delete ${item.name}?`)) return;
+    try {
+      if (item.id) {
         await menuApi.deleteMenuItem(item.id);
-        fetchBackendData();
-      } catch (err) {
-        console.error('Failed to delete item:', err);
-        alert('Failed to delete item.');
       }
+      await fetchBackendData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete item from backend.');
     }
   };
 
   const handleDeleteAddon = async (addon: Addon) => {
-    if (window.confirm(`Delete "${addon.name}"?`)) {
+    if (!confirm(`Delete addon "${addon.name}"?`)) return;
+    try {
       await menuApi.deleteAddon(addon.id);
-      fetchBackendData();
+      await fetchBackendData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete addon');
     }
   };
 
   return (
-    <div
-      className="admin-content"
-      style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
-    >
-      <div
-        className="admin-card"
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          padding: 24,
-          backgroundColor: '#f8fafc',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 16, marginBottom: 20, borderBottom: '1px solid #e2e8f0', paddingBottom: 12 }}>
-          <div
-            onClick={() => setMenuManagementTab('Menu Items')}
-            style={{
-              cursor: 'pointer',
-              padding: '8px 16px',
-              fontWeight: 600,
-              color: menuManagementTab === 'Menu Items' ? '#2563eb' : '#64748b',
-              borderBottom: menuManagementTab === 'Menu Items' ? '2px solid #2563eb' : 'none',
-            }}
-          >
-            Menu Items
-          </div>
-          <div
-            onClick={() => setMenuManagementTab('Addons')}
-            style={{
-              cursor: 'pointer',
-              padding: '8px 16px',
-              fontWeight: 600,
-              color: menuManagementTab === 'Addons' ? '#2563eb' : '#64748b',
-              borderBottom: menuManagementTab === 'Addons' ? '2px solid #2563eb' : 'none',
-            }}
-          >
-            Add-ons
-          </div>
-        </div>
+    <div className="h-full flex flex-col overflow-hidden bg-stone-50/60 dark:bg-stone-950/30">
+      {/* Top Tab Bar: Menu Items vs Add-ons */}
+      <div className="px-4 sm:px-6 py-2.5 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setMenuManagementTab('Menu Items')}
+          className={cn(
+            'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            menuManagementTab === 'Menu Items'
+              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800'
+          )}
+        >
+          <Utensils className="w-3.5 h-3.5" />
+          <span>Dishes & Beverages</span>
+        </button>
 
-        {menuManagementTab === 'Menu Items' && (
-          <div className="menu-layout">
+        <button
+          type="button"
+          onClick={() => setMenuManagementTab('Addons')}
+          className={cn(
+            'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            menuManagementTab === 'Addons'
+              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800'
+          )}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>Add-ons & Modifiers</span>
+        </button>
+      </div>
+
+      {/* Main Tab Views */}
+      <div className="flex-1 flex overflow-hidden">
+        {menuManagementTab === 'Menu Items' ? (
+          <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
             <CategorySidebar
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
@@ -203,47 +209,35 @@ export const MenuView: React.FC = () => {
               onDeleteItem={handleDeleteItem}
             />
           </div>
-        )}
-
-        {menuManagementTab === 'Addons' && (
-          <AddonsManagement
-            onAddAddon={() => {
-              setEditingAddon(null);
-              setAddonForm({ name: '', description: '', price: '' });
-              setShowAddonModal(true);
-            }}
-            onEditAddon={(addon) => {
-              setEditingAddon(addon);
-              setAddonForm({
-                name: addon.name,
-                description: addon.description || '',
-                price: String(addon.price),
-              });
-              setShowAddonModal(true);
-            }}
-            onDeleteAddon={handleDeleteAddon}
-          />
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-5xl mx-auto w-full">
+            <AddonsManagement
+              onAddAddon={() => {
+                setEditingAddon(null);
+                setAddonForm({ name: '', description: '', price: '' });
+                setShowAddonModal(true);
+              }}
+              onEditAddon={(addon) => {
+                setEditingAddon(addon);
+                setAddonForm({
+                  name: addon.name,
+                  description: addon.description || '',
+                  price: String(addon.price),
+                });
+                setShowAddonModal(true);
+              }}
+              onDeleteAddon={handleDeleteAddon}
+            />
+          </div>
         )}
       </div>
 
-      {/* Modals */}
+      {/* Management Modals */}
       <ItemModal
         show={showAddItemModal}
         onClose={() => {
           setShowAddItemModal(false);
           setEditingItemIndex(null);
-          setNewItem({
-            name: '',
-            category: '',
-            description: '',
-            image: '',
-            price: '',
-            type: 'Veg',
-            available: true,
-            status: 'Active',
-            sku: '',
-            prepTime: '',
-          });
         }}
         editingItemIndex={editingItemIndex}
         newItem={newItem}
@@ -256,7 +250,6 @@ export const MenuView: React.FC = () => {
         onClose={() => {
           setShowAddCategoryModal(false);
           setEditingCategoryName(null);
-          setNewCategory({ name: '', description: '', displayOrder: '', status: 'Active' });
         }}
         editingCategoryName={editingCategoryName}
         newCategory={newCategory}

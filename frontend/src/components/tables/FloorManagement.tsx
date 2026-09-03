@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AreaModal } from './AreaModal';
 import { TableModal } from './TableModal';
+import { Button } from '../ui';
+import { Plus, Armchair, Edit2, Layers, MapPin } from 'lucide-react';
 
 export const FloorManagement: React.FC = () => {
   const { appData } = useApp();
@@ -23,110 +25,126 @@ export const FloorManagement: React.FC = () => {
   });
 
   return (
-    <div className="admin-content">
-      <div className="admin-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3>Table Configuration</h3>
-            <p style={{ color: 'var(--text-muted)', marginTop: 12 }}>Manage areas and tables.</p>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              className="btn-primary"
-              onClick={() => {
-                setEditingAreaId(null);
-                setNewArea({ name: '', description: '' });
-                setShowAddAreaModal(true);
-              }}
-            >
-              + Add Area
-            </button>
-          </div>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Top Header Card */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+            <Armchair className="w-5 h-5 text-amber-500" />
+            <span>Floor & Table Architecture</span>
+          </h2>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            Configure dining sections, seating capacities, and table names for waiter ordering.
+          </p>
         </div>
 
-        {appData.areas?.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-            No areas configured. Create an area first.
-          </div>
-        ) : (
-          appData.areas?.map((area: any) => (
-            <div
-              key={area.id}
-              style={{
-                marginTop: 24,
-                padding: 16,
-                border: '1px solid var(--border-color)',
-                borderRadius: 8,
-              }}
-            >
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditingAreaId(null);
+              setNewArea({ name: '', description: '' });
+              setShowAddAreaModal(true);
+            }}
+            leftIcon={<Layers className="w-4 h-4" />}
+            className="font-bold"
+          >
+            Add Section / Area
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingTableId(null);
+              setNewTableConfig({
+                name: '',
+                seats: 4,
+                status: 'Available',
+                areaId: appData.areas?.[0]?.id || '',
+              });
+              setShowAddTableConfigModal(true);
+            }}
+            leftIcon={<Plus className="w-4 h-4" />}
+            className="font-bold"
+          >
+            Add Table
+          </Button>
+        </div>
+      </div>
+
+      {/* Areas & Tables Grid */}
+      {appData.areas?.length === 0 ? (
+        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-12 text-center text-stone-400 text-xs">
+          <Layers className="w-12 h-12 mx-auto mb-3 opacity-30 stroke-1" />
+          <h4 className="font-bold text-sm text-stone-700 dark:text-stone-300">
+            No Floor Areas Configured
+          </h4>
+          <p className="mt-1 max-w-xs mx-auto">
+            Create your first area (such as "Main Dining", "AC Hall", or "Outdoor Patio").
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingAreaId(null);
+              setNewArea({ name: '', description: '' });
+              setShowAddAreaModal(true);
+            }}
+            className="mt-4 font-bold"
+          >
+            Create Area First
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {appData.areas?.map((area: any) => {
+            const areaTables = (appData.tables || []).filter((t: any) => t.areaId === area.id);
+
+            return (
               <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 16,
-                }}
+                key={area.id}
+                className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4"
               >
-                <h4 style={{ margin: 0 }}>{area.name}</h4>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    style={{
-                      backgroundColor: '#eff6ff',
-                      color: '#2563eb',
-                      border: '1px solid #bfdbfe',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '0.9rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      fontWeight: 500,
-                      transition: 'background-color 0.2s',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#dbeafe')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#eff6ff')}
-                    onClick={() => {
-                      setEditingAreaId(area.id);
-                      setNewArea({ name: area.name, description: area.description || '' });
-                      setShowAddAreaModal(true);
-                    }}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                {/* Area Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-stone-900 dark:text-stone-100">
+                        {area.name}
+                      </h3>
+                      <span className="text-[11px] text-stone-400">
+                        {areaTables.length} Tables Registered
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditingAreaId(area.id);
+                        setNewArea({ name: area.name, description: area.description || '' });
+                        setShowAddAreaModal(true);
+                      }}
+                      leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                      className="text-xs"
                     >
-                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                    </svg>
-                    Edit Area
-                  </button>
+                      Edit Section
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
-                {appData.tables
-                  ?.filter((t: any) => t.areaId === area.id)
-                  .map((t: any) => (
+
+                {/* Table Cards Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {areaTables.map((t: any) => (
                     <div
                       key={t.id}
-                      style={{
-                        width: 120,
-                        padding: 12,
-                        border: '2px solid var(--border-color)',
-                        borderRadius: 8,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'border-color 0.2s',
-                        position: 'relative',
-                      }}
                       onClick={() => {
                         setEditingTableId(t.id);
                         setNewTableConfig({
@@ -137,81 +155,49 @@ export const FloorManagement: React.FC = () => {
                         });
                         setShowAddTableConfigModal(true);
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-color)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
+                      className="p-4 rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-850 hover:bg-amber-50/40 hover:border-amber-400 dark:hover:bg-amber-950/20 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer group active:scale-95"
                     >
-                      <svg
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ color: 'var(--text-muted)', marginBottom: 8 }}
-                      >
-                        <rect x="4" y="7" width="16" height="10" rx="2" />
-                        <path d="M8 7V5c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2" />
-                        <path d="M8 17v2c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-2" />
-                        <path d="M4 10H2c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h2" />
-                        <path d="M20 10h2c1.1 0 2 .9 2 2v2c0 1.1.9 2 2 2h-2" />
-                      </svg>
-                      <div style={{ fontWeight: 'bold' }}>{t.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.seats} Seats</div>
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-stone-800 shadow-sm flex items-center justify-center text-amber-600 group-hover:scale-105 transition-transform">
+                        <Armchair className="w-5 h-5" />
+                      </div>
+
+                      <div className="text-center">
+                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100">
+                          {t.name}
+                        </h4>
+                        <span className="text-[10px] text-stone-400 font-medium">
+                          {t.seats || 4} Seats
+                        </span>
+                      </div>
                     </div>
                   ))}
 
-                <div
-                  style={{
-                    width: 120,
-                    padding: 12,
-                    border: '2px dashed var(--border-color)',
-                    borderRadius: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                    transition: 'border-color 0.2s, color 0.2s',
-                  }}
-                  onClick={() => {
-                    setEditingTableId(null);
-                    setNewTableConfig({ name: '', seats: 4, status: 'Available', areaId: area.id });
-                    setShowAddTableConfigModal(true);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--accent-color)';
-                    e.currentTarget.style.color = 'var(--accent-color)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.color = 'var(--text-muted)';
-                  }}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ marginBottom: 8 }}
+                  {/* Add Table Quick Tile */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTableId(null);
+                      setNewTableConfig({
+                        name: '',
+                        seats: 4,
+                        status: 'Available',
+                        areaId: area.id,
+                      });
+                      setShowAddTableConfigModal(true);
+                    }}
+                    className="p-4 rounded-2xl border-2 border-dashed border-stone-200 dark:border-stone-800 hover:border-amber-400 text-stone-400 hover:text-amber-600 flex flex-col items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>Add Table</div>
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs font-bold">+ New Table</span>
+                  </button>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
+      {/* Modals */}
       <AreaModal
         show={showAddAreaModal}
         onClose={() => setShowAddAreaModal(false)}

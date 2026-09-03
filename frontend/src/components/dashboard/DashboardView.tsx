@@ -62,10 +62,11 @@ export const DashboardView: React.FC = () => {
 
   const recentOrders = [...(appData.orders || [])]
     .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 3);
+    .slice(0, 5);
 
   return (
-    <div className="admin-content">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* 1. Stat Summary Cards */}
       <StatCards
         ordersTodayCount={ordersTodayCount}
         ordersTrend={ordersTrend}
@@ -75,10 +76,13 @@ export const DashboardView: React.FC = () => {
         totalTables={totalTables}
       />
 
-      <div className="dashboard-grid-main">
-        <RevenueChart last7Days={last7Days} revenueByDay={revenueByDay} maxRev={maxRev} />
+      {/* 2. Main Analytics & Quick Actions Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-7 xl:col-span-8">
+          <RevenueChart last7Days={last7Days} revenueByDay={revenueByDay} maxRev={maxRev} />
+        </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div className="lg:col-span-5 xl:col-span-4 space-y-6 flex flex-col">
           <QuickActions />
           <RecentActivity recentOrders={recentOrders} />
         </div>

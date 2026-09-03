@@ -145,6 +145,7 @@ model StoreProfile {
   gstin          String?
   currencySymbol String    @default("₹")
   receiptFooter  String?   @default("Thank you for visiting! Please visit again.")
+  logoUrl        String?   @db.Text
   isActivated    Boolean   @default(false)
   activatedAt    DateTime?
   updatedAt      DateTime  @updatedAt

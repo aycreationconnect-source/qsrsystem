@@ -1,24 +1,53 @@
 import React, { useState } from 'react';
-import { ShieldCheck, KeyRound, Store, Lock, Sparkles, CheckCircle2, User, Phone, ArrowRight } from 'lucide-react';
+import { Button, Input, Tooltip } from '../ui';
+import {
+  ShieldCheck,
+  KeyRound,
+  Lock,
+  CheckCircle2,
+  User,
+  Phone,
+  ArrowRight,
+  ClipboardPaste,
+  Building,
+} from 'lucide-react';
 import { licenseApi, type ActivatePayload } from '../../api/licenseApi';
 
 interface ActivateLicenseViewProps {
   onActivationSuccess: () => void;
 }
 
-export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({ onActivationSuccess }) => {
+export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({
+  onActivationSuccess,
+}) => {
   const [cafeCode, setCafeCode] = useState('CF-MUM-001');
   const [licenseKey, setLicenseKey] = useState(
-    'LIC-CFMUM001-90D-89B24C797D9EE8EF-eyJjYWZlQ29kZSI6IkNGLU1VTS0wMDEiLCJidXNpbmVzc05hbWUiOiJUaGUgVXJiYW4gQmlzdHJvIiwicGxhbkNvZGUiOiJUUklBTF8zTSIsImR1cmF0aW9uRGF5cyI6OTAsImlzc3VlZEF0IjoiMjAyNi0wOS0wMlQxMjoxNTo1OS42ODJaIiwiZXhwaXJlc0F0IjoiMjAyNi0xMi0wMVQxMjoxNTo1OS42ODJaIiwibWF4VGVybWluYWxzIjoxMCwibW9kdWxlcyI6WyJDT1VOVEVSX1BPUyIsIlRBQkxFX1BPUyIsIktEUyIsIklOVkVOVE9SWSIsIkdEUklWRV9CQUNLVVAiXX0',
+    'LIC-CFMUM001-90D-89B24C797D9EE8EF-eyJjYWZlQ29kZSI6IkNGLU1VTS0wMDEiLCJidXNpbmVzc05hbWUiOiJUaGUgVXJiYW4gQmlzdHJvIiwicGxhbkNvZGUiOiJUUklBTF8zTSIsImR1cmF0aW9uRGF5cyI6OTAsImlzc3VlZEF0IjoiMjAyNi0wOS0wMlQxMjoxNTo1OS42ODJaIiwiZXhwaXJlc0F0IjoiMjAyNi0xMi0wMVQxMjoxNTo1OS42ODJaIiwibWF4VGVybWluYWxzIjoxMCwibW9kdWxlcyI6WyJDT1VOVEVSX1BPUyIsIlRBQkxFX1BPUyIsIktEUyIsIklOVkVOVE9SWSIsIkdEUklWRV9CQUNLVVAiXX0'
   );
   const [ownerPin, setOwnerPin] = useState('1234');
-  const [ownerPassword] = useState('admin123');
+  const [ownerPassword, setOwnerPassword] = useState('admin123');
   const [ownerName, setOwnerName] = useState('Rajesh Sharma');
   const [phone, setPhone] = useState('9876543210');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const handlePasteKey = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setLicenseKey(text.trim());
+        // Try to parse cafeCode from LIC-XXXX-
+        const parts = text.trim().split('-');
+        if (parts.length >= 2 && parts[0] === 'LIC') {
+          // If token contains clean code, don't overwrite if not sure, or prompt user
+        }
+      }
+    } catch {
+      // clipboard read failed
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +71,9 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({ onActi
       };
 
       const res = await licenseApi.activateStore(payload);
-      setSuccessMsg(`Store "${res.store.businessName}" (${res.store.cafeCode}) activated successfully!`);
+      setSuccessMsg(
+        `Store "${res.store.businessName}" (${res.store.cafeCode}) activated successfully!`
+      );
       setTimeout(() => {
         onActivationSuccess();
       }, 1000);
@@ -54,305 +85,167 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({ onActi
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        backgroundColor: '#f8fafc',
-        backgroundImage:
-          'radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%)',
-        boxSizing: 'border-box',
-        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '560px',
-          backgroundColor: '#ffffff',
-          borderRadius: '28px',
-          padding: '40px 36px',
-          boxShadow: '0 20px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-          position: 'relative',
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Top Accent Line */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '5px',
-            background: 'linear-gradient(90deg, #3b82f6, #6366f1, #f59e0b)',
-          }}
-        />
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[#faf8f5] dark:bg-[#0c0f17] text-stone-900 dark:text-stone-100 transition-colors">
+      <div className="w-full max-w-2xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl shadow-2xl overflow-hidden relative">
+        {/* Top Accent Bar */}
+        <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '18px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.4)',
-            }}
-          >
-            <ShieldCheck size={32} strokeWidth={2.2} />
-          </div>
-          <h1
-            style={{
-              fontSize: '1.65rem',
-              fontWeight: 800,
-              color: '#0f172a',
-              margin: '0 0 8px',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Activate Cafe POS
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0 }}>
-            Enter your Cafe Code and License Key to activate your 3-Month Trial offline.
-          </p>
-        </div>
-
-        {/* Status Alerts */}
-        {error && (
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: '14px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              color: '#dc2626',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              marginBottom: '20px',
-            }}
-          >
-            ⚠️ {error}
-          </div>
-        )}
-
-        {successMsg && (
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: '14px',
-              backgroundColor: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              color: '#065f46',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '20px',
-            }}
-          >
-            <CheckCircle2 size={18} color="#059669" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Row 1: Cafe Code & PIN */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                Cafe Code <span style={{ color: '#2563eb' }}>*</span>
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Store size={18} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '15px' }} />
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. CF-MUM-001"
-                  value={cafeCode}
-                  onChange={(e) => setCafeCode(e.target.value.toUpperCase())}
-                  style={{
-                    width: '100%',
-                    height: '48px',
-                    padding: '0 16px 0 44px',
-                    borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#f8fafc',
-                    color: '#2563eb',
-                    fontFamily: 'monospace',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                Master Owner PIN <span style={{ color: '#2563eb' }}>* (4 Digits)</span>
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '15px' }} />
-                <input
-                  type="password"
-                  required
-                  maxLength={6}
-                  placeholder="e.g. 1234"
-                  value={ownerPin}
-                  onChange={(e) => setOwnerPin(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '48px',
-                    padding: '0 16px 0 44px',
-                    borderRadius: '12px',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#f8fafc',
-                    color: '#0f172a',
-                    fontFamily: 'monospace',
-                    letterSpacing: '3px',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Row 2: Master License Key */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
-                Master License Key <span style={{ color: '#2563eb' }}>*</span>
-              </label>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>From WhatsApp Card</span>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <KeyRound size={18} color="#2563eb" style={{ position: 'absolute', left: '14px', top: '14px' }} />
-              <textarea
-                rows={3}
-                required
-                placeholder="Paste complete LIC-... key token"
-                value={licenseKey}
-                onChange={(e) => setLicenseKey(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px 12px 44px',
-                  borderRadius: '12px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#f8fafc',
-                  color: '#334155',
-                  fontFamily: 'monospace',
-                  fontSize: '0.82rem',
-                  lineHeight: '1.4',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  resize: 'none',
-                  wordBreak: 'break-all',
+        <div className="p-6 sm:p-8">
+          {/* Vidhara Official Brand Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-3">
+              <img
+                src="/vidhara-logo.png"
+                alt="Vidhara QSR"
+                className="h-9 w-auto object-contain dark:hidden"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
                 }}
               />
+              <img
+                src="/vidhara-logo-dark.png"
+                alt="Vidhara QSR"
+                className="h-9 w-auto object-contain hidden dark:block"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <div>
+                <h1 className="text-base font-extrabold text-stone-900 dark:text-stone-100 leading-tight flex items-center gap-1.5">
+                  <span>VIDHARA POS ACTIVATION</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold">
+                    OFFLINE
+                  </span>
+                </h1>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  Enter your Golden DB license credentials to initialize this terminal
+                </p>
+              </div>
             </div>
+
+            <Tooltip content="Zero Internet Required for Daily Billing" position="left">
+              <span className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Air-Gapped Node
+              </span>
+            </Tooltip>
           </div>
 
-          {/* Row 3: Owner Details */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                Owner Name
-              </label>
-              <div style={{ position: 'relative' }}>
-                <User size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '14px' }} />
-                <input
-                  type="text"
-                  placeholder="Rajesh Sharma"
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    padding: '0 12px 0 38px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#f8fafc',
-                    color: '#0f172a',
-                    fontSize: '0.88rem',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                  }}
+          {/* Error & Success Messages */}
+          {error && (
+            <div className="mt-4 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+              {error}
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{successMsg}</span>
+            </div>
+          )}
+
+          {/* Activation Form */}
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {/* Step 1: License & Cafe Code */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-1">
+                <Input
+                  label="Cafe Code"
+                  value={cafeCode}
+                  onChange={(e) => setCafeCode(e.target.value.toUpperCase())}
+                  placeholder="CF-MUM-001"
+                  leftIcon={<Building className="w-4 h-4" />}
+                  required
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+                      Master License Key
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handlePasteKey}
+                      className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <ClipboardPaste className="w-3 h-3" />
+                      Paste Token
+                    </button>
+                  </div>
+                  <Input
+                    value={licenseKey}
+                    onChange={(e) => setLicenseKey(e.target.value)}
+                    placeholder="LIC-CF001-90D-..."
+                    leftIcon={<KeyRound className="w-4 h-4" />}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Store Owner Identity */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <Input
+                label="Store Owner Full Name"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder="e.g. Rajesh Sharma"
+                leftIcon={<User className="w-4 h-4" />}
+                required
+              />
+              <Input
+                label="Owner Contact Phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="9876543210"
+                leftIcon={<Phone className="w-4 h-4" />}
+                required
+              />
+            </div>
+
+            {/* Step 3: Security Credentials */}
+            <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40">
+              <div className="text-xs font-bold text-amber-950 dark:text-amber-300 mb-3 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" />
+                <span>Create Master Owner Credentials</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  label="Master Owner PIN (4 Digits)"
+                  value={ownerPin}
+                  onChange={(e) => setOwnerPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="1234"
+                  maxLength={6}
+                  required
+                />
+                <Input
+                  label="Owner Password (Admin Settings)"
+                  type="password"
+                  value={ownerPassword}
+                  onChange={(e) => setOwnerPassword(e.target.value)}
+                  placeholder="adminpassword"
+                  required
                 />
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                Owner Phone
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Phone size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '14px' }} />
-                <input
-                  type="tel"
-                  placeholder="9876543210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '44px',
-                    padding: '0 12px 0 38px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#f8fafc',
-                    color: '#0f172a',
-                    fontSize: '0.88rem',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              width: '100%',
-              height: '52px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              color: '#ffffff',
-              fontSize: '1rem',
-              fontWeight: 700,
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              marginTop: '6px',
-            }}
-          >
-            <Sparkles size={18} />
-            <span>{isLoading ? 'Verifying HMAC Signature...' : 'Verify & Activate POS Offline'}</span>
-            <ArrowRight size={18} />
-          </button>
-        </form>
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="touch"
+              className="w-full mt-4"
+              isLoading={isLoading}
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+            >
+              Verify Cryptographic Key & Activate POS
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );

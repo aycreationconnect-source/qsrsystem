@@ -3,6 +3,8 @@ import { useApp } from '../../context/AppContext';
 import { InventoryTable } from './InventoryTable';
 import { UpdateStockModal } from './UpdateStockModal';
 import { HistoryModal } from './HistoryModal';
+import { Button } from '../ui';
+import { Boxes, Plus } from 'lucide-react';
 
 export const InventoryView: React.FC = () => {
   const { appData } = useApp();
@@ -27,25 +29,38 @@ export const InventoryView: React.FC = () => {
   };
 
   return (
-    <div className="admin-content">
-      <div className="admin-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3>Stock & Inventory</h3>
-          <button
-            className="btn btn-next"
-            onClick={() => {
-              if (appData.inventory.length > 0) {
-                handleEditInventory(0);
-              }
-            }}
-          >
-            + Update Stock
-          </button>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Header Card */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+            <Boxes className="w-5 h-5 text-amber-500" />
+            <span>Raw Material & Stock Tracking</span>
+          </h2>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            Real-time depletion on every order settled at POS.
+          </p>
         </div>
 
-        <InventoryTable onUpdateStock={handleEditInventory} onViewHistory={handleViewHistory} />
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => {
+            if (appData.inventory.length > 0) {
+              handleEditInventory(0);
+            }
+          }}
+          leftIcon={<Plus className="w-4 h-4" />}
+          className="font-bold"
+        >
+          Update Stock
+        </Button>
       </div>
 
+      {/* Inventory Table */}
+      <InventoryTable onUpdateStock={handleEditInventory} onViewHistory={handleViewHistory} />
+
+      {/* Modals */}
       <UpdateStockModal
         show={showUpdateStockModal}
         onClose={() => {

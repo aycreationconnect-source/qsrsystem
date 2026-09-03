@@ -1,5 +1,8 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import { Button, Badge, Tooltip } from '../ui';
+import { Plus, Settings2, Edit2, Trash2, UtensilsCrossed } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface MenuItemsGridProps {
   selectedCategory: string | null;
@@ -18,164 +21,158 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
 }) => {
   const { appData } = useApp();
 
+  if (!selectedCategory) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-stone-400">
+        <UtensilsCrossed className="w-12 h-12 mb-3 opacity-30 stroke-1" />
+        <h4 className="font-bold text-sm text-stone-700 dark:text-stone-300">
+          No Category Selected
+        </h4>
+        <p className="text-xs mt-1 max-w-xs">
+          Select a category from the left sidebar to manage its dishes, prices, and recipes.
+        </p>
+      </div>
+    );
+  }
+
+  const items = (appData.menu || []).filter(
+    (m: any) => m.category === selectedCategory && !m.isAddon
+  );
+
   return (
-    <div className="items-content">
-      {!selectedCategory ? (
-        <div
-          style={{
-            display: 'flex',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#64748b',
-            fontSize: '1.1rem',
-            textAlign: 'center',
-            padding: '0 40px',
-          }}
-        >
-          Select a category from the left to view
-          <br />
-          and manage its items.
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-stone-50/40 dark:bg-stone-950/20">
+      {/* Top Header */}
+      <div className="p-4 sm:p-5 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
+        <div>
+          <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+            <span>{selectedCategory}</span>
+            <span className="text-xs font-semibold text-stone-400">({items.length} items)</span>
+          </h3>
         </div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h3 style={{ fontSize: '1.25rem', color: '#1e293b', fontWeight: 600 }}>
-              {selectedCategory} Items
-            </h3>
-            <button
-              className="btn btn-next"
-              style={{
-                padding: '8px 16px',
-                borderRadius: 20,
-                backgroundColor: '#3b82f6',
-                color: '#fff',
-                border: 'none',
-                fontWeight: 500,
-              }}
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={onAddItem}
+          leftIcon={<Plus className="w-4 h-4" />}
+          className="font-bold"
+        >
+          Add Dish / Beverage
+        </Button>
+      </div>
+
+      {/* Items Table Area */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        {items.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-center text-stone-400 text-xs">
+            <span>No menu items created under "{selectedCategory}" yet.</span>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onAddItem}
+              className="mt-3 font-bold"
             >
-              + Add Item
-            </button>
+              Add First Item
+            </Button>
           </div>
-          <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 24 }}>
-            {(() => {
-              const items = appData.menu.filter(
-                (m: any) => m.category === selectedCategory && !m.isAddon
-              );
+        ) : (
+          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr className="border-b border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-850/60 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-4 w-12">#</th>
+                  <th className="py-3 px-4">Item Name & Diet</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                {items.map((item: any, i: number) => {
+                  return (
+                    <tr
+                      key={item.id || i}
+                      className="hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition-colors"
+                    >
+                      <td className="py-3 px-4 font-mono text-stone-400 font-medium">
+                        {i + 1}
+                      </td>
 
-              return (
-                <div style={{ marginBottom: 32 }}>
-                  <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.1)', color: 'var(--text-muted)' }}>
-                        <th style={{ padding: 12, width: 40 }}>#</th>
-                        <th style={{ padding: 12 }}>Name</th>
-                        <th style={{ padding: 12 }}>Price</th>
-                        <th style={{ padding: 12 }}>Status</th>
-                        <th style={{ padding: 12, textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} style={{ padding: 12, textAlign: 'center', color: '#94a3b8' }}>
-                            No items found.
-                          </td>
-                        </tr>
-                      ) : (
-                        items.map((item: any, i: number) => {
-                          let typeColor = '#22c55e'; // Veg (Green)
-                          if (item.type === 'Non-Veg') typeColor = '#ef4444'; // Red
-                          if (item.type === 'Egg') typeColor = '#eab308'; // Yellow
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          {item.type === 'Non-Veg' ? (
+                            <Badge variant="nonveg" size="sm">Non-Veg</Badge>
+                          ) : item.type === 'Egg' ? (
+                            <Badge variant="egg" size="sm">Egg</Badge>
+                          ) : (
+                            <Badge variant="veg" size="sm">Veg</Badge>
+                          )}
+                          <span className="font-bold text-stone-900 dark:text-stone-100">
+                            {item.name}
+                          </span>
+                        </div>
+                      </td>
 
-                          return (
-                            <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                              <td style={{ padding: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
-                                {i + 1}
-                              </td>
-                              <td style={{ padding: 12 }}>
-                                <span
-                                  style={{
-                                    display: 'inline-block',
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    backgroundColor: typeColor,
-                                    marginRight: 8,
-                                    border: `1px solid ${typeColor}`,
-                                  }}
-                                ></span>
-                                {item.name}
-                              </td>
-                              <td style={{ padding: 12 }}>{item.price}</td>
-                              <td style={{ padding: 12 }}>
-                                <span
-                                  style={{
-                                    color: item.available ? 'var(--success)' : 'var(--primary-color)',
-                                  }}
-                                >
-                                  {item.available ? 'Available' : 'Unavailable'}
-                                </span>
-                              </td>
-                              <td style={{ padding: 12, textAlign: 'right' }}>
-                                <button
-                                  className="btn btn-next"
-                                  style={{
-                                    padding: '4px 12px',
-                                    fontSize: '0.8rem',
-                                    background: '#f8fafc',
-                                    border: '1px solid #94a3b8',
-                                    color: '#475569',
-                                    fontWeight: 600,
-                                    marginRight: 8,
-                                  }}
-                                  onClick={() => onConfigItem(item)}
-                                >
-                                  ⚙ Config
-                                </button>
-                                <button
-                                  className="btn btn-next"
-                                  style={{
-                                    padding: '4px 12px',
-                                    fontSize: '0.8rem',
-                                    background: '#eff6ff',
-                                    border: '1px solid #3b82f6',
-                                    color: '#1d4ed8',
-                                    fontWeight: 600,
-                                    marginRight: 8,
-                                  }}
-                                  onClick={() => onEditItem(item)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-next"
-                                  style={{
-                                    padding: '4px 12px',
-                                    fontSize: '0.8rem',
-                                    background: '#fef2f2',
-                                    border: '1px solid #ef4444',
-                                    color: '#b91c1c',
-                                    fontWeight: 600,
-                                  }}
-                                  onClick={() => onDeleteItem(item)}
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
+                      <td className="py-3 px-4 font-mono font-bold text-amber-600 dark:text-amber-400">
+                        ₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <span
+                          className={cn(
+                            'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider',
+                            item.available !== false && item.status === 'Active'
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50'
+                              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50'
+                          )}
+                        >
+                          {item.available !== false && item.status === 'Active'
+                            ? 'Available'
+                            : 'Paused'}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Tooltip content="Recipe & Ingredients" position="top">
+                            <button
+                              type="button"
+                              onClick={() => onConfigItem(item)}
+                              className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                            >
+                              <Settings2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+
+                          <Tooltip content="Edit Details" position="top">
+                            <button
+                              type="button"
+                              onClick={() => onEditItem(item)}
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+
+                          <Tooltip content="Delete Item" position="top">
+                            <button
+                              type="button"
+                              onClick={() => onDeleteItem(item)}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
