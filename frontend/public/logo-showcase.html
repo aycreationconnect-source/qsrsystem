@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vidhara — Modern Geometric Brand Identity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #0f1217;
+      --card-dark: #181d24;
+      --accent-gold: #c59b4e;
+      --accent-gold-light: #e5c27c;
+      --border-dark: rgba(197, 155, 78, 0.25);
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      padding-bottom: 90px;
+    }
+
+    header {
+      text-align: center;
+      padding: 50px 20px 35px;
+      background: radial-gradient(circle at 50% 20%, #202733 0%, #0f1217 85%);
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      background: rgba(197, 155, 78, 0.12);
+      color: var(--accent-gold-light);
+      border: 1px solid rgba(197, 155, 78, 0.35);
+      border-radius: 9999px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 900;
+      letter-spacing: 0.24em;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .view-controls {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 18, 23, 0.92);
+      backdrop-filter: blur(12px);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .mode-tab {
+      padding: 10px 24px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid rgba(197, 155, 78, 0.25);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mode-tab:hover {
+      color: #fff;
+      border-color: var(--accent-gold);
+    }
+
+    .mode-tab.active {
+      background: linear-gradient(135deg, #c59b4e, #96702b);
+      color: #000;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(197, 155, 78, 0.35);
+    }
+
+    .container {
+      max-width: 1220px;
+      margin: 40px auto 0;
+      padding: 0 24px;
+    }
+
+    .section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-gold-light);
+      letter-spacing: 0.12em;
+      margin: 48px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(197, 155, 78, 0.3), transparent);
+    }
+
+    .logo-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .logo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .logo-header h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.35rem;
+      color: #ffffff;
+    }
+
+    .logo-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .stage-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 860px) {
+      .stage-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stage-box {
+      border-radius: 14px;
+      padding: 34px 20px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .stage-dark-bg {
+      background: radial-gradient(circle at center, #1b212b 0%, #0d1015 100%);
+    }
+
+    .stage-light-bg {
+      background: #faf8f5;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .stage-label {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .stage-dark-bg .stage-label {
+      color: var(--accent-gold-light);
+    }
+
+    .stage-light-bg .stage-label {
+      color: #78350f;
+    }
+
+    .logo-img {
+      max-width: 90%;
+      height: auto;
+      max-height: 145px;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+
+    .logo-img:hover {
+      transform: scale(1.03);
+    }
+
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #c59b4e, #96702b);
+      color: #000;
+      border: none;
+    }
+
+    .btn-gold:hover {
+      filter: brightness(1.12);
+      transform: translateY(-2px);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-light);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .format-pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(197, 155, 78, 0.2);
+      color: #fef08a;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="badge">Official Brand Assets</div>
+    <h1>VIDHARA</h1>
+    <p class="subtitle">Modern Geometric 'V' Brand Identity featuring Charcoal &amp; Warm Golden Ochre Fork. All raster
+      PNGs with transparent backgrounds. NO spoon, NO silver V, NO taglines.</p>
+  </header>
+
+  <div class="view-controls">
+    <button class="mode-tab active" onclick="filterMode('all')">🌟 View All Formats</button>
+    <button class="mode-tab" onclick="filterMode('dark')">🌙 Dark Mode Only</button>
+    <button class="mode-tab" onclick="filterMode('light')">☀️ Light Mode Only</button>
+  </div>
+
+  <div class="container">
+
+    <!-- SECTION 1: MASTER HORIZONTAL LOGO -->
+    <h2 class="section-title">1. Master Horizontal Brandmark (Symbol + VIDHARA)</h2>
+    <div class="logo-card">
+      <div class="logo-header">
+        <div>
+          <h3>Master Horizontal Lockup</h3>
+          <p class="logo-desc">Geometric 'V' Fork mark with clean bold sans-serif VIDHARA in warm metallic gold.
+            Transparent PNG.</p>
+        </div>
+        <div>
+          <span class="format-pill">Transparent PNG</span>
+        </div>
+      </div>
+
+      <div class="stage-wrapper">
+        <!-- Dark Mode -->
+        <div class="stage-box stage-dark-bg dark-asset">
+          <span class="stage-label">🌙 Dark Mode</span>
+          <img src="vidhara-logo-dark.png" alt="Vidhara Logo Dark" class="logo-img" />
+          <div class="actions-bar">
+            <a href="vidhara-logo-dark.png" download="vidhara-logo-dark.png" class="btn btn-gold">⬇️ Download Dark
+              PNG</a>
+            <a href="vidhara-logo-dark.png" target="_blank" class="btn btn-ghost">🔍 Open High-Res</a>
+          </div>
+        </div>
+
+        <!-- Light Mode -->
+        <div class="stage-box stage-light-bg light-asset">
+          <span class="stage-label">☀️ Light Mode</span>
+          <img src="vidhara-logo-light.png" alt="Vidhara Logo Light" class="logo-img" />
+          <div class="actions-bar">
+            <a href="vidhara-logo-light.png" download="vidhara-logo-light.png" class="btn btn-gold">⬇️ Download Light
+              PNG</a>
+            <a href="vidhara-logo-light.png" target="_blank" class="btn btn-ghost"
+              style="color:#000; border-color:rgba(0,0,0,0.2);">🔍 Open High-Res</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: STANDALONE WORDMARK ONLY -->
+    <h2 class="section-title">2. Standalone Wordmark (Only Name "VIDHARA")</h2>
+    <div class="logo-card">
+      <div class="logo-header">
+        <div>
+          <h3>Pure Wordmark (No Symbol / No Tagline)</h3>
+          <p class="logo-desc">Clean 3D sans-serif typography. Warm metallic gold in dark mode and rich charcoal in
+            light mode.</p>
+        </div>
+        <div>
+          <span class="format-pill">Transparent PNG</span>
+        </div>
+      </div>
+
+      <div class="stage-wrapper">
+        <!-- Wordmark Dark -->
+        <div class="stage-box stage-dark-bg dark-asset">
+          <span class="stage-label">🌙 Dark Mode (Metallic Gold)</span>
+          <img src="vidhara-wordmark-dark.png" alt="Vidhara Wordmark Dark" class="logo-img" style="max-height: 90px;" />
+          <div class="actions-bar">
+            <a href="vidhara-wordmark-dark.png" download="vidhara-wordmark-dark.png" class="btn btn-gold">⬇️ Download
+              Dark PNG</a>
+            <a href="vidhara-wordmark-dark.png" target="_blank" class="btn btn-ghost">🔍 Open</a>
+          </div>
+        </div>
+
+        <!-- Wordmark Light -->
+        <div class="stage-box stage-light-bg light-asset">
+          <span class="stage-label">☀️ Light Mode (Rich Charcoal)</span>
+          <img src="vidhara-wordmark-light.png" alt="Vidhara Wordmark Light" class="logo-img"
+            style="max-height: 90px;" />
+          <div class="actions-bar">
+            <a href="vidhara-wordmark-light.png" download="vidhara-wordmark-light.png" class="btn btn-gold">⬇️ Download
+              Light PNG</a>
+            <a href="vidhara-wordmark-light.png" target="_blank" class="btn btn-ghost"
+              style="color:#000; border-color:rgba(0,0,0,0.2);">🔍 Open</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: APP ICON & STANDALONE SYMBOL -->
+    <h2 class="section-title">3. App Icon &amp; Standalone Culinary Symbol (NO SPOON)</h2>
+    <div class="logo-card">
+      <div class="logo-header">
+        <div>
+          <h3>Geometric 'V' Fork Symbol</h3>
+          <p class="logo-desc">Matte charcoal left arm, warm golden ochre fork right arm. Exactly matching your uploaded
+            image without spoon.</p>
+        </div>
+        <div>
+          <span class="format-pill">Transparent PNG</span>
+        </div>
+      </div>
+
+      <div class="stage-wrapper">
+        <div class="stage-box stage-dark-bg dark-asset">
+          <span class="stage-label">🌙 Dark Mode Symbol</span>
+          <img src="vidhara-icon-dark.png" alt="Vidhara Icon Dark" class="logo-img" style="max-height: 160px;" />
+          <div class="actions-bar">
+            <a href="vidhara-icon-dark.png" download="vidhara-icon.png" class="btn btn-gold">⬇️ Download Icon PNG</a>
+          </div>
+        </div>
+
+        <div class="stage-box stage-light-bg light-asset">
+          <span class="stage-label">☀️ Light Mode Symbol</span>
+          <img src="vidhara-icon-light.png" alt="Vidhara Icon Light" class="logo-img" style="max-height: 160px;" />
+          <div class="actions-bar">
+            <a href="vidhara-icon-light.png" download="vidhara-icon.png" class="btn btn-gold">⬇️ Download Icon PNG</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: SQUARE 1:1 APP CANVAS & FAVICON -->
+    <h2 class="section-title">4. Square 1:1 App Canvas &amp; Favicon</h2>
+    <div class="logo-card">
+      <div class="logo-header">
+        <div>
+          <h3>Square 1024x1024 Canvas &amp; 64x64 Browser Favicon</h3>
+          <p class="logo-desc">Centered on transparent square backgrounds for App Stores, PWA manifests, and browser
+            tabs.</p>
+        </div>
+      </div>
+
+      <div class="stage-wrapper">
+        <div class="stage-box stage-dark-bg dark-asset">
+          <span class="stage-label">📱 1024x1024 Square Canvas</span>
+          <img src="vidhara-icon-square.png" alt="Vidhara Square Icon" class="logo-img" style="max-height: 160px;" />
+          <div class="actions-bar">
+            <a href="vidhara-icon-square.png" download="vidhara-icon-square.png" class="btn btn-gold">⬇️ 1024x1024
+              Transparent PNG</a>
+          </div>
+        </div>
+
+        <div class="stage-box stage-light-bg light-asset">
+          <span class="stage-label">🔖 Browser Favicon (64x64)</span>
+          <img src="favicon.png" alt="Favicon" class="logo-img" style="max-height: 64px;" />
+          <div class="actions-bar">
+            <a href="favicon.png" download="favicon.png" class="btn btn-gold">⬇️ Download Favicon.png</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: CIRCULAR RESTAURANT MEDALLION -->
+    <h2 class="section-title">5. Circular Restaurant Medallion (Fork inside, NO SPOON)</h2>
+    <div class="logo-card">
+      <div class="logo-header">
+        <div>
+          <h3>Circular Dining Medallion</h3>
+          <p class="logo-desc">Warm brushed metallic gold rim, dark charcoal matte inner disc, arched 'VIDHARA', and the
+            exact 'V' Fork symbol in the center. NO SPOON.</p>
+        </div>
+        <div>
+          <span class="format-pill">Transparent PNG</span>
+        </div>
+      </div>
+
+      <div class="stage-wrapper">
+        <div class="stage-box stage-dark-bg dark-asset">
+          <span class="stage-label">🌙 Dark Mode Medallion</span>
+          <img src="vidhara-emblem-dark.png" alt="Vidhara Emblem Dark" class="logo-img" style="max-height: 190px;" />
+          <div class="actions-bar">
+            <a href="vidhara-emblem-dark.png" download="vidhara-emblem-dark.png" class="btn btn-gold">⬇️ Download
+              Medallion PNG</a>
+            <a href="vidhara-emblem-dark.png" target="_blank" class="btn btn-ghost">🔍 Open High-Res</a>
+          </div>
+        </div>
+
+        <div class="stage-box stage-light-bg light-asset">
+          <span class="stage-label">☀️ Light Mode Medallion</span>
+          <img src="vidhara-emblem-light.png" alt="Vidhara Emblem Light" class="logo-img" style="max-height: 190px;" />
+          <div class="actions-bar">
+            <a href="vidhara-emblem-light.png" download="vidhara-emblem-light.png" class="btn btn-gold">⬇️ Download
+              Medallion PNG</a>
+            <a href="vidhara-emblem-light.png" target="_blank" class="btn btn-ghost"
+              style="color:#000; border-color:rgba(0,0,0,0.2);">🔍 Open High-Res</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function filterMode(mode) {
+      const tabs = document.querySelectorAll('.mode-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const darkBoxes = document.querySelectorAll('.dark-asset');
+      const lightBoxes = document.querySelectorAll('.light-asset');
+
+      if (mode === 'all') {
+        darkBoxes.forEach(b => b.style.display = 'flex');
+        lightBoxes.forEach(b => b.style.display = 'flex');
+      } else if (mode === 'dark') {
+        darkBoxes.forEach(b => b.style.display = 'flex');
+        lightBoxes.forEach(b => b.style.display = 'none');
+      } else if (mode === 'light') {
+        darkBoxes.forEach(b => b.style.display = 'none');
+        lightBoxes.forEach(b => b.style.display = 'flex');
+      }
+    }
+  </script>
+</body>
+
+</html>
