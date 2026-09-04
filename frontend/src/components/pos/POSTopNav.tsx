@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { CafeBrandBadge, Button, Tooltip } from '../ui';
@@ -9,7 +10,7 @@ export interface POSTopNavProps {
 }
 
 export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
-  const { posMode, appData, setView, storeProfile } = useApp();
+  const { posMode, appData, storeProfile } = useApp();
   const { selectedTableId, cart } = usePOS();
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -72,16 +73,17 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
         )}
 
         <Tooltip content="Return to Management Dashboard" position="bottom">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setView('dashboard')}
-            leftIcon={<LayoutDashboard className="w-4 h-4" />}
-            className="font-bold"
-          >
-            <span className="hidden sm:inline">Admin Panel</span>
-            <span className="sm:hidden">Admin</span>
-          </Button>
+          <Link to="/dashboard">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<LayoutDashboard className="w-4 h-4" />}
+              className="font-bold cursor-pointer"
+            >
+              <span className="hidden sm:inline">Admin Panel</span>
+              <span className="sm:hidden">Admin</span>
+            </Button>
+          </Link>
         </Tooltip>
       </div>
     </header>

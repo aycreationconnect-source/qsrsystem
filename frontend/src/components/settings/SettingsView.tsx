@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
-  const { appData, setAppData, fetchBackendData, storeProfile, setStoreProfile, licenseStatus } =
+  const { appData, setAppData, refreshSettings, storeProfile, setStoreProfile, licenseStatus } =
     useApp();
   const [isStoreProfileModalOpen, setIsStoreProfileModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,7 +29,7 @@ export const SettingsView: React.FC = () => {
       });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 2000);
-      fetchBackendData();
+      await refreshSettings();
     } catch (err) {
       console.error(err);
       alert('Failed to save settings.');

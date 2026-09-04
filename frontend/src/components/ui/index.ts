@@ -8,3 +8,4 @@ export * from './Numpad';
 export * from './Tooltip';
 export * from './Select';
 export * from './CafeBrandBadge';
+export * from './ConfirmModal';

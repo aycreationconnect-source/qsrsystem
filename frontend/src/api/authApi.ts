@@ -34,6 +34,7 @@ export const authApi = {
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
@@ -44,16 +45,35 @@ export const authApi = {
     return res.json();
   },
 
-  async getProfile(token: string) {
+  async getProfile(token?: string) {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      headers,
     });
     if (!res.ok) throw new Error('Session expired');
     return res.json();
   },
 
+  async logout(): Promise<{ success: boolean }> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      return res.ok ? await res.json() : { success: true };
+    } catch {
+      return { success: true };
+    }
+  },
+
   async getStaff() {
-    const res = await fetch(`${API_BASE_URL}/auth/staff`);
+    const res = await fetch(`${API_BASE_URL}/auth/staff`, {
+      credentials: 'include',
+    });
     if (!res.ok) throw new Error('Failed to fetch staff list');
     return res.json();
   },

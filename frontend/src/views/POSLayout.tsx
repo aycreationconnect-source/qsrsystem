@@ -12,10 +12,13 @@ import { ShiftTableModal } from '../components/pos/ShiftTableModal';
 import { AddTablePOSModal } from '../components/pos/AddTablePOSModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { Drawer } from '../components/ui';
+import { useSearchParams } from 'react-router-dom';
 import { Utensils, ArrowRight } from 'lucide-react';
 
 export const POSLayout: React.FC = () => {
-  const { posMode } = useApp();
+  const { posMode: contextPosMode } = useApp();
+  const [searchParams] = useSearchParams();
+  const posMode = searchParams.get('mode') || contextPosMode || 'quick';
   const { selectedTableId, cart, getCartTotals } = usePOS();
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 

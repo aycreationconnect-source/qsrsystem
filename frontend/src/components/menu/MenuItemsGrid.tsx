@@ -134,7 +134,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
 
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Tooltip content="Recipe & Ingredients" position="top">
+                          <Tooltip content="Recipe & Ingredients" position="top" align="center">
                             <button
                               type="button"
                               onClick={() => onConfigItem(item)}
@@ -144,7 +144,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                             </button>
                           </Tooltip>
 
-                          <Tooltip content="Edit Details" position="top">
+                          <Tooltip content="Edit Details" position="top" align="end">
                             <button
                               type="button"
                               onClick={() => onEditItem(item)}
@@ -154,7 +154,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                             </button>
                           </Tooltip>
 
-                          <Tooltip content="Delete Item" position="top">
+                          <Tooltip content="Delete Item" position="top" align="end">
                             <button
                               type="button"
                               onClick={() => onDeleteItem(item)}

@@ -8,10 +8,23 @@ export const POSCategoryTabs: React.FC = () => {
   const { appData } = useApp();
   const { posCategory, setPosCategory } = usePOS();
 
+  // Filter out Inactive categories from POS navigation
+  const activeCategories = (appData.categories || []).filter((c: any) => {
+    if (typeof c === 'string') return true;
+    return c.status !== 'Inactive' && c.isActive !== false;
+  });
+
   const categories = [
     'All Items',
-    ...appData.categories.map((c: any) => (typeof c === 'string' ? c : c.name)),
+    ...activeCategories.map((c: any) => (typeof c === 'string' ? c : c.name)),
   ];
+
+  // Auto-reset selection if currently selected category was set to Inactive
+  React.useEffect(() => {
+    if (posCategory !== 'All Items' && !categories.includes(posCategory)) {
+      setPosCategory('All Items');
+    }
+  }, [posCategory, categories, setPosCategory]);
 
   return (
     <div className="w-full bg-white/70 dark:bg-stone-900/70 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 px-4 sm:px-6 py-2.5 overflow-x-auto no-scrollbar shrink-0">

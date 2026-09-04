@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Button, Input, CafeBrandBadge, Tooltip } from '../ui';
 import {
@@ -13,7 +14,10 @@ import {
 } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
-  const { storeProfile, licenseStatus, handlePinLogin, handlePasswordLogin, setView } = useApp();
+  const { storeProfile, licenseStatus, handlePinLogin, handlePasswordLogin } = useApp();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
 
   const [loginMode, setLoginMode] = useState<'PIN' | 'PASSWORD'>('PIN');
   const [pin, setPin] = useState('');
@@ -45,6 +49,7 @@ export const LoginView: React.FC = () => {
       setIsLoading(true);
       setError(null);
       await handlePinLogin(pinToSubmit);
+      navigate(redirect);
     } catch (err: any) {
       setError(err.message || 'Invalid staff PIN');
       setPin('');
@@ -60,6 +65,7 @@ export const LoginView: React.FC = () => {
       setIsLoading(true);
       setError(null);
       await handlePasswordLogin(username, password);
+      navigate(redirect);
     } catch (err: any) {
       setError(err.message || 'Invalid username or password');
     } finally {
@@ -142,13 +148,13 @@ export const LoginView: React.FC = () => {
           {/* Quick Switch / Setup Footer Note */}
           <div className="mt-6 pt-4 border-t border-stone-200/60 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
             <span>First time setup?</span>
-            <button
-              onClick={() => setView('register')}
+            <Link
+              to="/activate"
               className="font-bold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
             >
               <span>Activate Store</span>
               <ArrowRight className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
         </div>
 

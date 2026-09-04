@@ -49,16 +49,26 @@ interface AppContextType {
   appData: AppData;
   setAppData: React.Dispatch<React.SetStateAction<AppData>>;
   fetchBackendData: () => Promise<void>;
+  refreshMenu: () => Promise<void>;
+  refreshCategories: () => Promise<void>;
+  refreshAddons: () => Promise<void>;
+  refreshInventory: () => Promise<void>;
+  refreshTables: () => Promise<void>;
+  refreshAreas: () => Promise<void>;
+  refreshOrders: () => Promise<void>;
+  refreshSettings: () => Promise<void>;
 
   // Store & License & Staff Auth State
   storeProfile: StoreProfileState | null;
   setStoreProfile: React.Dispatch<React.SetStateAction<StoreProfileState | null>>;
   licenseStatus: LicenseStatusState | null;
   currentUser: CurrentUserState | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<CurrentUserState | null>>;
+  isAuthLoading: boolean;
   checkLicenseStatus: () => Promise<void>;
   handlePinLogin: (pin: string) => Promise<void>;
   handlePasswordLogin: (username: string, pass: string) => Promise<void>;
-  handleLogout: () => void;
+  handleLogout: () => Promise<void>;
 }
 
 const initialAppData: AppData = {
@@ -98,6 +108,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const saved = localStorage.getItem('pos_current_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Check Local License Status on startup
   const checkLicenseStatus = useCallback(async () => {
@@ -111,16 +122,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setStoreProfile(res.store);
       setLicenseStatus(res.license);
 
-      const token = localStorage.getItem('pos_jwt_token');
-      if (token && localStorage.getItem('pos_current_user')) {
-        const params = new URLSearchParams(window.location.search);
-        setView(params.get('view') === 'pos' ? 'pos' : 'dashboard');
-      } else {
+      // Verify session via HttpOnly cookie
+      try {
+        const profile = await authApi.getProfile();
+        if (profile && profile.sub) {
+          const userObj = {
+            id: profile.sub,
+            username: profile.username,
+            fullName: profile.fullName,
+            role: profile.role,
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem('pos_current_user', JSON.stringify(userObj));
+          const params = new URLSearchParams(window.location.search);
+          setView(params.get('view') === 'pos' ? 'pos' : 'dashboard');
+        } else {
+          setCurrentUser(null);
+          setView('login');
+        }
+      } catch {
+        setCurrentUser(null);
         setView('login');
       }
     } catch (e) {
       console.warn('License check returned offline or unactivated state:', e);
       setView('register');
+    } finally {
+      setIsAuthLoading(false);
     }
   }, []);
 
@@ -183,22 +211,176 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
+  // Lightweight periodic synchronization ONLY for relatable live data (Category visibility, Menu availability, and live Orders)
+  const syncRelatableData = useCallback(async () => {
+    try {
+      const [catsRes, menusRes, ordersRes] = await Promise.allSettled([
+        menuApi.getCategories(),
+        menuApi.getMenuItems(),
+        orderApi.getOrders(),
+      ]);
+
+      const cats =
+        catsRes.status === 'fulfilled' && Array.isArray(catsRes.value) ? catsRes.value : null;
+      const menus =
+        menusRes.status === 'fulfilled' && Array.isArray(menusRes.value) ? menusRes.value : null;
+      const orders =
+        ordersRes.status === 'fulfilled' && Array.isArray(ordersRes.value) ? ordersRes.value : null;
+
+      setAppData((prev) => ({
+        ...prev,
+        ...(cats !== null ? { categories: cats } : {}),
+        ...(orders !== null ? { orders: orders } : {}),
+        ...(menus !== null
+          ? {
+              menu: menus
+                .filter((m: any) => !m.isAddon)
+                .map((m: any) => ({
+                  ...m,
+                  image: m.imageUrl,
+                  available: m.isAvailable,
+                  category: m.category?.name || 'Uncategorized',
+                  price: `₹${
+                    typeof m.price === 'number'
+                      ? m.price.toFixed(2)
+                      : parseFloat(m.price || 0).toFixed(2)
+                  }`,
+                })),
+            }
+          : {}),
+      }));
+    } catch (e) {
+      console.warn('Relatable live sync skipped:', e);
+    }
+  }, []);
+
+  // Granular Single-API Refreshers (used on create/update/delete instead of querying all 8 APIs)
+  const refreshCategories = useCallback(async () => {
+    try {
+      const cats = await menuApi.getCategories();
+      if (Array.isArray(cats)) {
+        setAppData((prev) => ({ ...prev, categories: cats }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh categories:', e);
+    }
+  }, []);
+
+  const refreshMenu = useCallback(async () => {
+    try {
+      const menus = await menuApi.getMenuItems();
+      if (Array.isArray(menus)) {
+        setAppData((prev) => ({
+          ...prev,
+          menu: menus
+            .filter((m: any) => !m.isAddon)
+            .map((m: any) => ({
+              ...m,
+              image: m.imageUrl,
+              available: m.isAvailable,
+              category: m.category?.name || 'Uncategorized',
+              price: `₹${
+                typeof m.price === 'number'
+                  ? m.price.toFixed(2)
+                  : parseFloat(m.price || 0).toFixed(2)
+              }`,
+            })),
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh menu:', e);
+    }
+  }, []);
+
+  const refreshAddons = useCallback(async () => {
+    try {
+      const addons = await menuApi.getAddons();
+      if (Array.isArray(addons)) {
+        setAppData((prev) => ({ ...prev, addons }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh addons:', e);
+    }
+  }, []);
+
+  const refreshInventory = useCallback(async () => {
+    try {
+      const inventory = await inventoryApi.getInventory();
+      if (Array.isArray(inventory)) {
+        setAppData((prev) => ({ ...prev, inventory }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh inventory:', e);
+    }
+  }, []);
+
+  const refreshTables = useCallback(async () => {
+    try {
+      const tables = await tableApi.getTables();
+      if (Array.isArray(tables)) {
+        setAppData((prev) => ({ ...prev, tables }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh tables:', e);
+    }
+  }, []);
+
+  const refreshAreas = useCallback(async () => {
+    try {
+      const areas = await tableApi.getAreas();
+      if (Array.isArray(areas)) {
+        setAppData((prev) => ({ ...prev, areas }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh areas:', e);
+    }
+  }, []);
+
+  const refreshOrders = useCallback(async () => {
+    try {
+      const orders = await orderApi.getOrders();
+      if (Array.isArray(orders)) {
+        setAppData((prev) => ({ ...prev, orders }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh orders:', e);
+    }
+  }, []);
+
+  const refreshSettings = useCallback(async () => {
+    try {
+      const settings = await settingsApi.getSettings();
+      if (settings) {
+        setAppData((prev) => ({ ...prev, settings }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh settings:', e);
+    }
+  }, []);
+
   useEffect(() => {
     checkLicenseStatus();
   }, [checkLicenseStatus]);
 
+  // Initial one-time snapshot of complete setup data
   useEffect(() => {
     if (view === 'dashboard' || view === 'pos') {
       fetchBackendData();
-      const intervalId = setInterval(fetchBackendData, 5000);
-      return () => clearInterval(intervalId);
     }
   }, [view, fetchBackendData]);
+
+  // Gentle 15-second background sync ONLY for relatable endpoints (Category, Menu, Orders)
+  useEffect(() => {
+    if (view === 'dashboard' || view === 'pos') {
+      const intervalId = setInterval(syncRelatableData, 15000);
+      return () => clearInterval(intervalId);
+    }
+  }, [view, syncRelatableData]);
 
   // Handle Staff PIN Login
   const handlePinLogin = async (pin: string) => {
     const res = await authApi.login({ pin });
-    localStorage.setItem('pos_jwt_token', res.token);
+    localStorage.removeItem('pos_jwt_token'); // Ensure legacy token is cleaned up
     localStorage.setItem('pos_current_user', JSON.stringify(res.user));
     setCurrentUser(res.user);
     setStoreProfile(res.store);
@@ -214,7 +396,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Handle Owner Password Login
   const handlePasswordLogin = async (username: string, pass: string) => {
     const res = await authApi.login({ username, password: pass });
-    localStorage.setItem('pos_jwt_token', res.token);
+    localStorage.removeItem('pos_jwt_token'); // Ensure legacy token is cleaned up
     localStorage.setItem('pos_current_user', JSON.stringify(res.user));
     setCurrentUser(res.user);
     setStoreProfile(res.store);
@@ -227,7 +409,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setView('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
     localStorage.removeItem('pos_jwt_token');
     localStorage.removeItem('pos_current_user');
     setCurrentUser(null);
@@ -245,10 +432,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         appData,
         setAppData,
         fetchBackendData,
+        refreshMenu,
+        refreshCategories,
+        refreshAddons,
+        refreshInventory,
+        refreshTables,
+        refreshAreas,
+        refreshOrders,
+        refreshSettings,
         storeProfile,
         setStoreProfile,
         licenseStatus,
         currentUser,
+        setCurrentUser,
+        isAuthLoading,
         checkLicenseStatus,
         handlePinLogin,
         handlePasswordLogin,

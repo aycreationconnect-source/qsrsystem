@@ -1,15 +1,13 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
+import { Link } from 'react-router-dom';
 import { UtensilsCrossed, Armchair, Boxes, Settings, Zap } from 'lucide-react';
 
 export const QuickActions: React.FC = () => {
-  const { setActiveTab } = useApp();
-
   const actions = [
-    { label: 'Add Dish', tab: 'Menu Management', icon: UtensilsCrossed, color: 'text-amber-600 bg-amber-500/10' },
-    { label: 'New Table', tab: 'Table Setup', icon: Armchair, color: 'text-sky-600 bg-sky-500/10' },
-    { label: 'Stock Audit', tab: 'Inventory', icon: Boxes, color: 'text-emerald-600 bg-emerald-500/10' },
-    { label: 'Settings', tab: 'Settings', icon: Settings, color: 'text-stone-600 bg-stone-500/10' },
+    { label: 'Add Dish', path: '/menu', icon: UtensilsCrossed, color: 'text-amber-600 bg-amber-500/10' },
+    { label: 'New Table', path: '/tables', icon: Armchair, color: 'text-sky-600 bg-sky-500/10' },
+    { label: 'Stock Audit', path: '/inventory', icon: Boxes, color: 'text-emerald-600 bg-emerald-500/10' },
+    { label: 'Settings', path: '/settings', icon: Settings, color: 'text-stone-600 bg-stone-500/10' },
   ];
 
   return (
@@ -27,10 +25,9 @@ export const QuickActions: React.FC = () => {
         {actions.map((act) => {
           const Icon = act.icon;
           return (
-            <button
+            <Link
               key={act.label}
-              type="button"
-              onClick={() => setActiveTab(act.tab)}
+              to={act.path}
               className="p-3.5 rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-850 hover:bg-amber-50 hover:border-amber-400 dark:hover:bg-amber-950/20 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 group"
             >
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${act.color}`}>
@@ -39,7 +36,7 @@ export const QuickActions: React.FC = () => {
               <span className="text-xs font-bold text-stone-800 dark:text-stone-200 group-hover:text-amber-600">
                 {act.label}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>

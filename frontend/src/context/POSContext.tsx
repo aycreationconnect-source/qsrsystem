@@ -56,7 +56,7 @@ interface POSContextType {
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
 export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { posMode, appData, fetchBackendData } = useApp();
+  const { posMode, appData, refreshOrders, refreshTables, refreshInventory } = useApp();
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [posCategory, setPosCategory] = useState<string>('All Items');
@@ -118,6 +118,10 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const handleAddToCart = useCallback(
     (item: any, skipAddonCheck = false) => {
+      if (item.available === false) {
+        return;
+      }
+
       if (posMode === 'table' && !selectedTableId) {
         alert('Please select a table from the left sidebar to add items.');
         return;
@@ -265,7 +269,11 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     try {
       await orderApi.placeOrder(orderDetails);
-      await fetchBackendData();
+      await Promise.allSettled([
+        refreshOrders(),
+        refreshTables(),
+        refreshInventory(),
+      ]);
       setCart([]);
       if (posMode === 'table' && selectedTableId) {
         setTableOrders((t) => {
@@ -299,7 +307,9 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     discountValue,
     discountType,
     paymentType,
-    fetchBackendData,
+    refreshOrders,
+    refreshTables,
+    refreshInventory,
   ]);
 
   return (

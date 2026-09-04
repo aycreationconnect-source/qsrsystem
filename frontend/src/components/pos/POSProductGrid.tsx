@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { MenuItem } from '../../types/app.types';
 import { Badge } from '../ui';
-import { Search, Plus, Minus, X } from 'lucide-react';
+import { Search, Plus, Minus, X, AlertCircle, Utensils } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const POSProductGrid: React.FC = () => {
@@ -18,11 +18,40 @@ export const POSProductGrid: React.FC = () => {
   } = usePOS();
 
   const [dietFilter, setDietFilter] = useState<'ALL' | 'Veg' | 'Non-Veg' | 'Egg'>('ALL');
+  const [stockWarning, setStockWarning] = useState<string | null>(null);
 
-  const categoriesToRender =
-    posCategory === 'All Items'
-      ? ['Uncategorized', ...appData.categories.map((c: any) => (typeof c === 'string' ? c : c.name))]
-      : [posCategory];
+  // Set of inactive category names to completely exclude from POS terminal
+  const inactiveCategoryNames = new Set(
+    (appData.categories || [])
+      .filter((c: any) => typeof c !== 'string' && (c.status === 'Inactive' || c.isActive === false))
+      .map((c: any) => c.name)
+  );
+
+  const activeCategories = (appData.categories || []).filter((c: any) => {
+    if (typeof c === 'string') return true;
+    return c.status !== 'Inactive' && c.isActive !== false;
+  });
+
+  const isPosCategoryInactive = inactiveCategoryNames.has(posCategory);
+
+  const categoriesToRender = isPosCategoryInactive
+    ? []
+    : posCategory === 'All Items'
+    ? ['Uncategorized', ...activeCategories.map((c: any) => (typeof c === 'string' ? c : c.name))]
+    : [posCategory];
+
+  // Calculate total items matching active filters across all rendered categories
+  // Note: Only items with status === 'Active' are included.
+  // Items with available === false (paused by admin) ARE included, but styled as Sold Out!
+  const allFilteredItems = appData.menu.filter((m: any) => {
+    if (m.isAddon || m.status !== 'Active') return false;
+    if (inactiveCategoryNames.has(m.category)) return false;
+    if (posCategory !== 'All Items' && m.category !== posCategory) return false;
+    if (dietFilter !== 'ALL' && m.type !== dietFilter) return false;
+    if (posSearchQuery && !m.name.toLowerCase().includes(posSearchQuery.toLowerCase()))
+      return false;
+    return true;
+  });
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden bg-stone-50/50 dark:bg-stone-950/20">
@@ -78,7 +107,8 @@ export const POSProductGrid: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         {categoriesToRender.map((catName: string) => {
           const itemsInCat = appData.menu.filter((m: any) => {
-            if (m.isAddon || m.available === false || m.status !== 'Active') return false;
+            if (m.isAddon || m.status !== 'Active') return false;
+            if (inactiveCategoryNames.has(m.category)) return false;
             if (m.category !== catName) return false;
             if (dietFilter !== 'ALL' && m.type !== dietFilter) return false;
             if (posSearchQuery && !m.name.toLowerCase().includes(posSearchQuery.toLowerCase()))
@@ -124,14 +154,21 @@ export const POSProductGrid: React.FC = () => {
                     return minPortions === Infinity ? '∞' : minPortions;
                   })();
 
+                  const isUnavailable = item.available === false;
                   const isOutOfStock = typeof availableStock === 'number' && availableStock <= 0;
+                  const isSoldOut = isUnavailable || isOutOfStock;
 
                   return (
                     <div
                       key={item.id || i}
                       onClick={() => {
-                        if (isOutOfStock) {
-                          alert(`Warning: ${item.name} is currently out of stock!`);
+                        if (isSoldOut) {
+                          setStockWarning(
+                            isUnavailable
+                              ? `"${item.name}" is paused and marked Sold Out by admin.`
+                              : `"${item.name}" is currently out of stock (depleted inventory).`
+                          );
+                          setTimeout(() => setStockWarning(null), 3000);
                           return;
                         }
                         if (qty === 0 || (item.addonIds && item.addonIds.trim() !== '')) {
@@ -139,10 +176,11 @@ export const POSProductGrid: React.FC = () => {
                         }
                       }}
                       className={cn(
-                        'relative bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-3 flex flex-col justify-between transition-all duration-150 select-none cursor-pointer',
-                        'hover:shadow-md hover:border-amber-500/40 hover:-translate-y-0.5',
-                        qty > 0 && 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/20 dark:bg-amber-950/10',
-                        isOutOfStock && 'opacity-60 bg-stone-100 dark:bg-stone-900/60'
+                        'relative bg-white dark:bg-stone-900 border rounded-2xl p-3 flex flex-col justify-between transition-all duration-150 select-none',
+                        isSoldOut
+                          ? 'opacity-70 bg-stone-100/90 dark:bg-stone-900/70 border-stone-300 dark:border-stone-800 cursor-not-allowed shadow-none'
+                          : 'border-stone-200/80 dark:border-stone-800 cursor-pointer hover:shadow-md hover:border-amber-500/40 hover:-translate-y-0.5',
+                        qty > 0 && !isSoldOut && 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/20 dark:bg-amber-950/10'
                       )}
                     >
                       {/* Top Header Row: Dietary Badge + Stock */}
@@ -155,9 +193,13 @@ export const POSProductGrid: React.FC = () => {
                           <Badge variant="veg" size="sm">Veg</Badge>
                         )}
 
-                        {isOutOfStock ? (
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-100 dark:bg-rose-950/60 px-1.5 py-0.5 rounded">
+                        {isUnavailable ? (
+                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shadow-xs">
                             Sold Out
+                          </span>
+                        ) : isOutOfStock ? (
+                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shadow-xs">
+                            Out of Stock
                           </span>
                         ) : isLowStock ? (
                           <span className="text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
@@ -188,14 +230,24 @@ export const POSProductGrid: React.FC = () => {
                         className="flex items-center justify-between pt-3 mt-2 border-t border-stone-100 dark:border-stone-800"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span className="text-sm font-extrabold text-amber-600 dark:text-amber-400 font-mono">
+                        <span
+                          className={cn(
+                            'text-sm font-extrabold font-mono',
+                            isSoldOut
+                              ? 'text-stone-400 dark:text-stone-500'
+                              : 'text-amber-600 dark:text-amber-400'
+                          )}
+                        >
                           ₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}
                         </span>
 
-                        {qty === 0 ? (
+                        {isSoldOut ? (
+                          <span className="inline-flex items-center px-2.5 py-1.5 rounded-xl bg-stone-200/90 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-extrabold text-[11px] select-none border border-stone-300/80 dark:border-stone-750 cursor-not-allowed">
+                            Sold Out
+                          </span>
+                        ) : qty === 0 ? (
                           <button
                             type="button"
-                            disabled={isOutOfStock}
                             onClick={() => handleAddToCart(item)}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs shadow-sm shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
                           >
@@ -248,7 +300,40 @@ export const POSProductGrid: React.FC = () => {
             </div>
           );
         })}
+
+        {/* Empty State when no active dishes exist or category is hidden */}
+        {allFilteredItems.length === 0 && (
+          <div className="h-72 flex flex-col items-center justify-center text-center p-6 text-stone-400">
+            <div className="w-16 h-16 rounded-2xl bg-stone-100 dark:bg-stone-850 flex items-center justify-center mb-3 text-stone-300 dark:text-stone-700">
+              <Utensils className="w-8 h-8 stroke-1" />
+            </div>
+            <h4 className="text-sm font-bold text-stone-700 dark:text-stone-300">
+              {posSearchQuery
+                ? `No items found matching "${posSearchQuery}"`
+                : 'No active dishes available'}
+            </h4>
+            <p className="text-xs text-stone-400 mt-1 max-w-xs">
+              {isPosCategoryInactive
+                ? 'This category is currently hidden from POS ordering.'
+                : 'Check menu management or dietary filters.'}
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Out of Stock Floating Toast Alert */}
+      {stockWarning && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 font-bold text-xs px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+          <span>{stockWarning}</span>
+          <button
+            onClick={() => setStockWarning(null)}
+            className="ml-2 opacity-60 hover:opacity-100 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </main>
   );
 };

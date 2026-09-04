@@ -74,7 +74,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
 
                 <td className="py-3.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-1.5">
-                    <Tooltip content="Stock Movement History" position="top">
+                    <Tooltip content="Stock Movement History" position="top" align="center">
                       <button
                         type="button"
                         onClick={() => onViewHistory(i)}
@@ -84,7 +84,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                       </button>
                     </Tooltip>
 
-                    <Tooltip content="Update Current Stock" position="top">
+                    <Tooltip content="Update Current Stock" position="top" align="end">
                       <button
                         type="button"
                         onClick={() => onUpdateStock(i)}

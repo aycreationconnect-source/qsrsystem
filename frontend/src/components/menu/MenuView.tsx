@@ -9,11 +9,12 @@ import { ConfigItemModal } from './ConfigItemModal';
 import { AddonModal } from './AddonModal';
 import { menuApi } from '../../api/menuApi';
 import type { Addon } from '../../types/app.types';
+import { ConfirmModal } from '../ui';
 import { Utensils, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const MenuView: React.FC = () => {
-  const { appData, fetchBackendData } = useApp();
+  const { appData, refreshMenu, refreshAddons } = useApp();
 
   const [menuManagementTab, setMenuManagementTab] = useState<'Menu Items' | 'Addons'>('Menu Items');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(() => {
@@ -105,27 +106,43 @@ export const MenuView: React.FC = () => {
     setShowAddItemModal(true);
   };
 
-  const handleDeleteItem = async (item: any) => {
-    if (!confirm(`Are you sure you want to delete ${item.name}?`)) return;
+  // Delete Confirmation States
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+  const [addonToDelete, setAddonToDelete] = useState<Addon | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return;
     try {
-      if (item.id) {
-        await menuApi.deleteMenuItem(item.id);
+      setIsDeleting(true);
+      setDeleteErrorMessage(null);
+      if (itemToDelete.id) {
+        await menuApi.deleteMenuItem(itemToDelete.id);
       }
-      await fetchBackendData();
-    } catch (e) {
+      await refreshMenu();
+      setItemToDelete(null);
+    } catch (e: any) {
       console.error(e);
-      alert('Failed to delete item from backend.');
+      setDeleteErrorMessage(e?.message || 'Failed to delete dish from server.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const handleDeleteAddon = async (addon: Addon) => {
-    if (!confirm(`Delete addon "${addon.name}"?`)) return;
+  const confirmDeleteAddon = async () => {
+    if (!addonToDelete) return;
     try {
-      await menuApi.deleteAddon(addon.id);
-      await fetchBackendData();
-    } catch (e) {
+      setIsDeleting(true);
+      setDeleteErrorMessage(null);
+      await menuApi.deleteAddon(addonToDelete.id);
+      await refreshAddons();
+      setAddonToDelete(null);
+    } catch (e: any) {
       console.error(e);
-      alert('Failed to delete addon');
+      setDeleteErrorMessage(e?.message || 'Failed to delete modifier addon.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -206,7 +223,10 @@ export const MenuView: React.FC = () => {
               }}
               onConfigItem={handleConfigItem}
               onEditItem={handleEditItem}
-              onDeleteItem={handleDeleteItem}
+              onDeleteItem={(item) => {
+                setDeleteErrorMessage(null);
+                setItemToDelete(item);
+              }}
             />
           </div>
         ) : (
@@ -226,7 +246,10 @@ export const MenuView: React.FC = () => {
                 });
                 setShowAddonModal(true);
               }}
-              onDeleteAddon={handleDeleteAddon}
+              onDeleteAddon={(addon) => {
+                setDeleteErrorMessage(null);
+                setAddonToDelete(addon);
+              }}
             />
           </div>
         )}
@@ -280,6 +303,72 @@ export const MenuView: React.FC = () => {
         editingAddon={editingAddon}
         addonForm={addonForm}
         setAddonForm={setAddonForm}
+      />
+
+      {/* Delete Item Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!itemToDelete}
+        onClose={() => {
+          if (!isDeleting) setItemToDelete(null);
+        }}
+        onConfirm={confirmDeleteItem}
+        title="Delete Menu Item"
+        message={
+          <div>
+            <p>
+              Are you sure you want to remove{' '}
+              <span className="font-bold text-stone-900 dark:text-stone-100">
+                {itemToDelete?.name}
+              </span>
+              ?
+            </p>
+            <p className="mt-1 text-stone-500 dark:text-stone-400 text-[11px]">
+              This will permanently remove the item from the catalog, recipe configurations, and POS terminals.
+            </p>
+            {deleteErrorMessage && (
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
+                {deleteErrorMessage}
+              </div>
+            )}
+          </div>
+        }
+        confirmText="Delete Dish"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* Delete Addon Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!addonToDelete}
+        onClose={() => {
+          if (!isDeleting) setAddonToDelete(null);
+        }}
+        onConfirm={confirmDeleteAddon}
+        title="Delete Modifier Add-on"
+        message={
+          <div>
+            <p>
+              Are you sure you want to remove{' '}
+              <span className="font-bold text-stone-900 dark:text-stone-100">
+                {addonToDelete?.name}
+              </span>
+              ?
+            </p>
+            <p className="mt-1 text-stone-500 dark:text-stone-400 text-[11px]">
+              Dishes configured with this modifier will no longer offer it during checkout.
+            </p>
+            {deleteErrorMessage && (
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
+                {deleteErrorMessage}
+              </div>
+            )}
+          </div>
+        }
+        confirmText="Delete Modifier"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Input, Tooltip } from '../ui';
 import {
   ShieldCheck,
@@ -244,6 +245,15 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({
             >
               Verify Cryptographic Key & Activate POS
             </Button>
+
+            <div className="mt-4 text-center">
+              <Link
+                to="/login"
+                className="text-xs font-bold text-stone-500 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition-colors"
+              >
+                Already activated? Go to Staff Login →
+              </Link>
+            </div>
           </form>
         </div>
       </div>

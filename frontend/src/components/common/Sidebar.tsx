@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { CafeBrandBadge } from '../ui';
 import {
@@ -9,6 +10,7 @@ import {
   Settings,
   Zap,
   Utensils,
+  Tablet,
   LogOut,
   ExternalLink,
 } from 'lucide-react';
@@ -19,36 +21,28 @@ export interface SidebarProps {
   onCloseMobileNav?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenStoreProfile, onCloseMobileNav }) => {
-  const { activeTab, setActiveTab, storeProfile, handleLogout } = useApp();
+export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobileNav }) => {
+  const { storeProfile, handleLogout } = useApp();
+  const navigate = useNavigate();
 
   const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard },
-    { label: 'Menu Management', icon: UtensilsCrossed },
-    { label: 'Inventory', icon: Boxes },
-    { label: 'Table Setup', icon: Armchair },
-    { label: 'Settings', icon: Settings },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Menu Management', path: '/menu', icon: UtensilsCrossed },
+    { label: 'Inventory', path: '/inventory', icon: Boxes },
+    { label: 'Table Setup', path: '/tables', icon: Armchair },
+    { label: 'Settings', path: '/settings', icon: Settings },
   ];
 
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-    if (onCloseMobileNav) onCloseMobileNav();
-  };
-
-  const handleLaunchTerminal = (mode?: string) => {
-    const url = mode ? `/?view=pos&mode=${mode}` : `/?view=pos`;
-    window.open(url, '_blank');
+  const onSignOut = async () => {
+    await handleLogout();
+    navigate('/login');
   };
 
   return (
     <aside className="w-64 sm:w-72 h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none">
       {/* 1. Cafe Brand Badge Header */}
       <div className="p-4 sm:p-5 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
-        <div
-          onClick={onOpenStoreProfile}
-          className="flex-1 cursor-pointer hover:opacity-90 transition-opacity"
-          title="Click to edit cafe profile & logo"
-        >
+        <div className="flex-1">
           <CafeBrandBadge
             name={storeProfile?.businessName || 'Vidhara Cafe'}
             cafeCode={storeProfile?.cafeCode || 'CF-MUM-001'}
@@ -65,23 +59,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenStoreProfile, onCloseMob
         </div>
 
         {navItems.map((item) => {
-          const isActive = activeTab === item.label;
           const Icon = item.icon;
           return (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => handleTabClick(item.label)}
-              className={cn(
-                'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer',
-                isActive
-                  ? 'bg-amber-500 text-stone-950 shadow-sm shadow-amber-500/20 font-extrabold'
-                  : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
-              )}
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onCloseMobileNav}
+              className={({ isActive }) =>
+                cn(
+                  'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer',
+                  isActive
+                    ? 'bg-amber-500 text-stone-950 shadow-sm shadow-amber-500/20 font-extrabold'
+                    : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+                )
+              }
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="truncate">{item.label}</span>
-            </button>
+            </NavLink>
           );
         })}
 
@@ -92,21 +87,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenStoreProfile, onCloseMob
           </div>
 
           <div className="space-y-1.5 mt-1">
-            <button
-              type="button"
-              onClick={() => handleLaunchTerminal()}
+            <a
+              href="/pos?mode=quick"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>QSR Terminal</span>
+                <span>Quick POS Terminal</span>
               </div>
               <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-            </button>
+            </a>
 
-            <button
-              type="button"
-              onClick={() => handleLaunchTerminal('table')}
+            <a
+              href="/pos?mode=table"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-stone-50 dark:bg-stone-850 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-750 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
@@ -114,7 +111,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenStoreProfile, onCloseMob
                 <span>Table POS Terminal</span>
               </div>
               <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-            </button>
+            </a>
+
+            <a
+              href="/pos?mode=kiosk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold bg-stone-50 dark:bg-stone-850 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-750 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <Tablet className="w-4 h-4 text-emerald-500" />
+                <span>Kiosk Terminal</span>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+            </a>
           </div>
         </div>
       </div>
@@ -123,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenStoreProfile, onCloseMob
       <div className="p-4 border-t border-stone-200/80 dark:border-stone-800 shrink-0">
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={onSignOut}
           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
         >
           <LogOut className="w-4 h-4" />

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { menuApi } from '../../api/menuApi';
+import { Modal, Input, Button } from '../ui';
+import { Tag, FileText, CheckCircle2 } from 'lucide-react';
 
 interface CategoryModalProps {
   show: boolean;
@@ -17,135 +19,143 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   newCategory,
   setNewCategory,
 }) => {
-  const { appData, fetchBackendData } = useApp();
+  const { appData, refreshCategories, refreshMenu } = useApp();
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!show) return null;
+  const isActive = newCategory?.status === 'Active';
 
-  const handleSave = async () => {
-    if (!newCategory.name) return;
-    const parsedOrder = newCategory.displayOrder ? parseInt(newCategory.displayOrder) : 999;
-    const catObj = { ...newCategory, displayOrder: parsedOrder };
-
-    if (editingCategoryName) {
-      const existingCat = appData.categories.find(
-        (c: any) => (typeof c === 'string' ? c : c.name) === editingCategoryName
-      ) as any;
-      if (existingCat && existingCat.id) {
-        await menuApi.updateCategory(existingCat.id, catObj);
-        fetchBackendData();
-      }
-    } else {
-      await menuApi.createCategory(catObj);
-      fetchBackendData();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newCategory?.name?.trim()) {
+      setError('Category name is required');
+      return;
     }
 
-    onClose();
+    try {
+      setIsSaving(true);
+      setError(null);
+      const parsedOrder = newCategory.displayOrder ? parseInt(newCategory.displayOrder) : 999;
+      const catObj = {
+        name: newCategory.name.trim(),
+        description: newCategory.description || '',
+        status: newCategory.status || 'Active',
+        displayOrder: parsedOrder,
+      };
+
+      if (editingCategoryName) {
+        const existingCat = appData.categories.find(
+          (c: any) => (typeof c === 'string' ? c : c.name) === editingCategoryName
+        ) as any;
+        if (existingCat && existingCat.id) {
+          await menuApi.updateCategory(existingCat.id, catObj);
+          await refreshCategories();
+          if (editingCategoryName !== catObj.name) {
+            await refreshMenu();
+          }
+        }
+      } else {
+        await menuApi.createCategory(catObj);
+        await refreshCategories();
+      }
+
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to save category');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ width: 450 }}>
-        <div className="modal-header">
-          <h2>{editingCategoryName ? 'Edit Category' : 'Add New Category'}</h2>
-          <button className="close-btn" onClick={onClose}>
-            &times;
-          </button>
-        </div>
-        <div className="modal-body">
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 20,
-              paddingBottom: 16,
-              borderBottom: '1px solid #e2e8f0',
-            }}
+    <Modal
+      isOpen={show}
+      onClose={onClose}
+      title={editingCategoryName ? 'Edit Category' : 'Add New Category'}
+      description="Organize your food & beverage items into distinct menu sections."
+      maxWidth="md"
+      footer={
+        <>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSave}
+            isLoading={isSaving}
+            leftIcon={<CheckCircle2 className="w-4 h-4" />}
           >
-            <div>
-              <span style={{ fontWeight: 600, fontSize: '1.05rem', color: '#1e293b' }}>Category Status</span>
-              <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
-                Toggle to make this category {newCategory?.status === 'Active' ? 'inactive' : 'active'}
-              </p>
-            </div>
-            <label style={{ position: 'relative', display: 'inline-block', width: 50, height: 28 }}>
-              <input
-                type="checkbox"
-                checked={newCategory?.status === 'Active'}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, status: e.target.checked ? 'Active' : 'Inactive' })
-                }
-                style={{ opacity: 0, width: 0, height: 0 }}
-              />
-              <span
-                style={{
-                  position: 'absolute',
-                  cursor: 'pointer',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: newCategory?.status === 'Active' ? '#34d399' : '#cbd5e1',
-                  transition: '0.4s',
-                  borderRadius: 34,
-                }}
-              >
-                <span
-                  style={{
-                    position: 'absolute',
-                    height: 20,
-                    width: 20,
-                    left: 4,
-                    bottom: 4,
-                    backgroundColor: 'white',
-                    transition: '0.4s',
-                    borderRadius: '50%',
-                    transform: newCategory?.status === 'Active' ? 'translateX(22px)' : 'translateX(0px)',
-                  }}
-                ></span>
-              </span>
-            </label>
+            {editingCategoryName ? 'Update Category' : 'Save Category'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSave} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
+            {error}
           </div>
-          <div className="form-group">
-            <label>
-              Category Name <span style={{ color: 'red' }}>*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Desserts"
-              value={newCategory?.name || ''}
-              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Category Description</label>
-            <textarea
-              rows={3}
-              placeholder="Brief description..."
-              value={newCategory?.description || ''}
-              onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                marginTop: '8px',
-                resize: 'vertical',
-              }}
-            ></textarea>
+        )}
+
+        {/* Status Toggle Card */}
+        <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-stone-900 dark:text-stone-100 block">
+              Category Visibility
+            </span>
+            <span className="text-[11px] text-stone-500 dark:text-stone-400">
+              {isActive ? 'Visible to staff and POS terminals' : 'Hidden from POS ordering'}
+            </span>
           </div>
 
-          <div style={{ display: 'flex', gap: 16, marginTop: 32 }}>
-            <button className="btn btn-prev" style={{ flex: 1 }} onClick={onClose}>
-              Cancel
-            </button>
-            <button className="btn btn-next" style={{ flex: 1 }} onClick={handleSave}>
-              {editingCategoryName ? 'Update Category' : 'Save Category'}
-            </button>
-          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) =>
+                setNewCategory({ ...newCategory, status: e.target.checked ? 'Active' : 'Inactive' })
+              }
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
         </div>
-      </div>
-    </div>
+
+        {/* Category Name */}
+        <Input
+          label="Category Name"
+          required
+          placeholder="e.g. Hot Coffees, Pastries, Main Course"
+          value={newCategory?.name || ''}
+          onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+          leftIcon={<Tag className="w-4 h-4" />}
+        />
+
+        {/* Display Order */}
+        <Input
+          label="Display Order (Optional)"
+          type="number"
+          placeholder="e.g. 1, 2, 3..."
+          value={newCategory?.displayOrder || ''}
+          onChange={(e) => setNewCategory({ ...newCategory, displayOrder: e.target.value })}
+        />
+
+        {/* Description */}
+        <div>
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-stone-400" />
+            <span>Description</span>
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Brief description of items included in this section..."
+            value={newCategory?.description || ''}
+            onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+            className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none"
+          />
+        </div>
+      </form>
+    </Modal>
   );
 };

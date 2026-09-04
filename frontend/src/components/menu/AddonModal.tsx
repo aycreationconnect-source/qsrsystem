@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { menuApi } from '../../api/menuApi';
+import { Modal, Input, Button } from '../ui';
+import { Sparkles, IndianRupee, FileText, CheckCircle2 } from 'lucide-react';
 
 interface AddonModalProps {
   show: boolean;
@@ -17,100 +19,111 @@ export const AddonModal: React.FC<AddonModalProps> = ({
   addonForm,
   setAddonForm,
 }) => {
-  const { fetchBackendData } = useApp();
+  const { refreshAddons } = useApp();
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!show) return null;
-
-  const handleSave = async () => {
-    if (!addonForm.name || !addonForm.price) return;
-    if (editingAddon) {
-      await menuApi.updateAddon(editingAddon.id, addonForm);
-    } else {
-      await menuApi.createAddon(addonForm);
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!addonForm.name?.trim() || !addonForm.price) {
+      setError('Add-on Name and Price are required.');
+      return;
     }
-    fetchBackendData();
-    onClose();
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      const numericPrice = parseFloat(String(addonForm.price).replace(/[^0-9.]/g, '')) || 0;
+      const payload = {
+        name: addonForm.name.trim(),
+        description: addonForm.description || '',
+        price: numericPrice,
+      };
+
+      if (editingAddon) {
+        await menuApi.updateAddon(editingAddon.id, payload);
+      } else {
+        await menuApi.createAddon(payload);
+      }
+
+      await refreshAddons();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to save add-on');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-content" style={{ width: 480, borderRadius: 16, padding: 0, overflow: 'hidden' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '20px 24px',
-            borderBottom: '1px solid #e5e7eb',
-            background: '#f8fafc',
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
-            {editingAddon ? 'Edit Add-on' : 'Create Add-on'}
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.4rem',
-              cursor: 'pointer',
-              color: '#64748b',
-            }}
+    <Modal
+      isOpen={show}
+      onClose={onClose}
+      title={editingAddon ? 'Edit Modifier / Add-on' : 'Create Modifier / Add-on'}
+      description="Create custom choices like Extra Cheese, Caramel Syrup, Oat Milk, or Extra Toppings."
+      maxWidth="md"
+      footer={
+        <>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSave}
+            isLoading={isSaving}
+            leftIcon={<CheckCircle2 className="w-4 h-4" />}
           >
-            &times;
-          </button>
+            {editingAddon ? 'Update Add-on' : 'Save Add-on'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSave} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
+            {error}
+          </div>
+        )}
+
+        <Input
+          label="Add-on / Modifier Name"
+          required
+          placeholder="e.g. Extra Cheese, Vanilla Syrup, Almond Milk"
+          value={addonForm.name}
+          onChange={(e) => setAddonForm({ ...addonForm, name: e.target.value })}
+          leftIcon={<Sparkles className="w-4 h-4" />}
+        />
+
+        <Input
+          label="Price (₹)"
+          required
+          type="number"
+          step="0.5"
+          placeholder="0.00"
+          value={
+            typeof addonForm.price === 'string'
+              ? addonForm.price.replace(/[^0-9.]/g, '')
+              : addonForm.price || ''
+          }
+          onChange={(e) => setAddonForm({ ...addonForm, price: e.target.value })}
+          leftIcon={<IndianRupee className="w-4 h-4" />}
+        />
+
+        <div>
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-stone-400" />
+            <span>Description (Optional)</span>
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Portion size, details, or notes..."
+            value={addonForm.description}
+            onChange={(e) => setAddonForm({ ...addonForm, description: e.target.value })}
+            className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none"
+          />
         </div>
-        <div style={{ padding: '24px' }}>
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label>
-              Name <span style={{ color: 'red' }}>*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Extra Cheese"
-              value={addonForm.name}
-              onChange={(e) => setAddonForm({ ...addonForm, name: e.target.value })}
-              style={{ width: '100%' }}
-            />
-          </div>
-          <div className="form-group" style={{ marginBottom: 16 }}>
-            <label>Description</label>
-            <textarea
-              rows={2}
-              placeholder="Short description..."
-              value={addonForm.description}
-              onChange={(e) => setAddonForm({ ...addonForm, description: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid var(--border-color)',
-                borderRadius: 8,
-              }}
-            />
-          </div>
-          <div className="form-group" style={{ marginBottom: 24 }}>
-            <label>
-              Price (₹) <span style={{ color: 'red' }}>*</span>
-            </label>
-            <input
-              type="number"
-              placeholder="0.00"
-              value={addonForm.price}
-              onChange={(e) => setAddonForm({ ...addonForm, price: e.target.value })}
-              style={{ width: '100%' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-prev" style={{ flex: 1 }} onClick={onClose}>
-              Cancel
-            </button>
-            <button className="btn btn-next" style={{ flex: 1 }} onClick={handleSave}>
-              {editingAddon ? 'Update Add-on' : 'Save Add-on'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 };

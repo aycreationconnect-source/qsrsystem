@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { tableApi } from '../../api/tableApi';
 import { useApp } from '../../context/AppContext';
+import { Modal, Button, Input } from '../ui';
+import { Layers, FileText, CheckCircle2 } from 'lucide-react';
 
 interface AreaModalProps {
   show: boolean;
@@ -17,73 +19,96 @@ export const AreaModal: React.FC<AreaModalProps> = ({
   newArea,
   setNewArea,
 }) => {
-  const { fetchBackendData } = useApp();
+  const { refreshAreas } = useApp();
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!show) return null;
 
-  const handleSaveArea = async () => {
+  const handleSaveArea = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newArea.name?.trim()) {
+      setError('Section/Area name is required.');
+      return;
+    }
+
     try {
+      setIsSaving(true);
+      setError(null);
+      const payload = {
+        name: newArea.name.trim(),
+        description: newArea.description || '',
+      };
+
       if (editingAreaId) {
-        await tableApi.updateArea(editingAreaId, newArea);
+        await tableApi.updateArea(editingAreaId, payload);
       } else {
-        await tableApi.createArea(newArea);
+        await tableApi.createArea(payload);
       }
+
+      await refreshAreas();
       onClose();
-      fetchBackendData();
-    } catch (e) {
-      console.error('Failed to save area:', e);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save section');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="modal-overlay">
-      <div
-        className="modal-content"
-        style={{ width: 500, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
-      >
-        <div className="modal-header">
-          <h2>{editingAreaId ? 'Edit Area' : 'Add New Area'}</h2>
-          <button className="close-btn" onClick={onClose}>
-            &times;
-          </button>
+    <Modal
+      isOpen={show}
+      onClose={onClose}
+      title={editingAreaId ? 'Edit Floor Section' : 'Add New Section / Area'}
+      description="Group dining tables into operational zones like Main Dining, Balcony, AC Hall, or Bar Area."
+      maxWidth="md"
+      footer={
+        <>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSaveArea}
+            isLoading={isSaving}
+            leftIcon={<CheckCircle2 className="w-4 h-4" />}
+          >
+            {editingAreaId ? 'Update Section' : 'Create Section'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSaveArea} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
+            {error}
+          </div>
+        )}
+
+        <Input
+          label="Section / Area Name"
+          required
+          placeholder="e.g. Main Dining, Terrace, Rooftop, VIP Lounge"
+          value={newArea.name || ''}
+          onChange={(e) => setNewArea({ ...newArea, name: e.target.value })}
+          leftIcon={<Layers className="w-4 h-4" />}
+        />
+
+        <div>
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-stone-400" />
+            <span>Description (Optional)</span>
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Floor location, atmosphere notes, or table range..."
+            value={newArea.description || ''}
+            onChange={(e) => setNewArea({ ...newArea, description: e.target.value })}
+            className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none"
+          />
         </div>
-        <div className="modal-body" style={{ overflowY: 'auto', paddingRight: 8 }}>
-          <div className="form-group">
-            <label>Area Name</label>
-            <input
-              type="text"
-              placeholder="e.g. Main Dining"
-              value={newArea.name}
-              onChange={(e) => setNewArea({ ...newArea, name: e.target.value })}
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              rows={3}
-              placeholder="Brief description..."
-              value={newArea.description}
-              onChange={(e) => setNewArea({ ...newArea, description: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                marginTop: '8px',
-                resize: 'vertical',
-              }}
-            ></textarea>
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginTop: 32 }}>
-            <button className="btn btn-prev" style={{ flex: 1 }} onClick={onClose}>
-              Cancel
-            </button>
-            <button className="btn btn-next" style={{ flex: 1 }} onClick={handleSaveArea}>
-              Save Area
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 };
