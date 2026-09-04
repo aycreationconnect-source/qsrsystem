@@ -94,22 +94,50 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
     setReadNotificationIds(allIds);
   };
 
-  const getTabTitle = (pathname: string) => {
-    if (pathname.startsWith('/menu')) return 'Menu Management';
-    if (pathname.startsWith('/inventory')) return 'Inventory Management';
-    if (pathname.startsWith('/tables')) return 'Table & Floor Setup';
-    if (pathname.startsWith('/settings')) return 'Store Settings';
-    if (pathname.startsWith('/pos')) return 'Point of Sale';
-    return 'Dashboard';
+  const getTabInfo = (pathname: string) => {
+    if (pathname.startsWith('/menu')) {
+      return {
+        title: 'Menu Management',
+        description: 'Dishes, beverages, categories, recipes & add-ons catalog',
+      };
+    }
+    if (pathname.startsWith('/inventory')) {
+      return {
+        title: 'Inventory Management',
+        description: 'Ingredient stock, threshold warnings, movements & wastage',
+      };
+    }
+    if (pathname.startsWith('/tables')) {
+      return {
+        title: 'Table & Floor Setup',
+        description: 'Restaurant sections, seating capacity & floor arrangement',
+      };
+    }
+    if (pathname.startsWith('/settings')) {
+      return {
+        title: 'Store Settings',
+        description: 'Cafe profile, tax configurations, payment gateways & station node',
+      };
+    }
+    if (pathname.startsWith('/pos')) {
+      return {
+        title: 'Point of Sale',
+        description: 'High-speed order billing & kitchen dispatch terminal',
+      };
+    }
+    return {
+      title: 'Dashboard',
+      description: 'Real-time sales analytics, orders summary & cafe metrics',
+    };
   };
 
-  const currentTabTitle = getTabTitle(location.pathname);
+  const currentTab = getTabInfo(location.pathname);
   const displayName = currentUser?.fullName || currentUser?.username || 'Store Manager';
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <header className="h-16 px-4 sm:px-6 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4 shrink-0 z-10">
-      {/* Left: Mobile Nav Toggle & Current Section Title */}
+      {/* Left: Mobile Nav Toggle & Current Section Title + Description */}
       <div className="flex items-center gap-3 min-w-0">
         {onToggleMobileNav && (
           <button
@@ -122,10 +150,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
           </button>
         )}
 
-        <div>
-          <h2 className="text-base sm:text-lg font-extrabold text-stone-900 dark:text-stone-100 leading-tight">
-            {currentTabTitle}
+        <div className="flex flex-col min-w-0">
+          <h2 className="text-base sm:text-lg font-extrabold text-stone-900 dark:text-stone-100 leading-tight truncate">
+            {currentTab.title}
           </h2>
+          <p className="hidden md:block text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
+            {currentTab.description}
+          </p>
         </div>
       </div>
 

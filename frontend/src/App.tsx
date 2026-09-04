@@ -14,6 +14,7 @@ import { MenuView } from './components/menu/MenuView';
 import { InventoryView } from './components/inventory/InventoryView';
 import { FloorManagement } from './components/tables/FloorManagement';
 import { SettingsView } from './components/settings/SettingsView';
+import { PageTitleUpdater } from './components/common/PageTitleUpdater';
 
 const ActivateScreen: React.FC = () => {
   const { checkLicenseStatus } = useApp();
@@ -32,6 +33,7 @@ const ActivateScreen: React.FC = () => {
 const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
+      <PageTitleUpdater />
       <Routes>
         {/* Public Routes */}
         <Route
@@ -49,13 +51,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Admin Management Views */}
-          <Route
-            element={
-              <POSProvider>
-                <AdminLayout />
-              </POSProvider>
-            }
-          >
+          <Route element={<AdminLayout />}>
             <Route path="/dashboard" element={<DashboardView />} />
             <Route path="/menu" element={<MenuView />} />
             <Route path="/inventory" element={<InventoryView />} />
@@ -64,14 +60,7 @@ const AppRoutes: React.FC = () => {
           </Route>
 
           {/* POS Terminal */}
-          <Route
-            path="/pos"
-            element={
-              <POSProvider>
-                <POSLayout />
-              </POSProvider>
-            }
-          />
+          <Route path="/pos" element={<POSLayout />} />
         </Route>
 
         {/* Fallback */}
@@ -84,7 +73,9 @@ const AppRoutes: React.FC = () => {
 function App() {
   return (
     <AppProvider>
-      <AppRoutes />
+      <POSProvider>
+        <AppRoutes />
+      </POSProvider>
     </AppProvider>
   );
 }

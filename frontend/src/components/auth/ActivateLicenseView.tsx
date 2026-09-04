@@ -96,16 +96,16 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-100 dark:border-stone-800">
             <div className="flex items-center gap-3">
               <img
-                src="/vidhara-logo.png"
-                alt="Vidhara QSR"
+                src="/velora-logo.png"
+                alt="Velora POS"
                 className="h-9 w-auto object-contain dark:hidden"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
               <img
-                src="/vidhara-logo-dark.png"
-                alt="Vidhara QSR"
+                src="/velora-logo-dark.png"
+                alt="Velora POS"
                 className="h-9 w-auto object-contain hidden dark:block"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -113,7 +113,7 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({
               />
               <div>
                 <h1 className="text-base font-extrabold text-stone-900 dark:text-stone-100 leading-tight flex items-center gap-1.5">
-                  <span>VIDHARA POS ACTIVATION</span>
+                  <span>VELORA POS ACTIVATION</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold">
                     OFFLINE
                   </span>

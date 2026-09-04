@@ -24,13 +24,46 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
       {/* Left: Cafe Brand Badge & Mode */}
       <div className="flex items-center gap-3 min-w-0">
         <CafeBrandBadge
-          name={storeProfile?.businessName || 'Vidhara Cafe'}
+          name={storeProfile?.businessName || 'Velora Cafe'}
           cafeCode={storeProfile?.cafeCode}
           logoUrl={storeProfile?.logoUrl}
           size="sm"
         />
 
-        <div className="hidden sm:flex items-center gap-1.5 pl-3 border-l border-stone-200 dark:border-stone-800">
+        {/* Desktop Title and Description */}
+        <div className="hidden md:flex flex-col min-w-0 pl-3 border-l border-stone-200 dark:border-stone-800">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-tight">
+              {posMode === 'table' ? 'POS - Table Service' : 'POS - Quick Order'}
+            </h2>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60">
+              {posMode === 'table' ? (
+                <>
+                  <Utensils className="w-2.5 h-2.5 text-amber-600" />
+                  Table Mode
+                </>
+              ) : (
+                <>
+                  <Zap className="w-2.5 h-2.5 text-amber-600" />
+                  Quick Mode
+                </>
+              )}
+            </span>
+            {posMode === 'table' && selectedTable && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">
+                {selectedTable.name}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
+            {posMode === 'table'
+              ? 'Dine-in floor orders, table booking & live billing'
+              : 'Fast counter sales, express checkout & takeaway billing'}
+          </p>
+        </div>
+
+        {/* Mobile Compact Pill */}
+        <div className="flex md:hidden items-center gap-1.5 pl-2 border-l border-stone-200 dark:border-stone-800">
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60">
             {posMode === 'table' ? (
               <>
@@ -40,13 +73,12 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
             ) : (
               <>
                 <Zap className="w-3 h-3 text-amber-600" />
-                Counter QSR
+                Quick POS
               </>
             )}
           </span>
-
           {posMode === 'table' && selectedTable && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60">
               {selectedTable.name}
             </span>
           )}

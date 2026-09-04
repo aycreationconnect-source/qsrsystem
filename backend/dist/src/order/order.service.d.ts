@@ -10,6 +10,14 @@ export declare class OrderService {
             menuItemId: number;
             orderId: number;
         }[];
+        payments: {
+            id: number;
+            date: Date;
+            paymentMethod: string;
+            amount: number;
+            reference: string | null;
+            orderId: number;
+        }[];
     } & {
         id: number;
         status: string;
@@ -18,6 +26,8 @@ export declare class OrderService {
         paymentMethod: string;
         subtotal: number;
         total: number;
+        paidAmount: number;
+        balanceAmount: number;
     }>;
     findAll(): import("@prisma/client").Prisma.PrismaPromise<({
         items: ({
@@ -44,6 +54,14 @@ export declare class OrderService {
             menuItemId: number;
             orderId: number;
         })[];
+        payments: {
+            id: number;
+            date: Date;
+            paymentMethod: string;
+            amount: number;
+            reference: string | null;
+            orderId: number;
+        }[];
     } & {
         id: number;
         status: string;
@@ -52,6 +70,8 @@ export declare class OrderService {
         paymentMethod: string;
         subtotal: number;
         total: number;
+        paidAmount: number;
+        balanceAmount: number;
     })[]>;
     findOne(id: number): import("@prisma/client").Prisma.Prisma__OrderClient<({
         items: ({
@@ -78,6 +98,14 @@ export declare class OrderService {
             menuItemId: number;
             orderId: number;
         })[];
+        payments: {
+            id: number;
+            date: Date;
+            paymentMethod: string;
+            amount: number;
+            reference: string | null;
+            orderId: number;
+        }[];
     } & {
         id: number;
         status: string;
@@ -86,8 +114,26 @@ export declare class OrderService {
         paymentMethod: string;
         subtotal: number;
         total: number;
+        paidAmount: number;
+        balanceAmount: number;
     }) | null, null, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     update(id: number, data: any): import("@prisma/client").Prisma.Prisma__OrderClient<{
+        items: {
+            id: number;
+            price: number;
+            quantity: number;
+            menuItemId: number;
+            orderId: number;
+        }[];
+        payments: {
+            id: number;
+            date: Date;
+            paymentMethod: string;
+            amount: number;
+            reference: string | null;
+            orderId: number;
+        }[];
+    } & {
         id: number;
         status: string;
         tax: number;
@@ -95,6 +141,8 @@ export declare class OrderService {
         paymentMethod: string;
         subtotal: number;
         total: number;
+        paidAmount: number;
+        balanceAmount: number;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     remove(id: number): import("@prisma/client").Prisma.Prisma__OrderClient<{
         id: number;
@@ -104,5 +152,79 @@ export declare class OrderService {
         paymentMethod: string;
         subtotal: number;
         total: number;
+        paidAmount: number;
+        balanceAmount: number;
     }, never, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    addPayment(orderId: number, paymentDto: {
+        amount: number;
+        paymentMethod: string;
+        reference?: string;
+    }): Promise<{
+        payment: {
+            id: number;
+            date: Date;
+            paymentMethod: string;
+            amount: number;
+            reference: string | null;
+            orderId: number;
+        };
+        order: {
+            items: {
+                id: number;
+                price: number;
+                quantity: number;
+                menuItemId: number;
+                orderId: number;
+            }[];
+            payments: {
+                id: number;
+                date: Date;
+                paymentMethod: string;
+                amount: number;
+                reference: string | null;
+                orderId: number;
+            }[];
+        } & {
+            id: number;
+            status: string;
+            tax: number;
+            date: Date;
+            paymentMethod: string;
+            subtotal: number;
+            total: number;
+            paidAmount: number;
+            balanceAmount: number;
+        };
+        orderSummary: {
+            total: number;
+            paidAmount: number;
+            balanceAmount: number;
+            status: string;
+        };
+    }>;
+    getPayments(orderId: number): Promise<{
+        orderId: number;
+        total: number;
+        paidAmount: number;
+        balanceAmount: number;
+        status: string;
+        payments: {
+            id: number;
+            date: Date;
+            paymentMethod: string;
+            amount: number;
+            reference: string | null;
+            orderId: number;
+        }[];
+    }>;
+    removePayment(orderId: number, paymentId: number): Promise<{
+        success: boolean;
+        message: string;
+        orderSummary: {
+            total: number;
+            paidAmount: number;
+            balanceAmount: number;
+            status: string;
+        };
+    }>;
 }

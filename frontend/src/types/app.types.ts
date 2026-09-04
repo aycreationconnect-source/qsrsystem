@@ -79,6 +79,15 @@ export interface OrderItem {
   menuItem?: MenuItem;
 }
 
+export interface OrderPayment {
+  id?: number;
+  orderId?: number;
+  amount: number;
+  paymentMethod: string;
+  reference?: string | null;
+  date?: string;
+}
+
 export interface Order {
   id: number;
   date: string;
@@ -86,8 +95,11 @@ export interface Order {
   subtotal: number;
   tax: number;
   total: number;
+  paidAmount?: number;
+  balanceAmount?: number;
   status: string;
   items?: OrderItem[];
+  payments?: OrderPayment[];
 }
 
 export interface Area {
@@ -130,4 +142,5 @@ export interface CartItem extends MenuItem {
 export interface TableOrderState {
   savedOrders: { items: CartItem[]; time: number }[];
   activeCart: CartItem[];
+  payments?: OrderPayment[];
 }

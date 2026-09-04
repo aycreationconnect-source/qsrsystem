@@ -88,23 +88,23 @@ export const LoginView: React.FC = () => {
             <div className="flex items-center justify-between pb-6 border-b border-stone-200/60 dark:border-stone-800">
               <div className="flex items-center gap-2">
                 <img
-                  src="/vidhara-logo.png"
-                  alt="Vidhara QSR"
+                  src="/velora-logo.png"
+                  alt="Velora POS"
                   className="h-7 w-auto object-contain dark:hidden"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
                 <img
-                  src="/vidhara-logo-dark.png"
-                  alt="Vidhara QSR"
+                  src="/velora-logo-dark.png"
+                  alt="Velora POS"
                   className="h-7 w-auto object-contain hidden dark:block"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
                 <span className="font-extrabold text-sm tracking-tight text-stone-900 dark:text-stone-100">
-                  VIDHARA <span className="text-amber-500 font-medium text-xs">POS</span>
+                  VELORA <span className="text-amber-500 font-medium text-xs">POS</span>
                 </span>
               </div>
 

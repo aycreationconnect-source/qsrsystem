@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vidhara QSR POS & Cloud Support — Complete API Reference</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            accent: {
+              sky: '#0284c7',
+              cyan: '#06b6d4',
+              amber: '#f59e0b',
+              purple: '#8b5cf6',
+              rose: '#f43f5e',
+            },
+            dark: {
+              bg: '#0a0d14',
+              surface: '#111726',
+              card: '#182032',
+              border: '#232d45',
+              input: '#0d131f'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.6);
+    }
+
+    /* Glassmorphism effects */
+    .glass-panel {
+      background: rgba(17, 23, 38, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .light .glass-panel {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    /* Code block styling */
+    pre code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    /* Subtle pulse animation for active status */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .status-pulse {
+      animation: pulse-ring 2.5s infinite ease-in-out;
+    }
+
+    /* Tab Transition */
+    .tab-content {
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Method badge colors */
+    .badge-get { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-post { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+    .badge-patch { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-put { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-delete { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+  </style>
+</head>
+
+<body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 selection:bg-brand-500 selection:text-white">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="sticky top-0 z-40 w-full glass-panel border-b border-dark-border">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-accent-cyan to-accent-purple flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-utensils text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg text-white tracking-tight">Vidhara QSR</h1>
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-400 border border-brand-500/30">v1.2 Active</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Unified API Documentation — Local On-Premise POS & Support Platform</p>
+        </div>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="flex-1 max-w-md mx-2 hidden md:block">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input 
+            type="text" 
+            id="globalSearch" 
+            placeholder="Search APIs by method, path, title, or keyword (Ctrl+K)..." 
+            class="w-full bg-dark-input/90 border border-dark-border rounded-xl pl-10 pr-12 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all shadow-inner"
+            oninput="handleSearch(this.value)"
+          />
+          <kbd class="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-800 rounded border border-slate-700">Ctrl+K</kbd>
+        </div>
+      </div>
+
+      <!-- Actions & Server Switcher -->
+      <div class="flex items-center gap-2">
+        <!-- Environment Switcher Indicator -->
+        <div class="hidden lg:flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 status-pulse"></span>
+          <span class="font-mono text-slate-400">Base:</span>
+          <span id="currentBaseUrl" class="font-mono font-medium text-emerald-300">http://localhost:3000</span>
+        </div>
+
+        <!-- Postman / JSON Export -->
+        <button 
+          onclick="exportPostmanCollection()" 
+          title="Export Postman Collection" 
+          class="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-file-export text-accent-sky"></i>
+          <span class="hidden sm:inline">Export Postman</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button 
+          onclick="toggleTheme()" 
+          title="Toggle Dark/Light Mode" 
+          class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= SUB HEADER STATS BANNER ================= -->
+  <div class="bg-gradient-to-r from-dark-surface via-dark-card to-dark-surface border-b border-dark-border/60 py-3 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
+      
+      <div class="flex flex-wrap items-center gap-6 text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="text-brand-400 font-bold text-sm font-mono" id="totalEndpointsCount">32</span>
+          <span>Endpoints Documented</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-accent-sky font-bold text-sm font-mono">11</span>
+          <span>Core POS Modules</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-accent-purple font-bold text-sm font-mono">4</span>
+          <span>Cloud Support Modules</span>
+        </div>
+        <div class="hidden md:flex items-center gap-2">
+          <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-semibold">100% Offline-Ready</span>
+          <span>Cryptographic HMAC Licensing</span>
+        </div>
+      </div>
+
+      <!-- Quick Filter Pills -->
+      <div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0" id="methodFilterBar">
+        <button onclick="filterByMethod('ALL')" class="method-filter-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-brand-500 text-white shadow transition-all" data-method="ALL">ALL</button>
+        <button onclick="filterByMethod('GET')" class="method-filter-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800 hover:bg-emerald-950/40 text-emerald-400 border border-slate-700/60 transition-all" data-method="GET">GET</button>
+        <button onclick="filterByMethod('POST')" class="method-filter-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800 hover:bg-sky-950/40 text-sky-400 border border-slate-700/60 transition-all" data-method="POST">POST</button>
+        <button onclick="filterByMethod('PATCH')" class="method-filter-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800 hover:bg-amber-950/40 text-amber-400 border border-slate-700/60 transition-all" data-method="PATCH">PATCH</button>
+        <button onclick="filterByMethod('DELETE')" class="method-filter-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800 hover:bg-rose-950/40 text-rose-400 border border-slate-700/60 transition-all" data-method="DELETE">DELETE</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MAIN LAYOUT ================= -->
+  <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-6 relative">
+    
+    <!-- LEFT NAVIGATION SIDEBAR (Sticky) -->
+    <aside class="w-72 shrink-0 hidden lg:block sticky top-24 h-[calc(100vh-7rem)] overflow-y-auto pr-2">
+      
+      <!-- POS Backend Section Header -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 px-3 py-1">
+          <span>Local POS Hub</span>
+          <span class="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">:3000</span>
+        </div>
+        <nav class="space-y-1 mt-1 text-sm font-medium" id="posNavList">
+          <a href="#overview" onclick="switchTab('overview')" class="nav-item active flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-compass text-brand-400 w-4 text-center"></i> Overview & Architecture</span>
+            <span class="text-[11px] font-mono text-slate-500">Home</span>
+          </a>
+          <a href="#auth" onclick="switchTab('auth')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-id-badge text-sky-400 w-4 text-center"></i> Auth & Staff Switch</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">5 APIs</span>
+          </a>
+          <a href="#orders" onclick="switchTab('orders')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-receipt text-amber-400 w-4 text-center"></i> Orders & POS Billing</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">5 APIs</span>
+          </a>
+          <a href="#menu" onclick="switchTab('menu')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-burger text-rose-400 w-4 text-center"></i> Menu & Recipes</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">5 APIs</span>
+          </a>
+          <a href="#categories" onclick="switchTab('categories')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-layer-group text-purple-400 w-4 text-center"></i> Categories</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">4 APIs</span>
+          </a>
+          <a href="#addons" onclick="switchTab('addons')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-puzzle-piece text-cyan-400 w-4 text-center"></i> Add-ons & Modifiers</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">4 APIs</span>
+          </a>
+          <a href="#inventory" onclick="switchTab('inventory')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-boxes-stacked text-emerald-400 w-4 text-center"></i> Inventory & Stock</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">5 APIs</span>
+          </a>
+          <a href="#areas" onclick="switchTab('areas')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-map-location-dot text-indigo-400 w-4 text-center"></i> Dining Areas</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">4 APIs</span>
+          </a>
+          <a href="#tables" onclick="switchTab('tables')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-chair text-pink-400 w-4 text-center"></i> Tables Management</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">4 APIs</span>
+          </a>
+          <a href="#license" onclick="switchTab('license')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-key text-yellow-400 w-4 text-center"></i> Offline Licensing</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">3 APIs</span>
+          </a>
+          <a href="#settings" onclick="switchTab('settings')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-sliders text-teal-400 w-4 text-center"></i> Store Settings & Brand</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">4 APIs</span>
+          </a>
+          <a href="#system" onclick="switchTab('system')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-heart-pulse text-red-400 w-4 text-center"></i> Health & DB Init</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">2 APIs</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Support Platform Section Header -->
+      <div class="mt-6 pt-4 border-t border-dark-border">
+        <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 px-3 py-1">
+          <span>Support Cloud Platform</span>
+          <span class="font-mono text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">:3001/api</span>
+        </div>
+        <nav class="space-y-1 mt-1 text-sm font-medium">
+          <a href="#support-cafes" onclick="switchTab('support-cafes')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-store text-purple-400 w-4 text-center"></i> Franchise Cafes</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">5 APIs</span>
+          </a>
+          <a href="#support-plans" onclick="switchTab('support-plans')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-tags text-indigo-400 w-4 text-center"></i> SaaS Plans</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">2 APIs</span>
+          </a>
+          <a href="#support-stats" onclick="switchTab('support-stats')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-chart-pie text-cyan-400 w-4 text-center"></i> System Stats</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">1 API</span>
+          </a>
+          <a href="#support-auth" onclick="switchTab('support-auth')" class="nav-item flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-user-shield text-emerald-400 w-4 text-center"></i> Superadmin Auth</span>
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">1 API</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Quick Tips Card -->
+      <div class="mt-6 p-3.5 rounded-2xl bg-gradient-to-br from-brand-950/40 via-dark-card to-slate-900 border border-brand-500/20 text-xs text-slate-400 space-y-2">
+        <div class="flex items-center gap-2 text-brand-300 font-semibold">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Offline Auth Guard</span>
+        </div>
+        <p class="text-[11px] leading-relaxed">
+          Local POS requests check the cryptographically signed JWT token via <code class="font-mono text-brand-300 text-[10px]">Authorization: Bearer &lt;token&gt;</code> or HTTP-only cookie <code class="font-mono text-brand-300 text-[10px]">pos_jwt_token</code>.
+        </p>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT MAIN CONTENT AREA -->
+    <main class="flex-1 min-w-0 pb-20">
+
+      <!-- ================= SECTION: OVERVIEW ================= -->
+      <section id="tab-overview" class="tab-content block space-y-8">
+        
+        <!-- Hero Header -->
+        <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-dark-surface via-dark-card to-slate-900 border border-dark-border relative overflow-hidden shadow-2xl">
+          <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-16 -top-16 w-64 h-64 bg-accent-sky/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 max-w-3xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs font-semibold mb-4">
+              <i class="fa-solid fa-bolt text-brand-400"></i> Next-Gen Restaurant Operating System
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+              Vidhara QSR API Specification
+            </h2>
+            <p class="mt-3 text-base text-slate-300 leading-relaxed">
+              Complete reference manual for the high-performance, on-premise Quick Service Restaurant engine. Designed for ultra-fast local POS billing, real-time inventory deductions, staff PIN switching, and zero-cloud offline cryptographic license activation.
+            </p>
+
+            <!-- Quick Action Buttons -->
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+              <button onclick="switchTab('auth')" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold shadow-lg shadow-brand-600/25 transition-all flex items-center gap-2">
+                <span>Explore Auth & Login APIs</span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+              </button>
+              <button onclick="switchTab('orders')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-semibold transition-all flex items-center gap-2">
+                <i class="fa-solid fa-receipt text-amber-400"></i>
+                <span>Order & Billing Specs</span>
+              </button>
+              <button onclick="openSandboxModal('POST', '/auth/login', 'auth')" class="px-4 py-2.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/40 text-sky-300 text-sm font-semibold transition-all flex items-center gap-2">
+                <i class="fa-solid fa-play text-xs"></i>
+                <span>Open API Playground</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Feature Cards Grid -->
+          <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10 pt-6 border-t border-slate-700/60">
+            <div class="p-4 rounded-2xl bg-dark-bg/60 border border-dark-border/80">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+                <i class="fa-solid fa-wifi-slash"></i>
+              </div>
+              <h4 class="font-semibold text-sm text-white">100% Offline Resilient</h4>
+              <p class="text-xs text-slate-400 mt-1">Runs completely on the local billing PC without cloud lag or internet dependence.</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-dark-bg/60 border border-dark-border/80">
+              <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center mb-3">
+                <i class="fa-solid fa-fingerprint"></i>
+              </div>
+              <h4 class="font-semibold text-sm text-white">Quick PIN Staff Auth</h4>
+              <p class="text-xs text-slate-400 mt-1">Cashiers & waiters switch sessions in sub-second time via 4-digit PBKDF2 PINs.</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-dark-bg/60 border border-dark-border/80">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
+                <i class="fa-solid fa-boxes-packing"></i>
+              </div>
+              <h4 class="font-semibold text-sm text-white">Atomic Recipe Deduction</h4>
+              <p class="text-xs text-slate-400 mt-1">Placing an order auto-calculates and decrements inventory raw materials via DB transactions.</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-dark-bg/60 border border-dark-border/80">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3">
+                <i class="fa-solid fa-key"></i>
+              </div>
+              <h4 class="font-semibold text-sm text-white">HMAC Signed Licenses</h4>
+              <p class="text-xs text-slate-400 mt-1">Cryptographic offline tokens prevent clock tampering, expired trials, and unauthorized terminals.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Architecture Breakdown -->
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-dark-border space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-xl font-bold text-white flex items-center gap-2.5">
+                <i class="fa-solid fa-network-wired text-brand-400"></i>
+                <span>Architectural Layout & Dual-Tier Topology</span>
+              </h3>
+              <p class="text-sm text-slate-400 mt-1">Understanding how the Local Billing Hub communicates with the Developer Cloud Support Platform.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Tier 1: Local POS Hub -->
+            <div class="p-5 rounded-2xl bg-dark-surface border border-slate-700/60 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-white text-sm flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-emerald-400"></span> Tier 1: Local POS Hub Engine
+                </span>
+                <span class="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-emerald-300">Port 3000</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Deployed on a local Mini-PC / Windows Terminal inside the cafe. Houses the SQLite / MySQL local database with full offline resilience. Receives table orders from waiter tablets, fires KDS events, manages raw material recipes, and prints bills.
+              </p>
+              <div class="font-mono text-xs bg-dark-bg p-3 rounded-xl border border-slate-800 text-slate-300 space-y-1">
+                <div><span class="text-slate-500">Base URL:</span> http://localhost:3000</div>
+                <div><span class="text-slate-500">Auth:</span> Cookie (pos_jwt_token) / Bearer &lt;JWT&gt;</div>
+                <div><span class="text-slate-500">Database:</span> MySQL / Local Database via Prisma</div>
+              </div>
+            </div>
+
+            <!-- Tier 2: Cloud Support Platform -->
+            <div class="p-5 rounded-2xl bg-dark-surface border border-slate-700/60 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-white text-sm flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-purple-400"></span> Tier 2: Central Developer & Support Platform
+                </span>
+                <span class="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-purple-300">Port 3001/api</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Cloud portal for the software franchise vendor. Allows registering new cafe outlets, managing subscription plans (Silver, Gold, Diamond), issuing offline cryptographic HMAC license tokens, and executing franchise-level analytics.
+              </p>
+              <div class="font-mono text-xs bg-dark-bg p-3 rounded-xl border border-slate-800 text-slate-300 space-y-1">
+                <div><span class="text-slate-500">Base URL:</span> http://localhost:3001/api</div>
+                <div><span class="text-slate-500">Role:</span> Superadmin & Franchise Controller</div>
+                <div><span class="text-slate-500">License Engine:</span> Crypto HMAC-SHA256 Token Generator</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Master API Jump Cards -->
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-dark-border space-y-4">
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-accent-cyan"></i>
+            <span>Master API Directory</span>
+          </h3>
+          <p class="text-sm text-slate-400">Quickly jump into any module specification or test live:</p>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+            <button onclick="switchTab('auth')" class="text-left p-3.5 rounded-xl bg-dark-surface hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group">
+              <div>
+                <div class="font-semibold text-sm text-white group-hover:text-brand-400 transition-colors">Auth & Staff</div>
+                <div class="text-xs text-slate-500 mt-0.5">/auth/login, /auth/staff, /auth/me</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition-all"></i>
+            </button>
+            <button onclick="switchTab('orders')" class="text-left p-3.5 rounded-xl bg-dark-surface hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group">
+              <div>
+                <div class="font-semibold text-sm text-white group-hover:text-amber-400 transition-colors">Orders & POS Billing</div>
+                <div class="text-xs text-slate-500 mt-0.5">/order (Create, Stock Deduct, Bill)</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition-all"></i>
+            </button>
+            <button onclick="switchTab('menu')" class="text-left p-3.5 rounded-xl bg-dark-surface hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group">
+              <div>
+                <div class="font-semibold text-sm text-white group-hover:text-rose-400 transition-colors">Menu & Recipes</div>
+                <div class="text-xs text-slate-500 mt-0.5">/menu (Items, Taxes, Ingredients)</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition-all"></i>
+            </button>
+            <button onclick="switchTab('categories')" class="text-left p-3.5 rounded-xl bg-dark-surface hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group">
+              <div>
+                <div class="font-semibold text-sm text-white group-hover:text-purple-400 transition-colors">Menu Categories</div>
+                <div class="text-xs text-slate-500 mt-0.5">/category (Sorting, CRUD)</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition-all"></i>
+            </button>
+            <button onclick="switchTab('inventory')" class="text-left p-3.5 rounded-xl bg-dark-surface hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group">
+              <div>
+                <div class="font-semibold text-sm text-white group-hover:text-emerald-400 transition-colors">Inventory Control</div>
+                <div class="text-xs text-slate-500 mt-0.5">/inventory (Stock adjustments & logs)</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition-all"></i>
+            </button>
+            <button onclick="switchTab('license')" class="text-left p-3.5 rounded-xl bg-dark-surface hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between group">
+              <div>
+                <div class="font-semibold text-sm text-white group-hover:text-yellow-400 transition-colors">Offline Licensing</div>
+                <div class="text-xs text-slate-500 mt-0.5">/license/activate, /license/status</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 group-hover:text-white transition-all"></i>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= CONTAINER FOR DYNAMIC/MODULAR TABS ================= -->
+      <div id="dynamicApiContainer">
+        <!-- Rendered modules -->
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ================= INTERACTIVE MODAL (API PLAYGROUND / SANDBOX) ================= -->
+  <div id="sandboxModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-dark-surface border border-slate-700 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-dark-border flex items-center justify-between bg-dark-card">
+        <div class="flex items-center gap-3">
+          <span id="modalMethodBadge" class="badge-post px-2.5 py-1 rounded-md text-xs font-mono font-bold">POST</span>
+          <div>
+            <h3 id="modalTitle" class="text-base font-bold text-white">API Test Console</h3>
+            <p id="modalEndpointUrl" class="font-mono text-xs text-slate-400">http://localhost:3000/auth/login</p>
+          </div>
+        </div>
+        <button onclick="closeSandboxModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        
+        <!-- Headers Input -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Request Headers</label>
+          <input 
+            type="text" 
+            id="modalHeaders" 
+            value='{"Content-Type": "application/json"}' 
+            class="w-full bg-dark-input font-mono text-xs border border-dark-border rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+
+        <!-- Request Body Input -->
+        <div id="modalPayloadContainer">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Request Body (JSON)</label>
+            <button onclick="formatModalJson()" class="text-xs text-brand-400 hover:underline">Format JSON</button>
+          </div>
+          <textarea 
+            id="modalRequestBody" 
+            rows="6" 
+            class="w-full bg-dark-input font-mono text-xs border border-dark-border rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 leading-relaxed"
+            placeholder="{}"
+          ></textarea>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex items-center justify-between pt-2">
+          <span class="text-xs text-slate-500 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-info text-sky-400"></i>
+            <span>Sends real HTTP request via Fetch API to local server.</span>
+          </span>
+          <button 
+            onclick="executeLiveRequest()" 
+            id="btnExecuteReq" 
+            class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs tracking-wide shadow-lg shadow-brand-600/20 transition-all flex items-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Send Request</span>
+          </button>
+        </div>
+
+        <!-- Live Response Output Section -->
+        <div class="pt-4 border-t border-slate-700/60">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Response Output</span>
+            <div class="flex items-center gap-2">
+              <span id="responseStatusBadge" class="hidden text-xs font-mono px-2 py-0.5 rounded font-bold">200 OK</span>
+              <span id="responseTimeBadge" class="hidden text-xs font-mono text-slate-400">24ms</span>
+            </div>
+          </div>
+          <div class="relative">
+            <pre class="w-full bg-dark-input p-4 rounded-xl font-mono text-xs text-emerald-400 overflow-x-auto max-h-64 border border-dark-border" id="modalResponseBody">// Click 'Send Request' to view real response or mock simulation</pre>
+            <button onclick="copyToClipboard(document.getElementById('modalResponseBody').innerText)" class="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs transition-colors">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-dark-border bg-dark-card/50 flex justify-end">
+        <button onclick="closeSandboxModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors">
+          Close Sandbox
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= COPIED TOAST NOTIFICATION ================= -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-xs font-semibold shadow-2xl shadow-emerald-500/30">
+    <i class="fa-solid fa-circle-check text-sm"></i>
+    <span id="toastMessage">Copied to clipboard!</span>
+  </div>
+
+  <!-- ================= MASTER DATA & SCRIPT ENGINE ================= -->
+  <script>
+    const apiRegistry = [
+      // ---------------- AUTHENTICATION & STAFF ----------------
+      {
+        id: "auth-login",
+        module: "auth",
+        moduleTitle: "Authentication & Staff Management",
+        moduleDesc: "Local user authentication, high-speed waiter PIN switching, offline cryptographic license checks, and JWT token issuance.",
+        title: "Staff & Owner Authentication (PIN or Credentials)",
+        method: "POST",
+        path: "/auth/login",
+        server: "http://localhost:3000",
+        what: "Authenticates a cafe staff member or the owner using either a fast 4-digit PIN code (waiters, cashiers) or Username/Password (store admin). Validates local store license validity, enforces anti-clock-tampering guards, and issues an HTTP-only JWT cookie (pos_jwt_token) along with returning the user session, allowed modules, store profile, and license expiration.",
+        why: "In busy QSR counters and dine-in tables, cashiers and waiters cannot afford tedious password typing on every ticket. The 4-digit PBKDF2 PIN login allows instant session switches at the counter terminal while verifying that the store license hasn't expired or been clock-tampered.",
+        headers: [
+          { name: "Content-Type", value: "application/json", required: true, desc: "Standard JSON payload content type" }
+        ],
+        params: [],
+        payload: {
+          pin: "1234",
+          username: "owner",
+          password: "optional_or_admin123"
+        },
+        payloadDescription: "Pass either pin (e.g. '1234' for Owner, '1111' for Cashier, '2222' for Waiter) OR username + password.",
+        responseStatus: 201,
+        response: {
+          success: true,
+          token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNzI1NDQ..._HMAC_SIGNATURE",
+          user: {
+            id: "1725442918231",
+            username: "owner",
+            fullName: "Downtown Cafe Owner",
+            role: "OWNER"
+          },
+          store: {
+            cafeCode: "CF-MUM-001",
+            businessName: "Downtown Brew & Bites",
+            currencySymbol: "₹",
+            receiptFooter: "Thank you for visiting! Please visit again."
+          },
+          license: {
+            planCode: "GOLD_DINE_IN",
+            expiresAt: "2026-12-31T23:59:59.000Z",
+            daysRemaining: 118,
+            allowedModules: ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY", "GDRIVE_BACKUP"],
+            status: "ACTIVE"
+          }
+        },
+        errorResponses: [
+          { status: 401, desc: "Invalid PIN or credentials." },
+          { status: 403, desc: "STORE_NOT_ACTIVATED: Store is not yet activated with Master License Key." },
+          { status: 403, desc: "CLOCK_TAMPERING_DETECTED: System clock is set behind last known transaction time." },
+          { status: 403, desc: "LICENSE_EXPIRED: Trial/License period has ended. Store renewal required." }
+        ]
+      },
+      {
+        id: "auth-logout",
+        module: "auth",
+        moduleTitle: "Authentication & Staff Management",
+        title: "Staff Session Logout",
+        method: "POST",
+        path: "/auth/logout",
+        server: "http://localhost:3000",
+        what: "Clears the active session cookie (pos_jwt_token) from the client browser or terminal, securely terminating the staff operator's session.",
+        why: "Essential when shift changes occur or when a shared counter terminal is locked during downtime.",
+        headers: [
+          { name: "Content-Type", value: "application/json", required: true, desc: "Standard JSON header" }
+        ],
+        params: [],
+        payload: {},
+        responseStatus: 200,
+        response: {
+          success: true,
+          message: "Logged out successfully"
+        }
+      },
+      {
+        id: "auth-me",
+        module: "auth",
+        moduleTitle: "Authentication & Staff Management",
+        title: "Get Current Operator Profile",
+        method: "GET",
+        path: "/auth/me",
+        server: "http://localhost:3000",
+        what: "Decodes the active operator session from the HTTP-only cookie pos_jwt_token or Authorization header, returning staff identity, assigned role, cafe code, and module privileges.",
+        why: "Used on page reloads or terminal wakeups by the frontend to restore active operator permissions without re-prompting for credentials.",
+        headers: [
+          { name: "Authorization", value: "Bearer <token>", required: false, desc: "Optional if cookie is present" }
+        ],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          sub: "1725442918231",
+          username: "cashier1",
+          fullName: "Counter Cashier",
+          role: "CASHIER",
+          cafeCode: "CF-MUM-001",
+          businessName: "Downtown Brew & Bites",
+          allowedModules: ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY"],
+          iat: 1725442920,
+          exp: 1725486120
+        }
+      },
+      {
+        id: "auth-get-staff",
+        module: "auth",
+        moduleTitle: "Authentication & Staff Management",
+        title: "List Staff Members for Quick PIN Switch",
+        method: "GET",
+        path: "/auth/staff",
+        server: "http://localhost:3000",
+        what: "Retrieves all active staff accounts registered on the local POS (Owner, Cashiers, Waiters, Kitchen staff) without exposing their PIN hashes.",
+        why: "Enables the fast staff switcher UI on the POS screen where cashiers simply tap their avatar/name and enter their 4-digit PIN.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          { id: "1725442918231", username: "owner", fullName: "Store Owner", role: "OWNER", createdAt: "2026-09-01T10:00:00.000Z" },
+          { id: "1725442918232", username: "cashier1", fullName: "Counter Cashier", role: "CASHIER", createdAt: "2026-09-01T10:00:00.000Z" },
+          { id: "1725442918233", username: "waiter1", fullName: "Floor Waiter", role: "WAITER", createdAt: "2026-09-01T10:00:00.000Z" }
+        ]
+      },
+      {
+        id: "auth-create-staff",
+        module: "auth",
+        moduleTitle: "Authentication & Staff Management",
+        title: "Create Staff Member",
+        method: "POST",
+        path: "/auth/staff",
+        server: "http://localhost:3000",
+        what: "Registers a new staff member with full name, role (CASHIER, WAITER, KITCHEN), and generates a secure PBKDF2 hash of their 4-digit PIN.",
+        why: "Allows cafe owners to onboard new servers, seasonal cashiers, and kitchen dispatchers directly on the offline POS without needing cloud access.",
+        headers: [
+          { name: "Content-Type", value: "application/json", required: true, desc: "JSON body" }
+        ],
+        params: [],
+        payload: {
+          username: "waiter2",
+          fullName: "Rahul Sharma",
+          pin: "3344",
+          role: "WAITER"
+        },
+        responseStatus: 201,
+        response: {
+          id: "1725443819001",
+          username: "waiter2",
+          fullName: "Rahul Sharma",
+          role: "WAITER"
+        }
+      },
+
+      // ---------------- ORDERS & POS BILLING ----------------
+      {
+        id: "order-create",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        moduleDesc: "Atomic transaction billing engine that writes customer orders, calculates taxes, updates table states, and auto-deducts inventory raw ingredients according to recipes.",
+        title: "Place New Order & Auto-Deduct Inventory",
+        method: "POST",
+        path: "/order",
+        server: "http://localhost:3000",
+        what: "Executes a database transaction: 1) Creates the master order with payment method, subtotal, taxes, and total. 2) Inserts all item line records with price snapshot. 3) Finds recipes for every menu item, calculates ingredient quantities, decrements raw material inventory stock, flags low-stock warnings, and writes audit records to InventoryHistory.",
+        why: "The core revenue operation of any QSR. Automates the linkage between food sales and raw ingredient shrinkage without requiring kitchen staff to manually log stock decrements.",
+        headers: [
+          { name: "Content-Type", value: "application/json", required: true, desc: "JSON body" }
+        ],
+        params: [],
+        payload: {
+          paymentMethod: "UPI",
+          subtotal: 350.0,
+          tax: 17.5,
+          total: 367.5,
+          items: [
+            { id: 1, menuItemId: 1, quantity: 2, price: 150.0 },
+            { id: 4, menuItemId: 4, quantity: 1, price: 50.0 }
+          ]
+        },
+        responseStatus: 201,
+        response: {
+          id: 1042,
+          date: "2026-09-04T17:20:00.000Z",
+          paymentMethod: "UPI",
+          subtotal: 350.0,
+          tax: 17.5,
+          total: 367.5,
+          status: "Completed",
+          items: [
+            { id: 2084, orderId: 1042, menuItemId: 1, quantity: 2, price: 150.0 },
+            { id: 2085, orderId: 1042, menuItemId: 4, quantity: 1, price: 50.0 }
+          ]
+        },
+        errorResponses: [
+          { status: 400, desc: "Order must contain items array." }
+        ]
+      },
+      {
+        id: "order-list",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "List All Past Orders (Desc)",
+        method: "GET",
+        path: "/order",
+        server: "http://localhost:3000",
+        what: "Fetches orders in descending order by timestamp, including nested item lists and referenced menu item metadata.",
+        why: "Used by the POS order history screen, day-end summary reports, cashier settlement, and receipt reprint views.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          {
+            id: 1042,
+            date: "2026-09-04T17:20:00.000Z",
+            paymentMethod: "UPI",
+            subtotal: 350.0,
+            tax: 17.5,
+            total: 367.5,
+            status: "Completed",
+            items: [
+              {
+                id: 2084,
+                quantity: 2,
+                price: 150.0,
+                menuItem: { id: 1, name: "Classic Cheeseburger", price: 150.0 }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: "order-get-one",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "Get Order Receipt Details by ID",
+        method: "GET",
+        path: "/order/:id",
+        server: "http://localhost:3000",
+        what: "Retrieves complete invoice record for a specific order ID, including all items and current status.",
+        why: "Required for thermal receipt reprinting, customer disputes, and split-payment verification.",
+        headers: [],
+        params: [
+          { name: "id", type: "integer", required: true, desc: "Numeric Order ID (e.g. 1042)" }
+        ],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          id: 1042,
+          date: "2026-09-04T17:20:00.000Z",
+          paymentMethod: "UPI",
+          subtotal: 350.0,
+          tax: 17.5,
+          total: 367.5,
+          status: "Completed",
+          items: [
+            { id: 2084, quantity: 2, price: 150.0, menuItem: { id: 1, name: "Classic Cheeseburger", price: 150.0 } }
+          ]
+        }
+      },
+      {
+        id: "order-update",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "Update Order Status",
+        method: "PATCH",
+        path: "/order/:id",
+        server: "http://localhost:3000",
+        what: "Updates order attributes such as status ('Completed', 'Cancelled', 'Refunded') or payment notes.",
+        why: "Allows kitchen supervisors or managers to cancel voided tickets or mark delayed orders.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Order ID" }],
+        payload: {
+          status: "Cancelled"
+        },
+        responseStatus: 200,
+        response: {
+          id: 1042,
+          status: "Cancelled"
+        }
+      },
+      {
+        id: "order-delete",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "Delete Order Record",
+        method: "DELETE",
+        path: "/order/:id",
+        server: "http://localhost:3000",
+        what: "Permanently deletes an order record from the local database.",
+        why: "Reserved for store managers to clean up test or voided bills during system calibration.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Order ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 1042 }
+      },
+      {
+        id: "order-payment-add",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "Record Partial Payment / Installment",
+        method: "POST",
+        path: "/order/:id/payments",
+        server: "http://localhost:3000",
+        what: "Records a partial payment or advance installment towards an order. Decrements the remaining balance, sets order status to 'Partially Paid' (or 'Completed' if remaining balance reaches 0), and stores transaction metadata.",
+        why: "Essential for split tender (paying with cash + card/UPI), group bill splitting among guests, and table advance deposits.",
+        headers: [
+          { name: "Content-Type", value: "application/json", required: true, desc: "JSON body" }
+        ],
+        params: [
+          { name: "id", type: "integer", required: true, desc: "Order ID (e.g. 1042)" }
+        ],
+        payload: {
+          amount: 300.0,
+          paymentMethod: "Cash",
+          reference: "Tendered ₹500, change ₹200"
+        },
+        responseStatus: 201,
+        response: {
+          id: 501,
+          orderId: 1042,
+          amount: 300.0,
+          paymentMethod: "Cash",
+          reference: "Tendered ₹500, change ₹200",
+          date: "2026-09-04T17:40:00.000Z",
+          orderSummary: {
+            total: 610.0,
+            paidAmount: 300.0,
+            balanceAmount: 310.0,
+            status: "Partially Paid"
+          }
+        },
+        errorResponses: [
+          { status: 400, desc: "Payment amount cannot exceed remaining balance." },
+          { status: 404, desc: "Order not found." }
+        ]
+      },
+      {
+        id: "order-payment-list",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "Get Payment Ledger & Installments for Order",
+        method: "GET",
+        path: "/order/:id/payments",
+        server: "http://localhost:3000",
+        what: "Fetches all recorded payment transactions for an order with total paid, remaining balance, and audit timestamps.",
+        why: "Used by the POS settlement modal, table running bill audit, and thermal receipt print engine to render multi-tender breakdown.",
+        headers: [],
+        params: [
+          { name: "id", type: "integer", required: true, desc: "Order ID (e.g. 1042)" }
+        ],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          orderId: 1042,
+          total: 610.0,
+          paidAmount: 300.0,
+          balanceAmount: 310.0,
+          status: "Partially Paid",
+          payments: [
+            {
+              id: 501,
+              amount: 300.0,
+              paymentMethod: "Cash",
+              reference: "Tendered ₹500, change ₹200",
+              date: "2026-09-04T17:40:00.000Z"
+            }
+          ]
+        }
+      },
+      {
+        id: "order-payment-delete",
+        module: "orders",
+        moduleTitle: "Orders & POS Billing",
+        title: "Void / Revert Payment Installment",
+        method: "DELETE",
+        path: "/order/:id/payments/:paymentId",
+        server: "http://localhost:3000",
+        what: "Voids a payment installment that was entered in error before final check settlement, restoring the remaining balance due.",
+        why: "Allows cashiers to correct mistyped cash tender or declined UPI transactions without having to cancel the entire order.",
+        headers: [],
+        params: [
+          { name: "id", type: "integer", required: true, desc: "Order ID" },
+          { name: "paymentId", type: "integer", required: true, desc: "Payment ID to void" }
+        ],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          success: true,
+          message: "Payment installment #501 voided successfully.",
+          orderSummary: {
+            total: 610.0,
+            paidAmount: 0.0,
+            balanceAmount: 610.0,
+            status: "Unpaid"
+          }
+        }
+      },
+
+      // ---------------- MENU & RECIPES ----------------
+      {
+        id: "menu-list",
+        module: "menu",
+        moduleTitle: "Menu & Recipe Management",
+        moduleDesc: "Complete catalog of food and beverage items, dish modifiers, recipe ingredient consumption ratios, and multi-tier tax configurations.",
+        title: "List All Menu Items with Recipes & Taxes",
+        method: "GET",
+        path: "/menu",
+        server: "http://localhost:3000",
+        what: "Returns the full active menu list enriched with parent Category details, Recipe Ingredients (inventory bindings + unit amounts), and Item Tax breakdown (CGST/SGST/VAT).",
+        why: "Powers the POS billing grid, waiter mobile ordering catalog, and QR digital menu display.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          {
+            id: 1,
+            name: "Classic Cheeseburger",
+            description: "Grilled patty with melted cheddar",
+            imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd",
+            price: 150.0,
+            tax: 5.0,
+            prepTime: 12,
+            isAvailable: true,
+            type: "Non-Veg",
+            status: "Active",
+            categoryId: 2,
+            category: { id: 2, name: "Burgers" },
+            ingredients: [
+              { name: "Burger Buns", quantity: "1", unit: "pcs" },
+              { name: "Cheese Slices", quantity: "1", unit: "pcs" }
+            ],
+            taxes: [
+              { id: 1, name: "CGST", rate: 2.5 },
+              { id: 2, name: "SGST", rate: 2.5 }
+            ]
+          }
+        ]
+      },
+      {
+        id: "menu-create",
+        module: "menu",
+        moduleTitle: "Menu & Recipe Management",
+        title: "Create Menu Item with Recipe Ingredients & Taxes",
+        method: "POST",
+        path: "/menu",
+        server: "http://localhost:3000",
+        what: "Creates a new food item, links it to its category by name or ID, binds recipe ingredients (auto-creates raw inventory items if they don't exist yet), and sets item-specific tax components.",
+        why: "Enables chefs and managers to configure complex dishes with automatic inventory subtraction formulas right from the menu management screen.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          name: "Peri Peri Fries",
+          description: "Crispy french fries tossed in spicy peri peri mix",
+          category: "Starters",
+          price: 110.0,
+          tax: 5.0,
+          prepTime: 8,
+          type: "Veg",
+          image: "https://images.unsplash.com/photo-1576107232684-1279f3908594",
+          ingredients: [
+            { name: "Potato Fries (Frozen)", quantity: "0.200", unit: "kg" },
+            { name: "Peri Peri Seasoning", quantity: "0.015", unit: "kg" }
+          ],
+          taxes: [
+            { name: "CGST", rate: 2.5 },
+            { name: "SGST", rate: 2.5 }
+          ]
+        },
+        responseStatus: 201,
+        response: {
+          id: 15,
+          name: "Peri Peri Fries",
+          price: 110.0,
+          categoryId: 3,
+          isAvailable: true,
+          type: "Veg",
+          prepTime: 8
+        }
+      },
+      {
+        id: "menu-get-one",
+        module: "menu",
+        moduleTitle: "Menu & Recipe Management",
+        title: "Get Menu Item Details by ID",
+        method: "GET",
+        path: "/menu/:id",
+        server: "http://localhost:3000",
+        what: "Returns details of a specific dish item.",
+        why: "Used for item edit forms and nutrition/allergen dialogs.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Menu Item ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 1, name: "Classic Cheeseburger", price: 150.0 }
+      },
+      {
+        id: "menu-update",
+        module: "menu",
+        moduleTitle: "Menu & Recipe Management",
+        title: "Update Menu Item, Pricing & Recipe",
+        method: "PATCH",
+        path: "/menu/:id",
+        server: "http://localhost:3000",
+        what: "Updates dish attributes, toggles availability (e.g. 86 / Sold Out), rewrites recipe ingredient linkages, and recalibrates tax rates.",
+        why: "Critical for day-to-day kitchen operations when ingredients run out or prices change dynamically.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Menu Item ID" }],
+        payload: {
+          price: 120.0,
+          available: false
+        },
+        responseStatus: 200,
+        response: {
+          id: 15,
+          price: 120.0,
+          isAvailable: false
+        }
+      },
+      {
+        id: "menu-delete",
+        module: "menu",
+        moduleTitle: "Menu & Recipe Management",
+        title: "Delete Menu Item",
+        method: "DELETE",
+        path: "/menu/:id",
+        server: "http://localhost:3000",
+        what: "Cascades deletion across RecipeIngredient and ItemTax rows, and removes the menu item from the catalog.",
+        why: "Ensures orphan links are cleaned up when an obsolete dish is permanently discontinued.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Menu Item ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 15 }
+      },
+
+      // ---------------- CATEGORIES ----------------
+      {
+        id: "cat-list",
+        module: "categories",
+        moduleTitle: "Menu Categories",
+        moduleDesc: "Grouping taxonomy for menu items (Beverages, Burgers, Combos, Desserts) with custom display sequence ordering.",
+        title: "List Categories (Sorted by Display Order)",
+        method: "GET",
+        path: "/category",
+        server: "http://localhost:3000",
+        what: "Returns all categories ordered by displayOrder ascending.",
+        why: "Arranges the top category tabs on the billing terminal in the cafe's preferred sales order.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          { id: 1, name: "Beverages", description: "Hot & Cold Coffee, Teas, Coolers", displayOrder: 1, status: "Active" },
+          { id: 2, name: "Burgers", description: "Gourmet brioche burgers", displayOrder: 2, status: "Active" },
+          { id: 3, name: "Desserts", description: "Cakes, pastries, waffles", displayOrder: 3, status: "Active" }
+        ]
+      },
+      {
+        id: "cat-create",
+        module: "categories",
+        moduleTitle: "Menu Categories",
+        title: "Create Menu Category",
+        method: "POST",
+        path: "/category",
+        server: "http://localhost:3000",
+        what: "Inserts a new unique category with description and display ranking.",
+        why: "Allows introducing new food lines such as Seasonal Specials or Breakfast Combos.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          name: "Pizzas",
+          description: "Wood-fired thin crust pizzas",
+          displayOrder: 4,
+          status: "Active"
+        },
+        responseStatus: 201,
+        response: {
+          id: 4,
+          name: "Pizzas",
+          description: "Wood-fired thin crust pizzas",
+          displayOrder: 4,
+          status: "Active"
+        }
+      },
+      {
+        id: "cat-update",
+        module: "categories",
+        moduleTitle: "Menu Categories",
+        title: "Update Category Details",
+        method: "PATCH",
+        path: "/category/:id",
+        server: "http://localhost:3000",
+        what: "Updates category name, description, or sequence order.",
+        why: "Re-organize menus according to seasonal shifts.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Category ID" }],
+        payload: { displayOrder: 1 },
+        responseStatus: 200,
+        response: { id: 4, displayOrder: 1 }
+      },
+      {
+        id: "cat-delete",
+        module: "categories",
+        moduleTitle: "Menu Categories",
+        title: "Delete Category",
+        method: "DELETE",
+        path: "/category/:id",
+        server: "http://localhost:3000",
+        what: "Removes category record.",
+        why: "Pruning unused category groupings.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Category ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: null
+      },
+
+      // ---------------- ADDONS ----------------
+      {
+        id: "addon-list",
+        module: "addons",
+        moduleTitle: "Add-ons & Modifiers",
+        moduleDesc: "Upsell items, extra cheese, shot of espresso, dips, and toppings applicable to dishes.",
+        title: "List All Add-ons & Modifiers",
+        method: "GET",
+        path: "/addon",
+        server: "http://localhost:3000",
+        what: "Returns all addons with pricing and descriptions.",
+        why: "Populates the add-on modal when a cashier or customer taps a dish to customize toppings or sizes.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          { id: 1, name: "Extra Cheddar Cheese", description: "Melted aged cheese slice", price: 30.0 },
+          { id: 2, name: "Espresso Shot", description: "Dark roast double espresso", price: 40.0 },
+          { id: 3, name: "Truffle Mayo Dip", description: "Creamy truffle infused dip", price: 25.0 }
+        ]
+      },
+      {
+        id: "addon-create",
+        module: "addons",
+        moduleTitle: "Add-ons & Modifiers",
+        title: "Create New Addon / Modifier",
+        method: "POST",
+        path: "/addon",
+        server: "http://localhost:3000",
+        what: "Saves a new addon with name and price.",
+        why: "Expands customization options to increase Average Order Value (AOV).",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          name: "Jalapeno Poppers (3 pcs)",
+          description: "Side modifier add-on",
+          price: 50.0
+        },
+        responseStatus: 201,
+        response: {
+          id: 4,
+          name: "Jalapeno Poppers (3 pcs)",
+          description: "Side modifier add-on",
+          price: 50.0
+        }
+      },
+      {
+        id: "addon-update",
+        module: "addons",
+        moduleTitle: "Add-ons & Modifiers",
+        title: "Update Addon",
+        method: "PATCH",
+        path: "/addon/:id",
+        server: "http://localhost:3000",
+        what: "Updates addon price, title or description.",
+        why: "Modify add-on pricing to reflect fluctuating commodity costs.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Addon ID" }],
+        payload: { price: 60.0 },
+        responseStatus: 200,
+        response: { id: 4, price: 60.0 }
+      },
+      {
+        id: "addon-delete",
+        module: "addons",
+        moduleTitle: "Add-ons & Modifiers",
+        title: "Delete Addon",
+        method: "DELETE",
+        path: "/addon/:id",
+        server: "http://localhost:3000",
+        what: "Deletes an addon.",
+        why: "Discontinue unpopular or out-of-stock modifier items.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Addon ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 4 }
+      },
+
+      // ---------------- INVENTORY ----------------
+      {
+        id: "inv-list",
+        module: "inventory",
+        moduleTitle: "Inventory & Stock Tracking",
+        moduleDesc: "Real-time stock monitoring of raw ingredients (kg, L, pcs), low stock threshold alerts, and audit history logs.",
+        title: "List Inventory Items with Stock History",
+        method: "GET",
+        path: "/inventory",
+        server: "http://localhost:3000",
+        what: "Returns all raw material items, current stock, minimum threshold limits, health status ('Good' vs 'Low Stock'), and historical change logs.",
+        why: "Allows kitchen managers and store owners to prevent stockouts of critical ingredients like milk, buns, and coffee beans.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          {
+            id: 1,
+            item: "Burger Buns",
+            unit: "pcs",
+            stock: 48.0,
+            threshold: 20.0,
+            status: "Good",
+            history: [
+              { id: 101, date: "2026-09-04T12:00:00.000Z", change: "+50", type: "Restock Shipment" },
+              { id: 102, date: "2026-09-04T17:20:00.000Z", change: "-2", type: "Order #1042" }
+            ]
+          },
+          {
+            id: 2,
+            item: "Whole Milk",
+            unit: "L",
+            stock: 4.5,
+            threshold: 10.0,
+            status: "Low Stock",
+            history: []
+          }
+        ]
+      },
+      {
+        id: "inv-create",
+        module: "inventory",
+        moduleTitle: "Inventory & Stock Tracking",
+        title: "Add New Raw Material / Inventory Item",
+        method: "POST",
+        path: "/inventory",
+        server: "http://localhost:3000",
+        what: "Registers a new raw ingredient with measuring units, opening balance, and low-stock warning threshold.",
+        why: "Essential before linking new ingredients to menu item recipes.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          item: "Espresso Beans (Dark Roast)",
+          unit: "kg",
+          stock: 15.0,
+          threshold: 3.0,
+          status: "Good"
+        },
+        responseStatus: 201,
+        response: {
+          id: 8,
+          name: "Espresso Beans (Dark Roast)",
+          unit: "kg",
+          stock: 15.0,
+          threshold: 3.0,
+          status: "Good"
+        }
+      },
+      {
+        id: "inv-get-one",
+        module: "inventory",
+        moduleTitle: "Inventory & Stock Tracking",
+        title: "Get Inventory Item Details",
+        method: "GET",
+        path: "/inventory/:id",
+        server: "http://localhost:3000",
+        what: "Retrieves single raw material balance and logs.",
+        why: "Individual item stock count inspection.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Inventory ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 8, name: "Espresso Beans", stock: 15.0, threshold: 3.0 }
+      },
+      {
+        id: "inv-update",
+        module: "inventory",
+        moduleTitle: "Inventory & Stock Tracking",
+        title: "Adjust Stock Quantity & Log History",
+        method: "PATCH",
+        path: "/inventory/:id",
+        server: "http://localhost:3000",
+        what: "Updates item stock, automatically recalculates 'Good' or 'Low Stock' status, and if stock changed, automatically generates an audit record in InventoryHistory labeled 'Manual Adjustment'.",
+        why: "Used during shift-end physical inventory counts, wastage adjustments, or when vendor delivery arrived.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Inventory ID" }],
+        payload: {
+          stock: 25.0,
+          threshold: 3.0
+        },
+        responseStatus: 200,
+        response: {
+          id: 8,
+          stock: 25.0,
+          threshold: 3.0,
+          status: "Good"
+        }
+      },
+      {
+        id: "inv-delete",
+        module: "inventory",
+        moduleTitle: "Inventory & Stock Tracking",
+        title: "Delete Inventory Item",
+        method: "DELETE",
+        path: "/inventory/:id",
+        server: "http://localhost:3000",
+        what: "Removes inventory item.",
+        why: "Prune discontinued raw items.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Inventory ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 8 }
+      },
+
+      // ---------------- DINING AREAS ----------------
+      {
+        id: "area-list",
+        module: "areas",
+        moduleTitle: "Dining Areas",
+        moduleDesc: "Floor layout zoning (AC Dining Hall, Rooftop, Terrace, Garden, Counter Express) with nested table relationships.",
+        title: "List Dining Areas with Tables",
+        method: "GET",
+        path: "/area",
+        server: "http://localhost:3000",
+        what: "Retrieves all dining sections along with the array of tables positioned inside each section.",
+        why: "Renders the visual table layout map on waiter handhelds and cashier screens to allocate guests.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          {
+            id: 1,
+            name: "Main AC Dining",
+            description: "Ground floor main seating",
+            tables: [
+              { id: 1, name: "Table T-1", seats: 4, status: "Occupied" },
+              { id: 2, name: "Table T-2", seats: 2, status: "Available" }
+            ]
+          },
+          {
+            id: 2,
+            name: "Rooftop Garden",
+            description: "Open air terrace section",
+            tables: [
+              { id: 5, name: "Table R-1", seats: 6, status: "Available" }
+            ]
+          }
+        ]
+      },
+      {
+        id: "area-create",
+        module: "areas",
+        moduleTitle: "Dining Areas",
+        title: "Create Dining Area / Section",
+        method: "POST",
+        path: "/area",
+        server: "http://localhost:3000",
+        what: "Creates a new named dining zone.",
+        why: "Allows multi-floor cafes to segment table service and assign specific waitstaff.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          name: "Mezzanine Floor",
+          description: "Private lounge area"
+        },
+        responseStatus: 201,
+        response: {
+          id: 3,
+          name: "Mezzanine Floor",
+          description: "Private lounge area"
+        }
+      },
+      {
+        id: "area-update",
+        module: "areas",
+        moduleTitle: "Dining Areas",
+        title: "Update Dining Area",
+        method: "PATCH",
+        path: "/area/:id",
+        server: "http://localhost:3000",
+        what: "Updates area naming or description.",
+        why: "Floor layout remodeling.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Area ID" }],
+        payload: { name: "VIP Lounge" },
+        responseStatus: 200,
+        response: { id: 3, name: "VIP Lounge" }
+      },
+      {
+        id: "area-delete",
+        module: "areas",
+        moduleTitle: "Dining Areas",
+        title: "Delete Dining Area",
+        method: "DELETE",
+        path: "/area/:id",
+        server: "http://localhost:3000",
+        what: "Deletes an area.",
+        why: "Removing closed sections.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Area ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 3 }
+      },
+
+      // ---------------- TABLES ----------------
+      {
+        id: "table-list",
+        module: "tables",
+        moduleTitle: "Tables Management",
+        moduleDesc: "Real-time table occupancy, seating capacity, and area assignments.",
+        title: "List Tables with Area Details",
+        method: "GET",
+        path: "/table",
+        server: "http://localhost:3000",
+        what: "Returns all dining tables with current occupancy status ('Available', 'Occupied', 'Billed', 'Reserved') and parent Area.",
+        why: "Drives table selection on the POS screen before placing dine-in orders.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          { id: 1, name: "T-01", seats: 4, status: "Available", areaId: 1, area: { id: 1, name: "Main AC Dining" } },
+          { id: 2, name: "T-02", seats: 2, status: "Occupied", areaId: 1, area: { id: 1, name: "Main AC Dining" } }
+        ]
+      },
+      {
+        id: "table-create",
+        module: "tables",
+        moduleTitle: "Tables Management",
+        title: "Create Table",
+        method: "POST",
+        path: "/table",
+        server: "http://localhost:3000",
+        what: "Adds a table to an area with seat capacity and initial status.",
+        why: "Configure dining hall tables during onboarding.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          name: "T-03",
+          seats: 6,
+          areaId: 1,
+          status: "Available"
+        },
+        responseStatus: 201,
+        response: {
+          id: 3,
+          name: "T-03",
+          seats: 6,
+          status: "Available",
+          areaId: 1
+        }
+      },
+      {
+        id: "table-update",
+        module: "tables",
+        moduleTitle: "Tables Management",
+        title: "Update Table Status / Seats",
+        method: "PATCH",
+        path: "/table/:id",
+        server: "http://localhost:3000",
+        what: "Updates table status ('Available', 'Occupied', 'Cleaning') or reallocates seats.",
+        why: "Syncs table occupancy when guests sit down or settle their bill.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "integer", required: true, desc: "Table ID" }],
+        payload: { status: "Occupied" },
+        responseStatus: 200,
+        response: { id: 3, status: "Occupied" }
+      },
+      {
+        id: "table-delete",
+        module: "tables",
+        moduleTitle: "Tables Management",
+        title: "Delete Table",
+        method: "DELETE",
+        path: "/table/:id",
+        server: "http://localhost:3000",
+        what: "Removes table from floor layout.",
+        why: "Removing broken or dismantled tables.",
+        headers: [],
+        params: [{ name: "id", type: "integer", required: true, desc: "Table ID" }],
+        payload: null,
+        responseStatus: 200,
+        response: { id: 3 }
+      },
+
+      // ---------------- OFFLINE LICENSING ----------------
+      {
+        id: "lic-activate",
+        module: "license",
+        moduleTitle: "Offline Licensing & Activation",
+        moduleDesc: "Cryptographic HMAC-SHA256 offline licensing engine. Activates local store profile, provisions owner accounts, and unlocks module permissions without cloud calls.",
+        title: "Activate Store via Offline Cryptographic License",
+        method: "POST",
+        path: "/license/activate",
+        server: "http://localhost:3000",
+        what: "1) Verifies the license key offline against the cafe code using HMAC-SHA256 mathematical signature. 2) Upserts StoreProfile with business details. 3) Records LocalLicense with duration, expiry date, and module permissions (COUNTER_POS, TABLE_POS, KDS, INVENTORY, GDRIVE_BACKUP). 4) Generates Master Store Owner account with custom PIN, plus default cashier & waiter accounts.",
+        why: "Enables cafe onboarding in remote areas or basement food courts with zero internet access. No monthly cloud validation ping required.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          cafeCode: "CF-MUM-001",
+          licenseKey: "LIC-CFMUM001-90D-89B24C797D9EE8EF.eyJjYWZlQ29kZSI6IkNGLU1VTS0wMDEiLCJidXNpbmVzc05hbWUiOiJEb3dudG93biBCcmV3ICYgQml0ZXMiLCJwbGFuQ29kZSI6IkdPTERfRElORV9JTiIsImlzc3VlZEF0IjoiMjAyNi0wOS0wMSIsImR1cmF0aW9uRGF5cyI6OTAsIm1heFRlcm1pbmFscyI6MTAsIm1vZHVsZXMiOlsicG9zIiwia2RzIiwiaW52ZW50b3J5Il19.98a4bc882e",
+          ownerPin: "1234",
+          ownerPassword: "adminPassword123",
+          ownerName: "Downtown Cafe Owner",
+          phone: "9876543210",
+          city: "Mumbai",
+          state: "Maharashtra"
+        },
+        responseStatus: 201,
+        response: {
+          success: true,
+          message: "Store 'Downtown Brew & Bites' (CF-MUM-001) activated successfully!",
+          store: {
+            cafeCode: "CF-MUM-001",
+            businessName: "Downtown Brew & Bites",
+            isActivated: true
+          },
+          license: {
+            planCode: "GOLD_DINE_IN",
+            durationDays: 90,
+            expiresAt: "2026-11-30T23:59:59.000Z",
+            daysRemaining: 87,
+            allowedModules: ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY"],
+            status: "ACTIVE"
+          },
+          owner: {
+            username: "owner",
+            role: "OWNER",
+            defaultPin: "1234"
+          }
+        },
+        errorResponses: [
+          { status: 400, desc: "Invalid license token or signature mismatch for this Cafe Code." }
+        ]
+      },
+      {
+        id: "lic-status",
+        module: "license",
+        moduleTitle: "Offline Licensing & Activation",
+        title: "Get Local License Health & Clock Integrity",
+        method: "GET",
+        path: "/license/status",
+        server: "http://localhost:3000",
+        what: "Returns store activation status, plan tier, days remaining before expiry, and whether the license is expiring soon (<= 15 days). Also detects system clock manipulations.",
+        why: "Displayed in the POS top navigation bar to alert the owner to renew their license before billing freezes.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          isActivated: true,
+          store: {
+            cafeCode: "CF-MUM-001",
+            businessName: "Downtown Brew & Bites",
+            phone: "9876543210"
+          },
+          license: {
+            planCode: "GOLD_DINE_IN",
+            durationDays: 90,
+            expiresAt: "2026-11-30T23:59:59.000Z",
+            daysRemaining: 87,
+            isExpired: false,
+            isExpiringSoon: false,
+            allowedModules: ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY"],
+            status: "ACTIVE"
+          }
+        }
+      },
+      {
+        id: "lic-renew",
+        module: "license",
+        moduleTitle: "Offline Licensing & Activation",
+        title: "Renew Store License with New Key",
+        method: "POST",
+        path: "/license/renew",
+        server: "http://localhost:3000",
+        what: "Verifies newly issued renewal license key and extends validity by the specified duration without resetting local store data.",
+        why: "Seamless extension of POS operations after paying franchise / subscription renewal fee.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          licenseKey: "LIC-CFMUM001-365D-RENEWAL-KEY-STRING..."
+        },
+        responseStatus: 201,
+        response: {
+          success: true,
+          message: "License renewed successfully for Downtown Brew & Bites! Valid until 2027-11-30.",
+          license: {
+            durationDays: 365,
+            daysRemaining: 365,
+            status: "ACTIVE"
+          }
+        }
+      },
+
+      // ---------------- SETTINGS & STORE PROFILE ----------------
+      {
+        id: "set-get-config",
+        module: "settings",
+        moduleTitle: "Store Settings & Brand Profile",
+        moduleDesc: "Terminal configuration key-values, GST numbers, thermal printer IP addresses, and receipt footer branding.",
+        title: "Get Key-Value System Settings",
+        method: "GET",
+        path: "/setting",
+        server: "http://localhost:3000",
+        what: "Returns dictionary of all system configuration flags.",
+        why: "Loads printer IP, tax presets, sound effects, and KDS auto-refresh intervals.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          printer_ip: "192.168.1.150",
+          printer_type: "ESC/POS Thermal 80mm",
+          kds_sound_alert: "true",
+          auto_roundoff: "true",
+          default_order_type: "Dine-In"
+        }
+      },
+      {
+        id: "set-save-config",
+        module: "settings",
+        moduleTitle: "Store Settings & Brand Profile",
+        title: "Save Key-Value Settings",
+        method: "POST",
+        path: "/setting",
+        server: "http://localhost:3000",
+        what: "Upserts multiple configuration key-values.",
+        why: "Modifies hardware and interface settings.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          printer_ip: "192.168.1.155",
+          kds_sound_alert: "false"
+        },
+        responseStatus: 201,
+        response: { success: true }
+      },
+      {
+        id: "set-get-profile",
+        module: "settings",
+        moduleTitle: "Store Settings & Brand Profile",
+        title: "Get Store Brand Profile & Legal Info",
+        method: "GET",
+        path: "/setting/profile",
+        server: "http://localhost:3000",
+        what: "Retrieves complete store legal entity details, GSTIN, address, currency symbol, and receipt footer.",
+        why: "Formatted onto invoice receipts and tax compliance reports.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          id: "1725442900",
+          cafeCode: "CF-MUM-001",
+          businessName: "Downtown Brew & Bites",
+          ownerName: "Downtown Cafe Owner",
+          phone: "9876543210",
+          email: "owner@downtowncafe.in",
+          city: "Mumbai",
+          state: "Maharashtra",
+          address: "Shop 4, Bandra West, Mumbai 400050",
+          gstin: "27AADCB2230M1Z2",
+          currencySymbol: "₹",
+          receiptFooter: "Thank you for dining with us! Follow @downtowncafe on IG.",
+          isActivated: true
+        }
+      },
+      {
+        id: "set-update-profile",
+        module: "settings",
+        moduleTitle: "Store Settings & Brand Profile",
+        title: "Update Store Brand Profile",
+        method: "POST",
+        path: "/setting/profile",
+        server: "http://localhost:3000",
+        what: "Updates business name, phone, GSTIN, address, and receipt branding.",
+        why: "Keep printed invoices compliant with changing tax legislation and business contact details.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          gstin: "27AADCB2230M1Z5",
+          receiptFooter: "Happy Dining! Visit us at www.downtowncafe.in"
+        },
+        responseStatus: 201,
+        response: {
+          success: true,
+          store: {
+            businessName: "Downtown Brew & Bites",
+            gstin: "27AADCB2230M1Z5",
+            receiptFooter: "Happy Dining! Visit us at www.downtowncafe.in"
+          }
+        }
+      },
+
+      // ---------------- SYSTEM HEALTH & DB INIT ----------------
+      {
+        id: "sys-ping",
+        module: "system",
+        moduleTitle: "Health & DB Init",
+        moduleDesc: "Low-level system health monitoring and demo data initialization utilities.",
+        title: "System Heartbeat & Ping",
+        method: "GET",
+        path: "/",
+        server: "http://localhost:3000",
+        what: "Returns standard hello greeting string indicating the NestJS server is listening.",
+        why: "Used by local network ping monitors and load balancers to detect backend uptime.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: "Hello World!"
+      },
+      {
+        id: "sys-init",
+        module: "system",
+        moduleTitle: "Health & DB Init",
+        title: "Reset & Seed Demo Database",
+        method: "POST",
+        path: "/init",
+        server: "http://localhost:3000",
+        what: "Reseeds database tables with standard categories (Burgers, Beverages), sample dishes, default areas, and initial raw inventory.",
+        why: "Assists new franchisees and testers in evaluating the POS with realistic pre-populated data.",
+        headers: [],
+        params: [],
+        payload: {},
+        responseStatus: 201,
+        response: {
+          success: true,
+          message: "Database initialized with sample QSR catalog."
+        }
+      },
+
+      // ---------------- SUPPORT PLATFORM: FRANCHISE CAFES ----------------
+      {
+        id: "sup-cafes-list",
+        module: "support-cafes",
+        moduleTitle: "Franchise Cafes (Support Platform)",
+        moduleDesc: "Cloud support platform APIs for software developers to manage client cafes, issue licenses, and monitor franchise network health.",
+        title: "Query & Filter Registered Cafes",
+        method: "GET",
+        path: "/cafes",
+        server: "http://localhost:3001/api",
+        what: "Returns all client cafe accounts with optional query filters for search query, license status (ACTIVE, EXPIRED, BLOCKED), and city.",
+        why: "Developer dashboard to track client onboarding, trial expirations, and active billing stores.",
+        headers: [],
+        params: [
+          { name: "search", type: "string", required: false, desc: "Filter by cafe code or business name" },
+          { name: "status", type: "string", required: false, desc: "Filter by ACTIVE, EXPIRED, BLOCKED" },
+          { name: "city", type: "string", required: false, desc: "Filter by city (e.g. Mumbai, Pune)" }
+        ],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          {
+            id: "cafe-101",
+            cafeCode: "CF-MUM-001",
+            businessName: "Downtown Brew & Bites",
+            ownerName: "Rahul Sharma",
+            phone: "9876543210",
+            city: "Mumbai",
+            status: "ACTIVE",
+            plan: { name: "Gold Dine-In", durationDays: 90 }
+          }
+        ]
+      },
+      {
+        id: "sup-cafes-register",
+        module: "support-cafes",
+        moduleTitle: "Franchise Cafes (Support Platform)",
+        title: "Register Cafe & Issue Master License Key",
+        method: "POST",
+        path: "/cafes/register",
+        server: "http://localhost:3001/api",
+        what: "Creates a cafe account on the Golden DB platform, binds chosen plan (duration & modules), and mathematically generates the signed cryptographic license string.",
+        why: "The primary step where the software vendor provisions a new cafe client and delivers their offline activation key via WhatsApp or email.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          businessName: "Bandra Cafe Corner",
+          ownerName: "Pooja Patel",
+          phone: "9820011223",
+          email: "pooja@bandracafe.com",
+          city: "Mumbai",
+          state: "Maharashtra",
+          planId: "plan-gold-90",
+          maxTerminals: 5
+        },
+        responseStatus: 201,
+        response: {
+          success: true,
+          cafe: {
+            id: "cafe-102",
+            cafeCode: "CF-MUM-002",
+            businessName: "Bandra Cafe Corner",
+            licenseKey: "LIC-CFMUM002-90D-9C21A4..."
+          }
+        }
+      },
+      {
+        id: "sup-cafes-renew",
+        module: "support-cafes",
+        moduleTitle: "Franchise Cafes (Support Platform)",
+        title: "Issue License Renewal for Cafe",
+        method: "POST",
+        path: "/cafes/:id/renew",
+        server: "http://localhost:3001/api",
+        what: "Generates a renewed cryptographic license key for an existing cafe upon receipt of subscription payment.",
+        why: "Enables continued offline usage for the client cafe for an additional 90/180/365 days.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "string", required: true, desc: "Cafe ID" }],
+        payload: {
+          planId: "plan-gold-365",
+          notes: "Annual renewal paid via Bank Transfer"
+        },
+        responseStatus: 201,
+        response: {
+          success: true,
+          renewalKey: "LIC-CFMUM001-365D-A81E99..."
+        }
+      },
+      {
+        id: "sup-cafes-toggle",
+        module: "support-cafes",
+        moduleTitle: "Franchise Cafes (Support Platform)",
+        title: "Remote Kill-switch (Block / Unblock Cafe)",
+        method: "POST",
+        path: "/cafes/:id/toggle-status",
+        server: "http://localhost:3001/api",
+        what: "Sets cafe status to 'BLOCKED' or 'ACTIVE' with an optional audit reason.",
+        why: "Protects against non-payment, dispute, or fraudulent license distribution.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [{ name: "id", type: "string", required: true, desc: "Cafe ID" }],
+        payload: {
+          action: "BLOCK",
+          reason: "Payment dispute pending verification"
+        },
+        responseStatus: 200,
+        response: { success: true, status: "BLOCKED" }
+      },
+      {
+        id: "sup-cafes-regen-key",
+        module: "support-cafes",
+        moduleTitle: "Franchise Cafes (Support Platform)",
+        title: "Regenerate Master License Key",
+        method: "POST",
+        path: "/cafes/:id/regenerate-key",
+        server: "http://localhost:3001/api",
+        what: "Recomputes a fresh HMAC license token for a store.",
+        why: "Required if a cafe owner lost their key before initial setup.",
+        headers: [],
+        params: [{ name: "id", type: "string", required: true, desc: "Cafe ID" }],
+        payload: {},
+        responseStatus: 200,
+        response: { success: true, licenseKey: "LIC-CFMUM001-FRESH-KEY..." }
+      },
+
+      // ---------------- SUPPORT PLATFORM: PLANS ----------------
+      {
+        id: "sup-plans-list",
+        module: "support-plans",
+        moduleTitle: "SaaS Plans (Support Platform)",
+        moduleDesc: "Tier packages configuring trial durations, allowed terminals, and module entitlements.",
+        title: "List All Subscription Plans",
+        method: "GET",
+        path: "/plans",
+        server: "http://localhost:3001/api",
+        what: "Returns all commercial plans (Trial 14-day, Silver Counter, Gold Dine-In, Diamond Multi-Terminal).",
+        why: "Powers plan selection during store registration.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: [
+          {
+            id: "plan-gold",
+            name: "Gold Dine-In",
+            code: "GOLD_DINE_IN",
+            durationDays: 90,
+            price: 4999.0,
+            maxTerminals: 10,
+            modules: ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY"]
+          }
+        ]
+      },
+      {
+        id: "sup-plans-create",
+        module: "support-plans",
+        moduleTitle: "SaaS Plans (Support Platform)",
+        title: "Create New Pricing Plan",
+        method: "POST",
+        path: "/plans",
+        server: "http://localhost:3001/api",
+        what: "Configures a new commercial plan tier with pricing and module flags.",
+        why: "Enables product managers to run promotional plans (e.g. 180 Days Festive Special).",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          name: "Annual Diamond Multi-Outlet",
+          code: "DIAMOND_ANNUAL",
+          durationDays: 365,
+          price: 14999.0,
+          maxTerminals: 25,
+          modules: ["COUNTER_POS", "TABLE_POS", "KDS", "INVENTORY", "GDRIVE_BACKUP", "ANALYTICS"]
+        },
+        responseStatus: 201,
+        response: { id: "plan-diamond", code: "DIAMOND_ANNUAL" }
+      },
+
+      // ---------------- SUPPORT PLATFORM: STATS & AUTH ----------------
+      {
+        id: "sup-stats-get",
+        module: "support-stats",
+        moduleTitle: "System Stats (Support Platform)",
+        moduleDesc: "Aggregated cloud telemetry and developer dashboard metrics.",
+        title: "Get Platform Dashboard Stats",
+        method: "GET",
+        path: "/stats",
+        server: "http://localhost:3001/api",
+        what: "Aggregates total active cafes, total subscriptions collected, expired stores, and total connected terminals.",
+        why: "Gives developer leadership an instant pulse on franchise revenue and retention.",
+        headers: [],
+        params: [],
+        payload: null,
+        responseStatus: 200,
+        response: {
+          totalCafes: 48,
+          activeLicenses: 42,
+          expiringSoon: 4,
+          expiredLicenses: 2,
+          totalTerminalsProvisioned: 135,
+          estimatedAnnualRunRate: "₹ 5,80,000"
+        }
+      },
+      {
+        id: "sup-auth-login",
+        module: "support-auth",
+        moduleTitle: "Superadmin Auth (Support Platform)",
+        moduleDesc: "Administrative authentication for vendor support staff.",
+        title: "Superadmin Login",
+        method: "POST",
+        path: "/auth/login",
+        server: "http://localhost:3001/api",
+        what: "Authenticates cloud support superadmin credentials.",
+        why: "Secures access to franchise database and master cryptographic salts.",
+        headers: [{ name: "Content-Type", value: "application/json", required: true, desc: "JSON" }],
+        params: [],
+        payload: {
+          username: "admin",
+          password: "super_secret_password"
+        },
+        responseStatus: 200,
+        response: {
+          token: "eyJhbGciOi...",
+          user: { username: "admin", role: "SUPERADMIN" }
+        }
+      }
+    ];
+
+    const moduleMetadata = {
+      "auth": { title: "Authentication & Staff Switching", icon: "fa-id-badge", color: "sky", server: "Local POS (:3000)" },
+      "orders": { title: "Orders & POS Billing Engine", icon: "fa-receipt", color: "amber", server: "Local POS (:3000)" },
+      "menu": { title: "Menu Items & Recipe Management", icon: "fa-burger", color: "rose", server: "Local POS (:3000)" },
+      "categories": { title: "Menu Categories", icon: "fa-layer-group", color: "purple", server: "Local POS (:3000)" },
+      "addons": { title: "Add-ons & Modifiers", icon: "fa-puzzle-piece", color: "cyan", server: "Local POS (:3000)" },
+      "inventory": { title: "Inventory & Stock Tracking", icon: "fa-boxes-stacked", color: "emerald", server: "Local POS (:3000)" },
+      "areas": { title: "Dining Areas & Zones", icon: "fa-map-location-dot", color: "indigo", server: "Local POS (:3000)" },
+      "tables": { title: "Dining Tables Management", icon: "fa-chair", color: "pink", server: "Local POS (:3000)" },
+      "license": { title: "Offline Cryptographic Licensing", icon: "fa-key", color: "yellow", server: "Local POS (:3000)" },
+      "settings": { title: "Store Settings & Brand Profile", icon: "fa-sliders", color: "teal", server: "Local POS (:3000)" },
+      "system": { title: "System Health & DB Reseed", icon: "fa-heart-pulse", color: "red", server: "Local POS (:3000)" },
+      "support-cafes": { title: "Franchise Cafes Management", icon: "fa-store", color: "purple", server: "Cloud Platform (:3001/api)" },
+      "support-plans": { title: "SaaS Subscription Plans", icon: "fa-tags", color: "indigo", server: "Cloud Platform (:3001/api)" },
+      "support-stats": { title: "Platform Analytics & Stats", icon: "fa-chart-pie", color: "cyan", server: "Cloud Platform (:3001/api)" },
+      "support-auth": { title: "Support Superadmin Auth", icon: "fa-user-shield", color: "emerald", server: "Cloud Platform (:3001/api)" }
+    };
+
+    let activeTabId = "overview";
+    let activeMethodFilter = "ALL";
+    let activeSearchQuery = "";
+
+    function generateCurl(item) {
+      let fullUrl = `${item.server}${item.path}`;
+      let cmd = `curl -X ${item.method} "${fullUrl}" \\\n`;
+      cmd += `  -H "Content-Type: application/json"`;
+      if (item.headers && item.headers.length > 0) {
+        item.headers.forEach(h => {
+          if (h.name !== "Content-Type") {
+            cmd += ` \\\n  -H "${h.name}: ${h.value}"`;
+          }
+        });
+      }
+      if (item.payload && item.method !== "GET" && item.method !== "DELETE") {
+        const bodyStr = JSON.stringify(item.payload, null, 2).replace(/"/g, '\\"');
+        cmd += ` \\\n  -d "${bodyStr.replace(/\n/g, '\\n')}"`;
+      }
+      return cmd;
+    }
+
+    function renderEndpointCard(item) {
+      const badgeClass = `badge-${item.method.toLowerCase()}`;
+      const curlSnippet = generateCurl(item);
+      const payloadStr = item.payload ? JSON.stringify(item.payload, null, 2) : null;
+      const responseStr = item.response !== undefined && item.response !== null ? JSON.stringify(item.response, null, 2) : "null";
+
+      return `
+        <div class="endpoint-card glass-panel rounded-3xl border border-dark-border overflow-hidden mb-8 transition-all hover:border-slate-600 shadow-xl" data-id="${item.id}" data-method="${item.method}" data-module="${item.module}">
+          
+          <!-- Card Header Bar -->
+          <div class="p-5 sm:p-6 bg-dark-card/70 border-b border-dark-border flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+              <span class="${badgeClass} px-3 py-1 rounded-lg text-xs font-mono font-bold tracking-wider">${item.method}</span>
+              <div class="font-mono text-sm font-semibold text-white tracking-wide break-all">${item.path}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="copyToClipboard('${item.server}${item.path}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-mono transition-colors flex items-center gap-1.5" title="Copy URL">
+                <i class="fa-solid fa-link text-xs"></i>
+                <span class="hidden sm:inline">Copy Path</span>
+              </button>
+              <button onclick="openSandboxModal('${item.method}', '${item.path}', '${item.module}', '${item.id}')" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md shadow-brand-600/20 transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-play text-xs"></i>
+                <span>Test in Sandbox</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card Content Body -->
+          <div class="p-6 sm:p-8 space-y-6">
+            
+            <!-- Title & What/Why Details Grid -->
+            <div>
+              <h3 class="text-xl font-bold text-white tracking-tight">${item.title}</h3>
+              <p class="text-sm text-slate-300 mt-1 leading-relaxed">${item.what}</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- What Block -->
+              <div class="p-4 rounded-2xl bg-dark-surface/90 border border-slate-700/60">
+                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent-sky mb-1.5">
+                  <i class="fa-solid fa-circle-question"></i>
+                  <span>What it does (Technical)</span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed">${item.what}</p>
+              </div>
+
+              <!-- Why Block -->
+              <div class="p-4 rounded-2xl bg-dark-surface/90 border border-slate-700/60">
+                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400 mb-1.5">
+                  <i class="fa-solid fa-lightbulb"></i>
+                  <span>Why it exists (Business Purpose)</span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed">${item.why}</p>
+              </div>
+            </div>
+
+            <!-- Parameters or URL details if any -->
+            ${item.params && item.params.length > 0 ? `
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">URL / Query Parameters</h4>
+                <div class="overflow-x-auto rounded-xl border border-dark-border">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-dark-card text-slate-400 border-b border-dark-border font-mono">
+                      <tr>
+                        <th class="py-2.5 px-4">Parameter</th>
+                        <th class="py-2.5 px-4">Type</th>
+                        <th class="py-2.5 px-4">Required</th>
+                        <th class="py-2.5 px-4">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-dark-border bg-dark-surface">
+                      ${item.params.map(p => `
+                        <tr>
+                          <td class="py-2.5 px-4 font-mono font-semibold text-brand-400">${p.name}</td>
+                          <td class="py-2.5 px-4 font-mono text-slate-400">${p.type}</td>
+                          <td class="py-2.5 px-4"><span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${p.required ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-slate-700 text-slate-400'}">${p.required ? 'YES' : 'NO'}</span></td>
+                          <td class="py-2.5 px-4 text-slate-300">${p.desc}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- cURL Request Snippet -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">cURL Request Example</span>
+                <button onclick="copyToClipboard(\`${curlSnippet.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`)" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition-colors flex items-center gap-1.5">
+                  <i class="fa-solid fa-copy text-xs"></i>
+                  <span>Copy cURL</span>
+                </button>
+              </div>
+              <pre class="bg-dark-input rounded-2xl p-4 overflow-x-auto border border-dark-border text-xs text-sky-300"><code>${escapeHtml(curlSnippet)}</code></pre>
+            </div>
+
+            <!-- Payload and Response Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+              
+              <!-- Payload -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Request Payload</span>
+                    ${item.payload ? '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-400">application/json</span>' : '<span class="text-[10px] font-mono text-slate-500">None</span>'}
+                  </div>
+                  ${item.payload ? `
+                    <button onclick="copyToClipboard(\`${escapeForCopy(payloadStr)}\`)" class="text-xs text-slate-400 hover:text-white transition-colors">
+                      <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                  ` : ''}
+                </div>
+                ${item.payload ? `
+                  <pre class="bg-dark-input rounded-2xl p-4 overflow-x-auto border border-dark-border text-xs text-amber-300 max-h-80"><code>${escapeHtml(payloadStr)}</code></pre>
+                ` : `
+                  <div class="bg-dark-input/50 rounded-2xl p-4 border border-dashed border-dark-border text-xs text-slate-500 italic">No request body required for this endpoint.</div>
+                `}
+              </div>
+
+              <!-- Response -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Expected Response</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">${item.responseStatus || 200} OK</span>
+                  </div>
+                  <button onclick="copyToClipboard(\`${escapeForCopy(responseStr)}\`)" class="text-xs text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-copy"></i> Copy
+                  </button>
+                </div>
+                <pre class="bg-dark-input rounded-2xl p-4 overflow-x-auto border border-dark-border text-xs text-emerald-300 max-h-80"><code>${escapeHtml(responseStr)}</code></pre>
+              </div>
+
+            </div>
+
+            <!-- Error Cases if documented -->
+            ${item.errorResponses && item.errorResponses.length > 0 ? `
+              <div class="pt-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2 flex items-center gap-1.5">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <span>Handled Error Responses</span>
+                </h4>
+                <div class="space-y-1.5">
+                  ${item.errorResponses.map(err => `
+                    <div class="flex items-start gap-2.5 text-xs p-2.5 rounded-xl bg-rose-950/20 border border-rose-900/40 text-slate-300">
+                      <span class="font-mono font-bold text-rose-400 shrink-0">${err.status}</span>
+                      <span>${err.desc}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+          </div>
+
+        </div>
+      `;
+    }
+
+    function renderAllSections() {
+      const container = document.getElementById("dynamicApiContainer");
+      container.innerHTML = "";
+
+      const modules = Object.keys(moduleMetadata);
+
+      modules.forEach(modKey => {
+        const meta = moduleMetadata[modKey];
+        const endpoints = apiRegistry.filter(e => e.module === modKey);
+
+        const section = document.createElement("section");
+        section.id = `tab-${modKey}`;
+        section.className = "tab-content hidden space-y-6";
+
+        section.innerHTML = `
+          <!-- Module Header -->
+          <div class="p-6 rounded-3xl bg-gradient-to-r from-dark-surface to-dark-card border border-dark-border flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-${meta.color}-500/20 text-${meta.color}-400 flex items-center justify-center text-xl border border-${meta.color}-500/30">
+                <i class="fa-solid ${meta.icon}"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-2xl font-extrabold text-white tracking-tight">${meta.title}</h2>
+                  <span class="px-2 py-0.5 rounded-full text-xs font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700">${endpoints.length} Endpoints</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">${endpoints[0]?.moduleDesc || 'Comprehensive API specification and schema contracts.'}</p>
+              </div>
+            </div>
+            <div class="text-xs font-mono px-3 py-1 rounded-xl bg-dark-bg border border-slate-700 text-slate-300">
+              <span class="text-slate-500">Target Host:</span> ${meta.server}
+            </div>
+          </div>
+
+          <!-- Cards for each endpoint -->
+          <div class="space-y-6">
+            ${endpoints.map(e => renderEndpointCard(e)).join('')}
+          </div>
+        `;
+
+        container.appendChild(section);
+      });
+    }
+
+    function switchTab(tabId) {
+      activeTabId = tabId;
+
+      document.querySelectorAll(".nav-item").forEach(item => {
+        const href = item.getAttribute("href");
+        if (href === `#${tabId}`) {
+          item.classList.add("bg-brand-600/20", "text-brand-400", "font-bold", "border", "border-brand-500/30");
+          item.classList.remove("text-slate-300");
+        } else {
+          item.classList.remove("bg-brand-600/20", "text-brand-400", "font-bold", "border", "border-brand-500/30");
+          item.classList.add("text-slate-300");
+        }
+      });
+
+      document.querySelectorAll(".tab-content").forEach(el => {
+        el.classList.add("hidden");
+        el.classList.remove("block");
+      });
+
+      const target = document.getElementById(`tab-${tabId}`);
+      if (target) {
+        target.classList.remove("hidden");
+        target.classList.add("block");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      const hostLabel = document.getElementById("currentBaseUrl");
+      if (tabId.startsWith("support-")) {
+        hostLabel.innerText = "http://localhost:3001/api";
+        hostLabel.className = "font-mono font-medium text-purple-400";
+      } else {
+        hostLabel.innerText = "http://localhost:3000";
+        hostLabel.className = "font-mono font-medium text-emerald-300";
+      }
+    }
+
+    function handleSearch(query) {
+      activeSearchQuery = query.toLowerCase().trim();
+      filterCards();
+    }
+
+    function filterByMethod(method) {
+      activeMethodFilter = method;
+
+      document.querySelectorAll(".method-filter-btn").forEach(btn => {
+        if (btn.getAttribute("data-method") === method) {
+          btn.classList.add("bg-brand-500", "text-white");
+          btn.classList.remove("bg-slate-800");
+        } else {
+          btn.classList.remove("bg-brand-500", "text-white");
+          btn.classList.add("bg-slate-800");
+        }
+      });
+
+      filterCards();
+    }
+
+    function filterCards() {
+      const cards = document.querySelectorAll(".endpoint-card");
+
+      cards.forEach(card => {
+        const id = card.getAttribute("data-id");
+        const method = card.getAttribute("data-method");
+        const item = apiRegistry.find(e => e.id === id);
+
+        const matchesMethod = (activeMethodFilter === "ALL" || method === activeMethodFilter);
+        const matchesQuery = !activeSearchQuery || (
+          item.title.toLowerCase().includes(activeSearchQuery) ||
+          item.path.toLowerCase().includes(activeSearchQuery) ||
+          item.what.toLowerCase().includes(activeSearchQuery) ||
+          item.why.toLowerCase().includes(activeSearchQuery) ||
+          item.module.toLowerCase().includes(activeSearchQuery)
+        );
+
+        if (matchesMethod && matchesQuery) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      if (activeSearchQuery) {
+        document.querySelectorAll(".tab-content").forEach(tab => {
+          tab.classList.remove("hidden");
+          tab.classList.add("block");
+        });
+      } else if (activeTabId !== "all") {
+        switchTab(activeTabId);
+      }
+    }
+
+    let currentTestItem = null;
+
+    function openSandboxModal(method, path, moduleKey, endpointId) {
+      const item = endpointId ? apiRegistry.find(e => e.id === endpointId) : apiRegistry.find(e => e.path === path && e.method === method);
+      currentTestItem = item || {
+        method,
+        path,
+        server: moduleKey.startsWith("support-") ? "http://localhost:3001/api" : "http://localhost:3000",
+        payload: {}
+      };
+
+      document.getElementById("modalMethodBadge").className = `badge-${currentTestItem.method.toLowerCase()} px-2.5 py-1 rounded-md text-xs font-mono font-bold`;
+      document.getElementById("modalMethodBadge").innerText = currentTestItem.method;
+      document.getElementById("modalTitle").innerText = currentTestItem.title || "Interactive Request Sandbox";
+      document.getElementById("modalEndpointUrl").innerText = `${currentTestItem.server}${currentTestItem.path}`;
+
+      const payloadInput = document.getElementById("modalRequestBody");
+      if (currentTestItem.payload && currentTestItem.method !== "GET" && currentTestItem.method !== "DELETE") {
+        document.getElementById("modalPayloadContainer").classList.remove("hidden");
+        payloadInput.value = JSON.stringify(currentTestItem.payload, null, 2);
+      } else {
+        document.getElementById("modalPayloadContainer").classList.add("hidden");
+        payloadInput.value = "";
+      }
+
+      document.getElementById("modalResponseBody").innerText = "// Ready to send request. Click 'Send Request' above.";
+      document.getElementById("responseStatusBadge").classList.add("hidden");
+      document.getElementById("responseTimeBadge").classList.add("hidden");
+
+      document.getElementById("sandboxModal").classList.remove("hidden");
+    }
+
+    function closeSandboxModal() {
+      document.getElementById("sandboxModal").classList.add("hidden");
+    }
+
+    function formatModalJson() {
+      const input = document.getElementById("modalRequestBody");
+      try {
+        const parsed = JSON.parse(input.value);
+        input.value = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        showToast("Invalid JSON syntax: " + e.message);
+      }
+    }
+
+    async function executeLiveRequest() {
+      if (!currentTestItem) return;
+
+      const url = `${currentTestItem.server}${currentTestItem.path}`;
+      const method = currentTestItem.method;
+      const statusBadge = document.getElementById("responseStatusBadge");
+      const timeBadge = document.getElementById("responseTimeBadge");
+      const output = document.getElementById("modalResponseBody");
+
+      output.innerText = "// Executing HTTP request to " + url + "...";
+
+      let headers = { "Content-Type": "application/json" };
+      try {
+        const customH = JSON.parse(document.getElementById("modalHeaders").value || "{}");
+        headers = { ...headers, ...customH };
+      } catch (e) {}
+
+      let body = undefined;
+      if (method !== "GET" && method !== "DELETE" && document.getElementById("modalRequestBody").value.trim()) {
+        try {
+          body = document.getElementById("modalRequestBody").value;
+        } catch (e) {}
+      }
+
+      const startTime = performance.now();
+
+      try {
+        const response = await fetch(url, {
+          method,
+          headers,
+          body: body ? body : undefined,
+          credentials: 'include'
+        });
+
+        const elapsed = Math.round(performance.now() - startTime);
+        const data = await response.json().catch(() => ({ status: response.statusText }));
+
+        statusBadge.innerText = `${response.status} ${response.statusText}`;
+        statusBadge.className = `text-xs font-mono px-2 py-0.5 rounded font-bold ${response.ok ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`;
+        statusBadge.classList.remove("hidden");
+
+        timeBadge.innerText = `${elapsed}ms`;
+        timeBadge.classList.remove("hidden");
+
+        output.innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        const elapsed = Math.round(performance.now() - startTime);
+        statusBadge.innerText = "200 OK (Simulated)";
+        statusBadge.className = "text-xs font-mono px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        statusBadge.classList.remove("hidden");
+
+        timeBadge.innerText = `${elapsed}ms (Offline Preview)`;
+        timeBadge.classList.remove("hidden");
+
+        output.innerText = JSON.stringify(currentTestItem.response || { simulated: true, message: "Local server not reachable on localhost port. Displaying schema mock response." }, null, 2);
+      }
+    }
+
+    function copyToClipboard(text) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Copied to clipboard!");
+      }).catch(err => {
+        const el = document.createElement("textarea");
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        showToast("Copied to clipboard!");
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toastNotification");
+      document.getElementById("toastMessage").innerText = msg;
+      toast.classList.remove("translate-y-16", "opacity-0");
+      setTimeout(() => {
+        toast.classList.add("translate-y-16", "opacity-0");
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeForCopy(str) {
+      if (!str) return "";
+      return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const icon = document.getElementById("themeIcon");
+      if (html.classList.contains("dark")) {
+        html.classList.remove("dark");
+        icon.className = "fa-solid fa-sun";
+      } else {
+        html.classList.add("dark");
+        icon.className = "fa-solid fa-moon";
+      }
+    }
+
+    function exportPostmanCollection() {
+      const collection = {
+        info: {
+          name: "Vidhara QSR POS & Cloud Support APIs",
+          schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+        },
+        item: apiRegistry.map(endpoint => ({
+          name: endpoint.title,
+          request: {
+            method: endpoint.method,
+            header: (endpoint.headers || []).map(h => ({ key: h.name, value: h.value })),
+            url: {
+              raw: `${endpoint.server}${endpoint.path}`,
+              protocol: "http",
+              host: [endpoint.server.replace("http://", "").split("/")[0]],
+              path: endpoint.path.replace(/^\//, '').split('/')
+            },
+            body: endpoint.payload ? {
+              mode: "raw",
+              raw: JSON.stringify(endpoint.payload, null, 2),
+              options: { raw: { language: "json" } }
+            } : undefined,
+            description: `${endpoint.what}\n\nWhy: ${endpoint.why}`
+          }
+        }))
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(collection, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "Vidhara_QSR_API_Postman_Collection.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Postman collection exported successfully!");
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        const search = document.getElementById("globalSearch");
+        search.focus();
+        search.select();
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeSandboxModal();
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderAllSections();
+      switchTab("overview");
+      document.getElementById("totalEndpointsCount").innerText = apiRegistry.length;
+    });
+  </script>
+</body>
+</html>

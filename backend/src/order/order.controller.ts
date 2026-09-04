@@ -29,4 +29,27 @@ export class OrderController {
   remove(@Param('id') id: string) {
     return this.orderService.remove(+id);
   }
+
+  // --- Partial Payment Routes ---
+
+  @Post(':id/payments')
+  addPayment(
+    @Param('id') id: string,
+    @Body() paymentDto: { amount: number; paymentMethod: string; reference?: string }
+  ) {
+    return this.orderService.addPayment(+id, paymentDto);
+  }
+
+  @Get(':id/payments')
+  getPayments(@Param('id') id: string) {
+    return this.orderService.getPayments(+id);
+  }
+
+  @Delete(':id/payments/:paymentId')
+  removePayment(
+    @Param('id') id: string,
+    @Param('paymentId') paymentId: string
+  ) {
+    return this.orderService.removePayment(+id, +paymentId);
+  }
 }

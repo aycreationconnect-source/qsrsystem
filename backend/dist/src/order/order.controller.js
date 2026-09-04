@@ -35,6 +35,15 @@ let OrderController = class OrderController {
     remove(id) {
         return this.orderService.remove(+id);
     }
+    addPayment(id, paymentDto) {
+        return this.orderService.addPayment(+id, paymentDto);
+    }
+    getPayments(id) {
+        return this.orderService.getPayments(+id);
+    }
+    removePayment(id, paymentId) {
+        return this.orderService.removePayment(+id, +paymentId);
+    }
 };
 exports.OrderController = OrderController;
 __decorate([
@@ -72,6 +81,29 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], OrderController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/payments'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], OrderController.prototype, "addPayment", null);
+__decorate([
+    (0, common_1.Get)(':id/payments'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], OrderController.prototype, "getPayments", null);
+__decorate([
+    (0, common_1.Delete)(':id/payments/:paymentId'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('paymentId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], OrderController.prototype, "removePayment", null);
 exports.OrderController = OrderController = __decorate([
     (0, common_1.Controller)('order'),
     __metadata("design:paramtypes", [order_service_1.OrderService])

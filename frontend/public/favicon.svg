@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="veloraGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="60%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#0c0a09" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#f59e0b" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="url(#veloraGold)" stroke-width="1.5" stroke-opacity="0.4" fill="none" />
+
+  <!-- Stylized Steam / Spark Accent -->
+  <path d="M32 12 C34 16, 36 17, 36 19 C36 21, 34 22, 32 22 C30 22, 28 21, 28 19 C28 17, 30 16, 32 12 Z" fill="url(#veloraGold)" opacity="0.85" />
+  
+  <!-- Velora Monogram "V" / Cup Silhouette -->
+  <path d="M17 22 L27 46 C28.5 49.5, 35.5 49.5, 37 46 L47 22 C48 19.5, 45.5 17.5, 43 18 L39.5 19 C37.5 19.5, 36 21, 35.5 23 L32 34 L28.5 23 C28 21, 26.5 19.5, 24.5 19 L21 18 C18.5 17.5, 16 19.5, 17 22 Z" fill="url(#veloraGold)" filter="url(#glow)" />
+
+  <!-- Cup Core Detail -->
+  <circle cx="32" cy="27" r="2.5" fill="#fef3c7" />
+</svg>

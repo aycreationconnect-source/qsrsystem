@@ -75,7 +75,7 @@ export const SettingsView: React.FC = () => {
 
             <div className="mt-4 p-4 rounded-2xl bg-stone-50/70 dark:bg-stone-850/60 border border-stone-200/60 dark:border-stone-750">
               <CafeBrandBadge
-                name={storeProfile?.businessName || 'Vidhara Cafe'}
+                name={storeProfile?.businessName || 'Velora Cafe'}
                 cafeCode={storeProfile?.cafeCode || 'CF-MUM-001'}
                 logoUrl={storeProfile?.logoUrl}
                 size="lg"

@@ -14,6 +14,7 @@ export const ShiftTableModal: React.FC = () => {
     setSelectedTableId,
     tableOrders,
     setTableOrders,
+    setTablePayments,
     setTableStartTimes,
   } = usePOS();
 
@@ -42,6 +43,14 @@ export const ShiftTableModal: React.FC = () => {
       newOrders[targetTable.id] = newOrders[selectedTableId];
       delete newOrders[selectedTableId];
       return newOrders;
+    });
+    setTablePayments((prev) => {
+      const newPayments = { ...prev };
+      if (newPayments[selectedTableId]) {
+        newPayments[targetTable.id] = newPayments[selectedTableId];
+        delete newPayments[selectedTableId];
+      }
+      return newPayments;
     });
     setTableStartTimes((prev) => {
       const newTimes = { ...prev };

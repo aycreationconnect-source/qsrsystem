@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobileNav }) => {
       <div className="p-4 sm:p-5 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
         <div className="flex-1">
           <CafeBrandBadge
-            name={storeProfile?.businessName || 'Vidhara Cafe'}
+            name={storeProfile?.businessName || 'Velora Cafe'}
             cafeCode={storeProfile?.cafeCode || 'CF-MUM-001'}
             logoUrl={storeProfile?.logoUrl}
             size="md"

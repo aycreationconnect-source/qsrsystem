@@ -88,15 +88,29 @@ model InventoryHistory {
 }
 
 model Order {
-  id            Int         @id @default(autoincrement())
-  date          DateTime    @default(now())
-  paymentMethod String      // Cash, Card, UPI
+  id            Int            @id @default(autoincrement())
+  date          DateTime       @default(now())
+  paymentMethod String         // Cash, Card, UPI, Split
   subtotal      Float
   tax           Float
   total         Float
-  status        String      @default("Completed")
+  paidAmount    Float          @default(0)
+  balanceAmount Float          @default(0)
+  status        String         @default("Completed")
   
   items         OrderItem[]
+  payments      OrderPayment[]
+}
+
+model OrderPayment {
+  id            Int      @id @default(autoincrement())
+  amount        Float
+  paymentMethod String   // Cash, Card, UPI
+  reference     String?
+  date          DateTime @default(now())
+  
+  orderId       Int
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model OrderItem {
