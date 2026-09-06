@@ -2,22 +2,23 @@
 
 ## 📑 Table of Contents
 - [1. Executive Summary & Purpose](#1-executive-summary--purpose)
-- [2. System Architecture & High-Level Flow](#2-system-architecture--high-level-flow)
-- [3. Database Architecture (Golden DB)](#3-database-architecture-golden-db)
-- [4. Dynamic Plan Management Engine](#4-dynamic-plan-management-engine)
-- [5. Offline Cryptographic Licensing Engine](#5-offline-cryptographic-licensing-engine)
-- [6. Backend API Specification](#6-backend-api-specification)
-- [7. Frontend Support & Developer UI](#7-frontend-support--developer-ui)
-- [8. Onboarding & WhatsApp Card Lifecycle](#8-onboarding--whatsapp-card-lifecycle)
-- [9. Environment Configuration & Setup Guide](#9-environment-configuration--setup-guide)
-- [10. Future Cloud Migration Roadmap](#10-future-cloud-migration-roadmap)
+- [2. Why We Migrated from MySQL to Supabase (PostgreSQL)](#2-why-we-migrated-from-mysql-to-supabase-postgresql)
+- [3. System Architecture & High-Level Flow](#3-system-architecture--high-level-flow)
+- [4. Database Architecture (Supabase Golden DB)](#4-database-architecture-supabase-golden-db)
+- [5. Dynamic Plan Management Engine](#5-dynamic-plan-management-engine)
+- [6. Offline Cryptographic Licensing Engine](#6-offline-cryptographic-licensing-engine)
+- [7. Backend API Specification](#7-backend-api-specification)
+- [8. Frontend Support & Developer UI](#8-frontend-support--developer-ui)
+- [9. Onboarding & WhatsApp Card Lifecycle](#9-onboarding--whatsapp-card-lifecycle)
+- [10. Environment Configuration & Supabase Setup Guide](#10-environment-configuration--supabase-setup-guide)
+- [11. Production Cloud Architecture & Zero-Cost Strategy](#11-production-cloud-architecture--zero-cost-strategy)
 
 ---
 
 ## 1. Executive Summary & Purpose
 
 ### What is the Support Platform?
-The **Support Platform** is an independent, developer-facing control center and master licensing hub for the QSR & Table POS ecosystem. It operates completely standalone from the cafe POS codebase and is maintained on the developer's laptop during Year 1 without incurring cloud hosting costs.
+The **Support Platform** is an independent, developer-facing control center and master licensing hub for the QSR & Table POS ecosystem. It operates completely standalone from the cafe POS codebase and is maintained by the developer/support engineering team.
 
 ### Why was it built?
 1. **Centralized Cafe Master Record ("Golden DB")**: Retains single source of truth for all onboarded cafes (50+ stores), their owners, contact details, branch locations, and active status.
@@ -28,44 +29,71 @@ The **Support Platform** is an independent, developer-facing control center and 
 
 ---
 
-## 2. System Architecture & High-Level Flow
+## 2. Why We Migrated from MySQL to Supabase (PostgreSQL)
+
+### Background & Problem Statement
+Originally, the Support Platform was designed to use a local or cloud MySQL instance. However, hosting a remote MySQL database requires purchasing a dedicated VPS, cPanel MySQL with remote access limits, or a paid managed database service (e.g. Hostinger, AWS RDS, DigitalOcean Managed MySQL), incurring **$5 to $25+ per month in recurring hosting costs**.
+
+To achieve a **100% zero-cost commercial architecture**, we migrated the Support Platform's master data layer to **Supabase (PostgreSQL)**.
+
+### Comparison Table: MySQL (Hostinger / VPS) vs. Supabase (PostgreSQL)
+
+| Evaluation Metric | MySQL on Hostinger / VPS | Supabase (PostgreSQL) | Why Supabase Wins |
+| :--- | :--- | :--- | :--- |
+| **Monthly Cost** | **Paid recurring** ($4 - $20+/mo for VPS; shared hosting restricts remote connections) | **100% Free Tier** ($0/month) | **Zero capital outlay**: 500MB DB storage handles 100,000+ cafe records, license histories, and plans for free. |
+| **Server Maintenance** | Manual OS updates, MySQL config tuning, firewall ports (3306), security patches | **Fully Managed Serverless Cloud** | Zero maintenance overhead; automated health checks and upgrades. |
+| **Connection Pooling** | MySQL crashes under high connection limits without custom ProxySQL setup | **Built-in Supavisor / PgBouncer** (port 6543) | Handles transaction pooling effortlessly without running out of connections. |
+| **Database Administration** | Requires installing desktop HeidiSQL, DBeaver, or phpMyAdmin | **Built-in Supabase Studio Web UI** | Access visual table editors, run SQL queries, and inspect logs directly from any browser. |
+| **ORM Compatibility** | Prisma MySQL provider | **Prisma PostgreSQL provider** | Seamless transition via Prisma ORM with `@prisma/client` and direct connection support (`directUrl`). |
+| **Client SDK Options** | Raw SQL / REST API only | **PostgreSQL Connection + `@supabase/supabase-js`** | Allows both server-side Prisma access and browser-side real-time query access. |
+| **Security & Backups** | Manual mysqldump cron jobs | **Automated Daily Backups + SSL/TLS** | Built-in point-in-time recovery, SSL encryption, and native Row-Level Security (RLS). |
+
+---
+
+## 3. System Architecture & High-Level Flow
 
 ```mermaid
 graph TD
-    subgraph "Developer Laptop (Support Platform Control Center)"
+    subgraph "Cloud Database (Supabase Free Tier - Mumbai AWS ap-south-1)"
+        SupabaseCloud[("Supabase Golden DB (PostgreSQL)<br/>Project: vhowowbxyqztakovrqwy<br/>Port 6543 (Pooler) / 5432 (Direct)")]
+    end
+
+    subgraph "Developer / Support Control Center"
         SupportUI["Support Web UI (React 19 + Vite)<br/>Port: 5174"]
         SupportAPI["Support Platform NestJS API<br/>Port: 3001"]
-        GoldenDB[("Golden DB: golden_qsr_db<br/>MySQL 8.0 :3306")]
         PlanEngine["Dynamic Plan Engine"]
-        CryptoEngine["RSA / Ed25519 Cryptographic Signer"]
+        CryptoEngine["RSA / HMAC-SHA256 Cryptographic Signer"]
 
         SupportUI <--> SupportAPI
-        SupportAPI <--> GoldenDB
+        SupportAPI <-->|"Prisma (PostgreSQL Pooler)"| SupabaseCloud
+        SupportUI -.->|"Optional Direct SDK"| SupabaseCloud
         SupportAPI --> PlanEngine
         SupportAPI --> CryptoEngine
     end
 
     subgraph "Cafe Local Infrastructure (Offline / On-Premise)"
         CafePOS["Local Cafe POS (NestJS + React)<br/>Port: 3000 / 5173"]
-        CafeDB[("Local DB: qsr_db")]
+        CafeDB[("Local On-Premise DB: qsr_db")]
         EmbeddedPubKey["Embedded Public Verification Key"]
 
         CafePOS <--> CafeDB
         CafePOS --> EmbeddedPubKey
     end
 
-    CryptoEngine -.->|"1. Signed License Key (WhatsApp / Email)"| CafePOS
+    CryptoEngine -.->|"1. Signed License Key (WhatsApp / SMS / Email)"| CafePOS
 ```
 
 ---
 
-## 3. Database Architecture (Golden DB)
+## 4. Database Architecture (Supabase Golden DB)
 
-- **Database Engine**: MySQL 8.0 / MariaDB
-- **Database Name**: `golden_qsr_db`
-- **Host**: `localhost:3306`
-- **Connection User**: `aycreationconnect`
-- **Workbench Connection**: `Production Instance MySQL 80`
+- **Database Engine**: PostgreSQL 15+ (Hosted on **Supabase Cloud**)
+- **Project Reference**: `vhowowbxyqztakovrqwy`
+- **Region**: `aws-0-ap-south-1` (Mumbai, India)
+- **Transaction Pooler URL (Port 6543)**: `postgresql://postgres.vhowowbxyqztakovrqwy:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
+- **Direct Session URL (Port 5432)**: `postgresql://postgres.vhowowbxyqztakovrqwy:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`
+- **Web Administration**: [Supabase Studio Dashboard](https://supabase.com/dashboard/project/vhowowbxyqztakovrqwy)
+- **Direct SQL DDL Script**: [`support-platform/backend/prisma/supabase_schema.sql`](file:///c:/Learning/projects/vidhara-qsr/support-platform/backend/prisma/supabase_schema.sql)
 
 ### Entity-Relationship Diagram
 
@@ -261,27 +289,54 @@ $$\text{Days Remaining} = \text{round}\left(\frac{\text{Expiry Date (Midnight)} 
 
 ---
 
-## 9. Environment Configuration & Setup Guide
+## 10. Environment Configuration & Supabase Setup Guide
 
 ### 1. Support Platform Backend (`support-platform/backend/.env`):
 ```env
+# Server Port
 PORT=3001
 
-# Prisma Database Connection URL (MySQL / MariaDB for Support Platform Golden DB)
-DATABASE_URL="mysql://root:root@localhost:3306/qsr_support_db"
+# Supabase PostgreSQL Database Configuration
+# Connect to Postgres via the shared transaction-mode pooler (IPv4-only)
+DATABASE_URL="postgresql://postgres.vhowowbxyqztakovrqwy:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Connect to Postgres via the shared session-mode pooler (used for migrations)
+DIRECT_URL="postgresql://postgres.vhowowbxyqztakovrqwy:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+
+# Supabase Project Credentials
+SUPABASE_PROJECT_REF="vhowowbxyqztakovrqwy"
+SUPABASE_URL="https://vhowowbxyqztakovrqwy.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key-here"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
 
 # Master Secret for Cryptographic Licensing Engine (Must match local POS secret)
 MASTER_LICENSE_SECRET="QSR_MASTER_GOLDEN_SECRET_2026_AY_CONNECT"
 ```
 
-> [!NOTE]
-> Run `npx prisma generate` after installing dependencies or making schema changes to regenerate `@prisma/client`.
+> [!TIP]
+> **How to Initialize Your Supabase Database in 1 Click**:
+> 1. Log in to [Supabase Studio](https://supabase.com/dashboard/project/vhowowbxyqztakovrqwy).
+> 2. Open the **SQL Editor** tab from the left sidebar.
+> 3. Open [`support-platform/backend/prisma/supabase_schema.sql`](file:///c:/Learning/projects/vidhara-qsr/support-platform/backend/prisma/supabase_schema.sql).
+> 4. Copy and paste the entire script into the SQL Editor and click **Run**.
+> 5. Your tables (`plan_templates`, `cafe_masters`, `license_histories`, `admin_users`) and default seed plans/admin will be initialized immediately!
 
-### 2. Local POS Backend (`backend/.env`):
+### 2. Support Platform Frontend (`support-platform/frontend/.env`):
+```env
+# Support Platform Backend API URL
+VITE_API_BASE_URL="http://localhost:3001/api"
+
+# Supabase Cloud Project Configuration
+VITE_SUPABASE_PROJECT_REF="vhowowbxyqztakovrqwy"
+VITE_SUPABASE_URL="https://vhowowbxyqztakovrqwy.supabase.co"
+VITE_SUPABASE_ANON_KEY="your-anon-key-here"
+```
+
+### 3. Local POS Backend (`backend/.env`):
 ```env
 PORT=3000
 
-# Database Configuration (MySQL / MariaDB)
+# Local On-Premise Database Configuration (MySQL / MariaDB on Cafe PC)
 DATABASE_HOST=localhost
 DATABASE_PORT=3306
 DATABASE_USER=root
@@ -293,17 +348,12 @@ DATABASE_CONNECTION_LIMIT=10
 DATABASE_URL="mysql://root:root@localhost:3306/qsr_db"
 ```
 
-### 3. Support Platform Frontend (`support-platform/frontend/.env`):
-```env
-VITE_API_BASE_URL="http://localhost:3001/api"
-VITE_APP_TITLE="QSR Developer & Support Platform"
-```
-
 ---
 
-## 10. Future Cloud Migration Roadmap
+## 11. Production Cloud Architecture & Zero-Cost Strategy
 
-When migrating to the cloud in Year 2:
-1. **Zero POS Disruption**: The verification logic in local cafe machines remains 100% identical.
-2. **Direct DB Migration**: Dump `golden_qsr_db` from local MySQL and restore to AWS RDS / DigitalOcean Managed MySQL.
-3. **Deployment**: Deploy `support-platform/backend` as a container on Render/Railway/AWS ECS and `support-platform/frontend` on Vercel under `admin.yourdomain.com`.
+By leveraging Supabase Cloud for the Support Platform and keeping local cafe terminals on-premise, the platform achieves:
+1. **Zero Recurring Infrastructure Costs**: No Hostinger VPS bills, no AWS RDS bills, and no cPanel hosting fees.
+2. **True Air-Gapped Cafe Security**: If the cafe loses internet or power, local billing never stops.
+3. **Anywhere Central Management**: The developer or support staff can log in to the Support Platform UI or Supabase Studio from any machine, onboard new cafes, issue/renew licenses, and dispatch WhatsApp cards seamlessly.
+4. **Instant Scale**: The transaction pooler handles spikes in licensing validation or cafe registrations without database connection exhaustion.

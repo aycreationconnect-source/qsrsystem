@@ -6,11 +6,13 @@ import { PlansModule } from './plans/plans.module';
 import { CafesModule } from './cafes/cafes.module';
 import { StatsModule } from './stats/stats.module';
 import { AuthModule } from './auth/auth.module';
+import { SupabaseModule } from './supabase/supabase.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    SupabaseModule,
     LicenseEngineModule,
     PlansModule,
     CafesModule,
