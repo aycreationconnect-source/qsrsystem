@@ -15,6 +15,7 @@ import { InventoryView } from './components/inventory/InventoryView';
 import { FloorManagement } from './components/tables/FloorManagement';
 import { SettingsView } from './components/settings/SettingsView';
 import { PageTitleUpdater } from './components/common/PageTitleUpdater';
+import { OrderNotificationToast } from './components/common/OrderNotificationToast';
 
 const ActivateScreen: React.FC = () => {
   const { checkLicenseStatus } = useApp();
@@ -34,6 +35,7 @@ const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
       <PageTitleUpdater />
+      <OrderNotificationToast />
       <Routes>
         {/* Public Routes */}
         <Route

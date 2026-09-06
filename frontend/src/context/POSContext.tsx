@@ -431,7 +431,12 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
 
       try {
-        await orderApi.placeOrder(orderDetails);
+        const placedOrder = await orderApi.placeOrder(orderDetails);
+        if (placedOrder && placedOrder.id) {
+          window.dispatchEvent(
+            new CustomEvent('velora-order-completed', { detail: placedOrder })
+          );
+        }
         await Promise.allSettled([
           refreshOrders(),
           refreshTables(),

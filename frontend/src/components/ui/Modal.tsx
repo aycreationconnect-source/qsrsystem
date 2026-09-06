@@ -9,8 +9,10 @@ export interface ModalProps {
   description?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
   className?: string;
+  headerClassName?: string;
+  bodyClassName?: string;
   closeOnBackdrop?: boolean;
 }
 
@@ -23,6 +25,8 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   maxWidth = 'md',
   className,
+  headerClassName,
+  bodyClassName,
   closeOnBackdrop = true,
 }) => {
   useEffect(() => {
@@ -49,6 +53,9 @@ export const Modal: React.FC<ModalProps> = ({
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
     full: 'max-w-[95vw]',
   };
 
@@ -76,15 +83,21 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Modal Header */}
         {(title || description) && (
-          <div className="flex items-start justify-between px-6 pt-4 sm:pt-6 pb-4 border-b border-stone-100 dark:border-stone-800/80">
+          <div
+            className={cn(
+              'flex items-center justify-between px-6 border-b border-stone-100 dark:border-stone-800/80',
+              description ? 'pt-4 sm:pt-5 pb-3' : 'py-3 sm:py-3.5',
+              headerClassName
+            )}
+          >
             <div>
               {title && (
-                <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 leading-snug">
+                <h3 className="text-base sm:text-lg font-bold text-stone-900 dark:text-stone-100 leading-snug">
                   {title}
                 </h3>
               )}
               {description && (
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{description}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{description}</p>
               )}
             </div>
 
@@ -99,7 +112,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div className={cn('flex-1 overflow-y-auto px-6 py-4', bodyClassName)}>{children}</div>
 
         {/* Modal Footer */}
         {footer && (

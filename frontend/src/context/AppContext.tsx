@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import type { AppData, Category, Addon, InventoryItem, Area, Table, Order, Settings } from '../types/app.types';
 import { menuApi } from '../api/menuApi';
 import { inventoryApi } from '../api/inventoryApi';
@@ -110,6 +110,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
+  // Track known orders to trigger completion chimes & toasts on live incoming orders
+  const knownOrderIdsRef = useRef<Set<number>>(new Set());
+  const isOrdersInitializedRef = useRef<boolean>(false);
+
   // Check Local License Status on startup
   const checkLicenseStatus = useCallback(async () => {
     try {
@@ -183,6 +187,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const settings: Settings =
         settingsRes.status === 'fulfilled' && settingsRes.value ? settingsRes.value : {};
 
+      if (!isOrdersInitializedRef.current && Array.isArray(orders)) {
+        orders.forEach((o) => knownOrderIdsRef.current.add(o.id));
+        isOrdersInitializedRef.current = true;
+      }
+
       setAppData((prev) => ({
         ...prev,
         categories: cats,
@@ -226,6 +235,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         menusRes.status === 'fulfilled' && Array.isArray(menusRes.value) ? menusRes.value : null;
       const orders =
         ordersRes.status === 'fulfilled' && Array.isArray(ordersRes.value) ? ordersRes.value : null;
+
+      if (orders !== null && Array.isArray(orders)) {
+        if (isOrdersInitializedRef.current) {
+          const brandNewOrders = orders.filter((o) => !knownOrderIdsRef.current.has(o.id));
+          brandNewOrders.forEach((o) => {
+            knownOrderIdsRef.current.add(o.id);
+            window.dispatchEvent(
+              new CustomEvent('velora-order-completed', { detail: o })
+            );
+          });
+        } else {
+          orders.forEach((o) => knownOrderIdsRef.current.add(o.id));
+          isOrdersInitializedRef.current = true;
+        }
+      }
 
       setAppData((prev) => ({
         ...prev,
@@ -340,6 +364,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const orders = await orderApi.getOrders();
       if (Array.isArray(orders)) {
+        if (isOrdersInitializedRef.current) {
+          const brandNewOrders = orders.filter((o) => !knownOrderIdsRef.current.has(o.id));
+          brandNewOrders.forEach((o) => {
+            knownOrderIdsRef.current.add(o.id);
+            window.dispatchEvent(
+              new CustomEvent('velora-order-completed', { detail: o })
+            );
+          });
+        } else {
+          orders.forEach((o) => knownOrderIdsRef.current.add(o.id));
+          isOrdersInitializedRef.current = true;
+        }
         setAppData((prev) => ({ ...prev, orders }));
       }
     } catch (e) {

@@ -102,28 +102,75 @@ export class OrderService {
         }
       }
       
-      return order;
+      const startOfDay = new Date(order.date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const dailyOrderNumber = await tx.order.count({
+        where: {
+          date: {
+            gte: startOfDay,
+            lte: order.date,
+          },
+        },
+      });
+
+      return {
+        ...order,
+        dailyOrderNumber,
+      };
     });
   }
 
-  findAll() {
-    return this.prisma.order.findMany({
+  async findAll() {
+    const orders = await this.prisma.order.findMany({
       include: {
         items: { include: { menuItem: true } },
         payments: true,
       },
-      orderBy: { date: 'desc' },
+      orderBy: { date: 'asc' },
     });
+
+    // Reset daily sequence number everyday starting at 1
+    const dayCounters = new Map<string, number>();
+    const withDaily = orders.map((order) => {
+      const d = new Date(order.date);
+      const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const nextNum = (dayCounters.get(dayStr) || 0) + 1;
+      dayCounters.set(dayStr, nextNum);
+      return {
+        ...order,
+        dailyOrderNumber: nextNum,
+      };
+    });
+
+    return withDaily.reverse();
   }
 
-  findOne(id: number) {
-    return this.prisma.order.findUnique({
+  async findOne(id: number) {
+    const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
         items: { include: { menuItem: true } },
         payments: true,
       },
     });
+    if (!order) return null;
+
+    const startOfDay = new Date(order.date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const dailyOrderNumber = await this.prisma.order.count({
+      where: {
+        date: {
+          gte: startOfDay,
+          lte: order.date,
+        },
+      },
+    });
+
+    return {
+      ...order,
+      dailyOrderNumber,
+    };
   }
 
   update(id: number, data: any) {
