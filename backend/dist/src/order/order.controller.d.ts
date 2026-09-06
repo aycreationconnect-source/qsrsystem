@@ -3,6 +3,7 @@ export declare class OrderController {
     private readonly orderService;
     constructor(orderService: OrderService);
     create(createOrderDto: any): Promise<{
+        dailyOrderNumber: number;
         items: {
             id: number;
             price: number;
@@ -18,7 +19,6 @@ export declare class OrderController {
             reference: string | null;
             orderId: number;
         }[];
-    } & {
         id: number;
         status: string;
         tax: number;
@@ -29,7 +29,8 @@ export declare class OrderController {
         paidAmount: number;
         balanceAmount: number;
     }>;
-    findAll(): import("@prisma/client").Prisma.PrismaPromise<({
+    findAll(): Promise<{
+        dailyOrderNumber: number;
         items: ({
             menuItem: {
                 id: number;
@@ -62,7 +63,6 @@ export declare class OrderController {
             reference: string | null;
             orderId: number;
         }[];
-    } & {
         id: number;
         status: string;
         tax: number;
@@ -72,8 +72,9 @@ export declare class OrderController {
         total: number;
         paidAmount: number;
         balanceAmount: number;
-    })[]>;
-    findOne(id: string): import("@prisma/client").Prisma.Prisma__OrderClient<({
+    }[]>;
+    findOne(id: string): Promise<{
+        dailyOrderNumber: number;
         items: ({
             menuItem: {
                 id: number;
@@ -106,7 +107,6 @@ export declare class OrderController {
             reference: string | null;
             orderId: number;
         }[];
-    } & {
         id: number;
         status: string;
         tax: number;
@@ -116,7 +116,7 @@ export declare class OrderController {
         total: number;
         paidAmount: number;
         balanceAmount: number;
-    }) | null, null, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    } | null>;
     update(id: string, updateOrderDto: any): import("@prisma/client").Prisma.Prisma__OrderClient<{
         items: {
             id: number;

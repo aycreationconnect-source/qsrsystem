@@ -3,6 +3,7 @@ export declare class OrderService {
     private prisma;
     constructor(prisma: PrismaService);
     create(data: any): Promise<{
+        dailyOrderNumber: number;
         items: {
             id: number;
             price: number;
@@ -18,7 +19,6 @@ export declare class OrderService {
             reference: string | null;
             orderId: number;
         }[];
-    } & {
         id: number;
         status: string;
         tax: number;
@@ -29,7 +29,8 @@ export declare class OrderService {
         paidAmount: number;
         balanceAmount: number;
     }>;
-    findAll(): import("@prisma/client").Prisma.PrismaPromise<({
+    findAll(): Promise<{
+        dailyOrderNumber: number;
         items: ({
             menuItem: {
                 id: number;
@@ -62,7 +63,6 @@ export declare class OrderService {
             reference: string | null;
             orderId: number;
         }[];
-    } & {
         id: number;
         status: string;
         tax: number;
@@ -72,8 +72,9 @@ export declare class OrderService {
         total: number;
         paidAmount: number;
         balanceAmount: number;
-    })[]>;
-    findOne(id: number): import("@prisma/client").Prisma.Prisma__OrderClient<({
+    }[]>;
+    findOne(id: number): Promise<{
+        dailyOrderNumber: number;
         items: ({
             menuItem: {
                 id: number;
@@ -106,7 +107,6 @@ export declare class OrderService {
             reference: string | null;
             orderId: number;
         }[];
-    } & {
         id: number;
         status: string;
         tax: number;
@@ -116,7 +116,7 @@ export declare class OrderService {
         total: number;
         paidAmount: number;
         balanceAmount: number;
-    }) | null, null, import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    } | null>;
     update(id: number, data: any): import("@prisma/client").Prisma.Prisma__OrderClient<{
         items: {
             id: number;

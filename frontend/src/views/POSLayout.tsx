@@ -88,7 +88,7 @@ export const POSLayout: React.FC = () => {
       </div>
 
       {/* 3. Right Desktop Cart Sidebar (Hidden on mobile/small tablets, fixed on large desktop) */}
-      <div className="hidden lg:flex w-80 xl:w-96 h-full shrink-0">
+      <div className="hidden lg:flex w-72 xl:w-80 2xl:w-88 h-full shrink-0">
         <POSCartSidebar />
       </div>
 

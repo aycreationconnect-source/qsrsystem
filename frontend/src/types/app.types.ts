@@ -90,6 +90,7 @@ export interface OrderPayment {
 
 export interface Order {
   id: number;
+  dailyOrderNumber?: number;
   date: string;
   paymentMethod: string;
   subtotal: number;

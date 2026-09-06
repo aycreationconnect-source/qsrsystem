@@ -129,7 +129,7 @@ export const POSProductGrid: React.FC = () => {
               </div>
 
               {/* Responsive Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-4">
                 {itemsInCat.map((item: MenuItem, i: number) => {
                   const qty = cart
                     .filter((c) => c.id === item.id)
@@ -176,7 +176,7 @@ export const POSProductGrid: React.FC = () => {
                         }
                       }}
                       className={cn(
-                        'relative bg-white dark:bg-stone-900 border rounded-2xl p-3 flex flex-col justify-between transition-all duration-150 select-none',
+                        'relative bg-white dark:bg-stone-900 border rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-150 select-none min-h-[160px] sm:min-h-[170px]',
                         isSoldOut
                           ? 'opacity-70 bg-stone-100/90 dark:bg-stone-900/70 border-stone-300 dark:border-stone-800 cursor-not-allowed shadow-none'
                           : 'border-stone-200/80 dark:border-stone-800 cursor-pointer hover:shadow-md hover:border-amber-500/40 hover:-translate-y-0.5',
@@ -184,37 +184,39 @@ export const POSProductGrid: React.FC = () => {
                       )}
                     >
                       {/* Top Header Row: Dietary Badge + Stock */}
-                      <div className="flex items-center justify-between gap-1 mb-2">
-                        {item.type === 'Non-Veg' ? (
-                          <Badge variant="nonveg" size="sm">Non-Veg</Badge>
-                        ) : item.type === 'Egg' ? (
-                          <Badge variant="egg" size="sm">Egg</Badge>
-                        ) : (
-                          <Badge variant="veg" size="sm">Veg</Badge>
-                        )}
+                      <div className="flex items-center justify-between gap-1.5 mb-2.5 min-w-0">
+                        <div className="shrink-0">
+                          {item.type === 'Non-Veg' ? (
+                            <Badge variant="nonveg" size="sm">Non-Veg</Badge>
+                          ) : item.type === 'Egg' ? (
+                            <Badge variant="egg" size="sm">Egg</Badge>
+                          ) : (
+                            <Badge variant="veg" size="sm">Veg</Badge>
+                          )}
+                        </div>
 
                         {isUnavailable ? (
-                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shadow-xs">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shrink-0">
                             Sold Out
                           </span>
                         ) : isOutOfStock ? (
-                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shadow-xs">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shrink-0">
                             Out of Stock
                           </span>
                         ) : isLowStock ? (
-                          <span className="text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded shrink-0">
                             {availableStock} left
                           </span>
                         ) : null}
                       </div>
 
                       {/* Item Details */}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 line-clamp-1">
+                      <div className="flex-1 min-w-0 mb-2">
+                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 line-clamp-2 leading-snug">
                           {item.name}
                         </h4>
                         {item.description && (
-                          <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-2 mt-0.5">
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 line-clamp-2 mt-1 leading-relaxed">
                             {item.description}
                           </p>
                         )}
@@ -227,12 +229,12 @@ export const POSProductGrid: React.FC = () => {
 
                       {/* Bottom Price & Add/Qty Row */}
                       <div
-                        className="flex items-center justify-between pt-3 mt-2 border-t border-stone-100 dark:border-stone-800"
+                        className="flex items-center justify-between gap-2 pt-2.5 border-t border-stone-100 dark:border-stone-800 shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span
                           className={cn(
-                            'text-sm font-extrabold font-mono',
+                            'text-sm font-extrabold font-mono shrink-0',
                             isSoldOut
                               ? 'text-stone-400 dark:text-stone-500'
                               : 'text-amber-600 dark:text-amber-400'
@@ -242,21 +244,21 @@ export const POSProductGrid: React.FC = () => {
                         </span>
 
                         {isSoldOut ? (
-                          <span className="inline-flex items-center px-2.5 py-1.5 rounded-xl bg-stone-200/90 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-extrabold text-[11px] select-none border border-stone-300/80 dark:border-stone-750 cursor-not-allowed">
+                          <span className="inline-flex items-center px-2 py-1 rounded-xl bg-stone-200/90 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-extrabold text-[11px] select-none border border-stone-300/80 dark:border-stone-750 cursor-not-allowed shrink-0">
                             Sold Out
                           </span>
                         ) : qty === 0 ? (
                           <button
                             type="button"
                             onClick={() => handleAddToCart(item)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs shadow-sm shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold text-xs shadow-sm shadow-amber-500/20 active:scale-95 transition-all cursor-pointer shrink-0"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Add</span>
                           </button>
                         ) : (
                           /* Quantity Stepper */
-                          <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl">
+                          <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl shrink-0">
                             <button
                               type="button"
                               onClick={() => {
@@ -267,12 +269,12 @@ export const POSProductGrid: React.FC = () => {
                                   updateCartQty(item, -1);
                                 }
                               }}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold hover:bg-stone-200 active:scale-90 transition-all cursor-pointer"
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold hover:bg-stone-200 active:scale-90 transition-all cursor-pointer shrink-0 shadow-2xs"
                             >
                               <Minus className="w-3 h-3" />
                             </button>
 
-                            <span className="w-6 text-center text-xs font-extrabold text-stone-900 dark:text-stone-100 font-mono">
+                            <span className="w-5 sm:w-6 text-center text-xs font-extrabold text-stone-900 dark:text-stone-100 font-mono select-none">
                               {qty}
                             </span>
 
@@ -286,7 +288,7 @@ export const POSProductGrid: React.FC = () => {
                                   updateCartQty(item, 1);
                                 }
                               }}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-amber-500 text-stone-950 font-bold hover:bg-amber-600 active:scale-90 transition-all cursor-pointer shadow-sm"
+                              className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg bg-amber-500 text-stone-950 font-bold hover:bg-amber-600 active:scale-90 transition-all cursor-pointer shadow-2xs shrink-0"
                             >
                               <Plus className="w-3 h-3" />
                             </button>
