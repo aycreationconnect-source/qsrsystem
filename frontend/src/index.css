@@ -206,6 +206,7 @@ html.dark .cafe-glass {
     visibility: visible !important;
   }
   #thermal-receipt {
+    display: block !important;
     position: absolute;
     left: 0;
     top: 0;

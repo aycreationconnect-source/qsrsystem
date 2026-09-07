@@ -6,7 +6,20 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-07 — Reports Suite (Total Summary & Order History) + Dashboard Cleanup
+### 1. 2026-09-07 — Bugfix: Thermal Receipt Printing on Settlement & Payment Screen
+- **Type**: Bugfix & Printing Improvement
+- **Summary**:
+  - **Issue Resolved**: When clicking "Print Receipt" on the Settlement & Payment modal (`CheckoutModal`), the browser preview was completely blank due to `display: none` (`hidden`) overriding print styles, fixed backdrop modal trapping, and full-page `window.print()` quirks.
+  - **Isolated Thermal Printing**: Built a dedicated `handlePrintThermalReceipt` generator utilizing an isolated iframe sandbox that renders only the 80mm/58mm thermal receipt directly to the printer without browser headers/footers (`localhost:5173...`).
+  - **Complete Order & Cafe Details**: The thermal receipt prints centered Cafe Branding (`storeProfile.businessName`, `cafeCode`, address, phone, GSTIN), Order/Table meta, itemized dishes grouped by KOT batches (`Order 1`, `Order 2`, etc.), subtotals, taxes, discount deductions, net payable total in bold, payment settlement breakdown, and custom receipt footer.
+  - **Direct CSS Fallback**: Added `display: block !important` and updated the in-DOM `#thermal-receipt` container in `index.css` for print media query fallbacks.
+- **Documentation**:
+  - [**System README**](../README.md)
+  - [**Features & Modifications Changelog**](features%20&%20modifications.md)
+
+---
+
+### 2. 2026-09-07 — Reports Suite (Total Summary & Order History) + Dashboard Cleanup
 - **Type**: New Feature & UI Modification
 - **Summary**:
   - **Dashboard Cleanup**: Removed the "Recent Completed Orders" card from the Admin Dashboard (`DashboardView`) and rebalanced the grid layout (`RevenueChart` + `QuickActions`). Added a direct **Reports** workflow shortcut.
