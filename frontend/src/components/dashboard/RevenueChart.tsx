@@ -13,7 +13,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
   maxRev,
 }) => {
   return (
-    <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+    <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
       <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
