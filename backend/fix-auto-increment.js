@@ -1,13 +1,15 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
 
 const adapter = new PrismaMariaDb({
-  host: 'localhost',
-  port: 3306,
-  user: 'root',
-  password: 'Aniket@123',
-  database: 'qsr_db',
+  host: process.env.DATABASE_HOST || 'localhost',
+  port: Number(process.env.DATABASE_PORT) || 3306,
+  user: process.env.DATABASE_USER || 'root',
+  password: process.env.DATABASE_PASSWORD || 'ay@creationconnect123',
+  database: process.env.DATABASE_NAME || 'qsr_db',
   connectionLimit: 1,
+  allowPublicKeyRetrieval: true,
 });
 const prisma = new PrismaClient({ adapter });
 

@@ -29,6 +29,7 @@ The platform provides a modular, production-ready solution for modern food busin
   - [3. Frontend Setup](#3-frontend-setup)
 - [🖥️ How to Run & Access the System](#️-how-to-run--access-the-system)
 - [📡 API Documentation & Service Layer](#-api-documentation--service-layer)
+- [🏢 Ecosystem & Headquarters (qsrsystem-hq)](#-ecosystem--headquarters-qsrsystem-hq)
 - [📁 Project Directory Structure](#-project-directory-structure)
 - [🔧 Helper Scripts & Maintenance](#-helper-scripts--maintenance)
 - [❓ Troubleshooting & FAQs](#-troubleshooting--faqs)
@@ -359,12 +360,37 @@ The frontend consumes the NestJS REST API via the modular service layer in `fron
 
 ---
 
+## 🏢 Ecosystem & Headquarters (`qsrsystem-hq`)
+
+The central cloud operations, superadmin developer portal, master cafe registry, and cryptographic license generation authority have been decoupled into a dedicated companion repository:
+
+👉 **[`qsrsystem-hq`](../qsrsystem-hq)**
+
+### Architecture Separation:
+- **`qsrsystem` (This Repository)**: The on-premise, offline-first restaurant & QSR POS engine running at local cafe hardware (NestJS + React 19 + MariaDB/MySQL). It verifies store licenses cryptographically offline without requiring continuous internet.
+- **[`qsrsystem-hq`](../qsrsystem-hq)**: The Centralized Headquarters hosted on **Vercel + Supabase PostgreSQL** ("Golden DB"). It serves as the master cafe registry, dynamic plan manager, superadmin dashboard, and cryptographic license key generator.
+
+> [!NOTE]
+> Detailed documentation for the cloud support platform architecture, Supabase schema, licensing mechanics, and the standalone API reference HTML file have been migrated to the HQ repository:
+> - **Architecture & Licensing Spec**: [`qsrsystem-hq/docs/support-platform.md`](../qsrsystem-hq/docs/support-platform.md)
+> - **Standalone API Reference**: [`qsrsystem-hq/docs/API Documentation.html`](../qsrsystem-hq/docs/API%20Documentation.html)
+
+---
+
 ## 📁 Project Directory Structure
 
 ```text
 qsrsystem/
 ├── README.md                          # Complete system documentation (This file)
 ├── package.json                       # Root project definition
+│
+├── docs/                              # Local POS Architecture & Feature Documentation
+│   ├── Brand Name Selection.md        # Branding and naming strategy
+│   ├── frontend-architecture-and-design-system.md  # UI design tokens and component structure
+│   ├── local-pos-onboarding.md        # Local store setup & offline activation guide
+│   ├── order-notification-and-sound-feature.md     # Real-time audio alerts & Web Audio API
+│   └── partial-payment-feature.md     # Split/partial billing workflow
+│   *(Note: Support platform & API HTML docs have moved to qsrsystem-hq/docs/)*
 │
 ├── frontend/                          # Refactored Frontend (React 19 + TypeScript + Vite)
 │   ├── index.html                     # Single-page application HTML root
