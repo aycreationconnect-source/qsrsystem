@@ -11,6 +11,7 @@ import { AddonSelectModal } from '../components/pos/AddonSelectModal';
 import { ShiftTableModal } from '../components/pos/ShiftTableModal';
 import { AddTablePOSModal } from '../components/pos/AddTablePOSModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
+import { POSOrderHistoryModal } from '../components/pos/POSOrderHistoryModal';
 import { Drawer } from '../components/ui';
 import { useSearchParams } from 'react-router-dom';
 import { Utensils, ArrowRight } from 'lucide-react';
@@ -108,6 +109,7 @@ export const POSLayout: React.FC = () => {
       <ShiftTableModal />
       <AddTablePOSModal />
       <OrderSuccessModal />
+      <POSOrderHistoryModal />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
+import { roundPOSAmount } from '../../lib/orderUtils';
 import { DollarSign, ShoppingBag, Percent, Receipt, Wallet, CreditCard, QrCode } from 'lucide-react';
 
 interface TotalSummaryReportProps {
@@ -56,7 +57,7 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
       dayOrders.forEach((o) => {
         const orderSub = o.subtotal || 0;
         const orderTax = o.tax || 0;
-        const orderTot = o.total || 0;
+        const orderTot = roundPOSAmount(o.total || 0);
 
         subtotal += orderSub;
         tax += orderTax;

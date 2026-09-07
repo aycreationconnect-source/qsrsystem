@@ -13,6 +13,7 @@ import {
   ArrowUpDown,
   CheckCircle2,
   FilterX,
+  History,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -32,6 +33,7 @@ export const POSTableSidebar: React.FC = () => {
     setCart,
     now,
     setShowAddTableModal,
+    setShowOrderHistoryModal,
   } = usePOS();
 
   const [selectedAreaId, setSelectedAreaId] = useState<string | number>('ALL');
@@ -543,12 +545,12 @@ export const POSTableSidebar: React.FC = () => {
                   isSelected
                     ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/60 dark:bg-amber-950/25 shadow-sm'
                     : isPartial
-                    ? 'bg-violet-50/40 dark:bg-violet-950/20 border-violet-200/90 dark:border-violet-800/60 hover:border-violet-400'
-                    : isDining
-                    ? 'bg-amber-50/30 dark:bg-amber-950/15 border-amber-200/90 dark:border-amber-800/60 hover:border-amber-400 hover:bg-amber-50/50'
-                    : isPrinted
-                    ? 'bg-sky-50/30 dark:bg-sky-950/15 border-sky-200/90 dark:border-sky-800/60 hover:border-sky-400'
-                    : 'bg-white dark:bg-stone-850 border-stone-200/80 dark:border-stone-750 hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-xs'
+                      ? 'bg-violet-50/40 dark:bg-violet-950/20 border-violet-200/90 dark:border-violet-800/60 hover:border-violet-400'
+                      : isDining
+                        ? 'bg-amber-50/30 dark:bg-amber-950/15 border-amber-200/90 dark:border-amber-800/60 hover:border-amber-400 hover:bg-amber-50/50'
+                        : isPrinted
+                          ? 'bg-sky-50/30 dark:bg-sky-950/15 border-sky-200/90 dark:border-sky-800/60 hover:border-sky-400'
+                          : 'bg-white dark:bg-stone-850 border-stone-200/80 dark:border-stone-750 hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-xs'
                 )}
               >
                 {/* Left: Monogram Badge & Table Details */}
@@ -559,12 +561,12 @@ export const POSTableSidebar: React.FC = () => {
                       isSelected
                         ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-sm shadow-amber-500/20'
                         : isPartial
-                        ? 'bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-300 border border-violet-300/60 dark:border-violet-800/60'
-                        : isDining
-                        ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60'
-                        : isPrinted
-                        ? 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/60 dark:border-sky-800/60'
-                        : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
+                          ? 'bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-300 border border-violet-300/60 dark:border-violet-800/60'
+                          : isDining
+                            ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60'
+                            : isPrinted
+                              ? 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/60 dark:border-sky-800/60'
+                              : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
                     )}
                   >
                     {initials}
@@ -622,8 +624,8 @@ export const POSTableSidebar: React.FC = () => {
                               isPrinted
                                 ? 'text-sky-600 dark:text-sky-400'
                                 : isSelected
-                                ? 'text-amber-800 dark:text-amber-300'
-                                : 'text-amber-600 dark:text-amber-400'
+                                  ? 'text-amber-800 dark:text-amber-300'
+                                  : 'text-amber-600 dark:text-amber-400'
                             )}
                           >
                             ₹{orderSummary.total.toFixed(2)}
@@ -661,8 +663,8 @@ export const POSTableSidebar: React.FC = () => {
                             isPartial
                               ? 'bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300 border border-violet-300/40'
                               : isPrinted
-                              ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
-                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                                ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                                : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
                           )}
                         >
                           {isPartial ? 'Partial' : isPrinted ? 'Billed' : 'Dining'}

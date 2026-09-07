@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import type { CartItem, TableOrderState, OrderPayment } from '../types/app.types';
 import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
+import { roundPOSAmount } from '../lib/orderUtils';
 
 interface POSContextType {
   cart: CartItem[];
@@ -12,6 +13,8 @@ interface POSContextType {
   setPosSearchQuery: (query: string) => void;
   showCheckoutModal: boolean;
   setShowCheckoutModal: (show: boolean) => void;
+  showOrderHistoryModal: boolean;
+  setShowOrderHistoryModal: (show: boolean) => void;
   paymentType: string;
   setPaymentType: (type: string) => void;
   discountType: 'percent' | 'fixed';
@@ -66,6 +69,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [posCategory, setPosCategory] = useState<string>('All Items');
   const [posSearchQuery, setPosSearchQuery] = useState('');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
   const [paymentType, setPaymentType] = useState('Cash');
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('fixed');
   const [discountValue, setDiscountValue] = useState('');
@@ -384,6 +388,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         finalTotal = baseTotal - dVal;
       }
       if (finalTotal < 0) finalTotal = 0;
+      const roundedTotal = roundPOSAmount(finalTotal);
 
       // Determine payments to send
       let paymentsToSend: Array<{ amount: number; paymentMethod: string; reference?: string | null }> = [];
@@ -405,7 +410,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         paymentsToSend = [
           {
-            amount: finalTotal,
+            amount: roundedTotal,
             paymentMethod: paymentType,
             reference: null,
           },
@@ -425,7 +430,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         })),
         subtotal,
         tax,
-        total: finalTotal,
+        total: roundedTotal,
         paymentMethod: methodToSave,
         payments: paymentsToSend,
       };
@@ -509,6 +514,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setPosSearchQuery,
         showCheckoutModal,
         setShowCheckoutModal,
+        showOrderHistoryModal,
+        setShowOrderHistoryModal,
         paymentType,
         setPaymentType,
         discountType,

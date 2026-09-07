@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { Button, Tooltip } from '../ui';
+import { roundPOSAmount } from '../../lib/orderUtils';
 import {
   ShoppingBag,
   Trash2,
@@ -36,6 +37,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
   } = usePOS();
 
   const { subtotal, tax, total } = getCartTotals();
+  const roundedTotal = roundPOSAmount(total);
   const selectedTable = selectedTableId
     ? appData.tables.find((t: any) => t.id === selectedTableId)
     : null;
@@ -257,11 +259,18 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             </span>
           </div>
 
-          <div className="flex justify-between text-base font-extrabold text-stone-900 dark:text-stone-100 pt-2 border-t border-stone-200 dark:border-stone-800">
+          <div className="flex justify-between items-start text-base font-extrabold text-stone-900 dark:text-stone-100 pt-2 border-t border-stone-200 dark:border-stone-800">
             <span>Total Amount</span>
-            <span className="font-mono text-amber-600 dark:text-amber-400">
-              ₹{total.toFixed(2)}
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="font-mono text-amber-600 dark:text-amber-400">
+                ₹{roundedTotal}
+              </span>
+              {roundedTotal !== total && (
+                <span className="text-[11px] font-mono font-normal text-stone-400">
+                  (₹{total.toFixed(2)})
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -290,7 +299,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             }}
             className="w-full text-base font-extrabold shadow-md shadow-amber-500/20"
           >
-            Pay ₹{total.toFixed(2)}
+            Pay ₹{roundedTotal}
           </Button>
         </div>
       </div>

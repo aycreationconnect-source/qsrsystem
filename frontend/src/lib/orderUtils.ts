@@ -82,3 +82,15 @@ export function getDailyOrderNumber(
   // If newly placed and not yet in allOrders list:
   return sameDayOrders.length + 1;
 }
+
+/**
+ * POS Amount Rounding Rule:
+ * If decimal part >= 0.50 -> rounds up to next integer (e.g. 1192.50 -> 1193)
+ * If decimal part < 0.50 -> rounds down to previous integer (e.g. 1192.49 -> 1192)
+ */
+export function roundPOSAmount(amount: number): number {
+  if (isNaN(amount) || !isFinite(amount)) return 0;
+  const normalized = Math.round(amount * 100) / 100;
+  return Math.round(normalized);
+}
+

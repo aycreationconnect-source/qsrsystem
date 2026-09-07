@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { roundPOSAmount } from '../../lib/orderUtils';
 
 export const CheckoutModal: React.FC = () => {
   const { posMode, appData, storeProfile, currentUser } = useApp();
@@ -136,6 +137,7 @@ export const CheckoutModal: React.FC = () => {
     discountAmount = dVal;
   }
   const finalTotal = Math.max(0, baseTotal - discountAmount);
+  const roundedTotal = roundPOSAmount(finalTotal);
 
   // Active payments for current session
   const currentPayments: OrderPayment[] =
@@ -147,11 +149,11 @@ export const CheckoutModal: React.FC = () => {
     (sum, p) => sum + (parseFloat(String(p.amount ?? '').replace(/[^0-9.]/g, '')) || 0),
     0
   );
-  const currentRemaining = Math.max(0, parseFloat((finalTotal - currentPaid).toFixed(2)));
+  const currentRemaining = Math.max(0, parseFloat((roundedTotal - currentPaid).toFixed(2)));
 
   // Cash tender change calculation (for single payment tab)
   const tenderedAmount = parseFloat(tenderCash) || 0;
-  const changeDue = Math.max(0, tenderedAmount - finalTotal);
+  const changeDue = Math.max(0, tenderedAmount - roundedTotal);
 
   // When modal opens, auto-switch to split tab if table has recorded advance/payments
   useEffect(() => {
@@ -291,7 +293,7 @@ export const CheckoutModal: React.FC = () => {
       paymentLinesHtml = `
         <div style="display: flex; justify-content: space-between; padding: 1px 0;">
           <span>• Mode: ${escapeXml(paymentType)}</span>
-          <span style="font-weight: bold;">₹${finalTotal.toFixed(2)}</span>
+          <span style="font-weight: bold;">₹${roundedTotal}</span>
         </div>
       `;
       if (paymentType.toLowerCase() === 'cash' && tenderedAmount > 0) {
@@ -457,11 +459,18 @@ export const CheckoutModal: React.FC = () => {
           </div>
         ` : ''}
 
+        ${roundedTotal !== finalTotal ? `
+          <div class="calc-row" style="color: #222;">
+            <span>Round Off:</span>
+            <span>${roundedTotal > finalTotal ? '+' : ''}₹${(roundedTotal - finalTotal).toFixed(2)}</span>
+          </div>
+        ` : ''}
+
         <div class="divider-double"></div>
 
         <div class="total-banner">
           <span>NET PAYABLE:</span>
-          <span>₹${finalTotal.toFixed(2)}</span>
+          <span>₹${roundedTotal}</span>
         </div>
 
         <div class="divider-double"></div>
@@ -659,13 +668,20 @@ export const CheckoutModal: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex justify-between items-baseline pt-0.5">
+                <div className="flex justify-between items-start pt-0.5">
                   <span className="text-sm font-extrabold text-stone-900 dark:text-stone-100">
                     Total Amount:
                   </span>
-                  <span className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-blue-400">
-                    ₹{finalTotal.toFixed(2)}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-blue-400">
+                      ₹{roundedTotal}
+                    </span>
+                    {roundedTotal !== finalTotal && (
+                      <span className="text-[11px] font-mono text-stone-500 dark:text-stone-400">
+                        (₹{finalTotal.toFixed(2)})
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* If partial payments recorded, display live running balance */}
@@ -822,7 +838,7 @@ export const CheckoutModal: React.FC = () => {
 
                       <input
                         type="number"
-                        placeholder={finalTotal.toFixed(0)}
+                        placeholder={roundedTotal.toString()}
                         value={tenderCash}
                         onChange={(e) => setTenderCash(e.target.value)}
                         className="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-1.5 text-sm font-mono font-bold focus:border-amber-500 focus:outline-none"
@@ -851,7 +867,7 @@ export const CheckoutModal: React.FC = () => {
                     onClick={() => confirmPaymentAndOrder()}
                     className="w-full font-bold text-sm py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
                   >
-                    Confirm & Pay ₹{finalTotal.toFixed(2)}
+                    Confirm & Pay ₹{roundedTotal}
                   </button>
                 </div>
               </div>
@@ -1019,7 +1035,7 @@ export const CheckoutModal: React.FC = () => {
                       onClick={() => confirmPaymentAndOrder(currentPayments)}
                       className="w-full font-bold text-sm py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
                     >
-                      Confirm & Settle Final Bill (₹{finalTotal.toFixed(2)})
+                      Confirm & Settle Final Bill (₹{roundedTotal})
                     </button>
                   ) : posMode === 'table' && selectedTableId ? (
                     <Button
@@ -1143,10 +1159,16 @@ export const CheckoutModal: React.FC = () => {
               <span>-₹{discountAmount.toFixed(2)}</span>
             </div>
           )}
+          {roundedTotal !== finalTotal && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Round Off:</span>
+              <span>{roundedTotal > finalTotal ? '+' : ''}₹{(roundedTotal - finalTotal).toFixed(2)}</span>
+            </div>
+          )}
           <div style={{ borderBottom: '2px dashed #000', margin: '5px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: '900' }}>
             <span>NET PAYABLE:</span>
-            <span>₹{finalTotal.toFixed(2)}</span>
+            <span>₹{roundedTotal}</span>
           </div>
           <div style={{ borderBottom: '2px dashed #000', margin: '5px 0' }} />
         </div>
@@ -1164,7 +1186,7 @@ export const CheckoutModal: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>• Mode: {paymentType}:</span>
-              <span style={{ fontWeight: 'bold' }}>₹{finalTotal.toFixed(2)}</span>
+              <span style={{ fontWeight: 'bold' }}>₹{roundedTotal}</span>
             </div>
           )}
 

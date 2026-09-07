@@ -4,7 +4,7 @@ import { TotalSummaryReport } from './TotalSummaryReport';
 import { OrderHistoryReport } from './OrderHistoryReport';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { printReportToPdf, exportReportToXls, type ReportColumn } from '../../lib/reportExportUtils';
-import { buildDailyOrderNumberMap } from '../../lib/orderUtils';
+import { buildDailyOrderNumberMap, roundPOSAmount } from '../../lib/orderUtils';
 import type { Order } from '../../types/app.types';
 import {
   BarChart3,
@@ -163,9 +163,10 @@ export const ReportsView: React.FC = () => {
       let net = 0;
 
       dayOrders.forEach((o) => {
+        const orderTot = roundPOSAmount(o.total || 0);
         sub += o.subtotal || 0;
         tax += o.tax || 0;
-        net += o.total || 0;
+        net += orderTot;
 
         if (o.payments && o.payments.length > 0) {
           o.payments.forEach((p) => {
@@ -178,10 +179,10 @@ export const ReportsView: React.FC = () => {
           });
         } else {
           const m = (o.paymentMethod || '').toLowerCase();
-          if (m.includes('cash')) cash += o.total || 0;
-          else if (m.includes('card')) card += o.total || 0;
-          else if (m.includes('upi')) upi += o.total || 0;
-          else other += o.total || 0;
+          if (m.includes('cash')) cash += orderTot;
+          else if (m.includes('card')) card += orderTot;
+          else if (m.includes('upi')) upi += orderTot;
+          else other += orderTot;
         }
       });
 
@@ -259,9 +260,10 @@ export const ReportsView: React.FC = () => {
         .map((it: any) => `${it.menuItem?.name || 'Dish'} x${it.quantity || 1}`)
         .join('; ');
 
+      const orderTot = roundPOSAmount(o.total || 0);
       totSub += o.subtotal || 0;
       totTax += o.tax || 0;
-      totTotal += o.total || 0;
+      totTotal += orderTot;
 
       return {
         dailySeq: `#${dailySeq}`,
@@ -271,7 +273,7 @@ export const ReportsView: React.FC = () => {
         paymentMethod: o.paymentMethod || 'Cash',
         subtotal: `₹${(o.subtotal || 0).toFixed(2)}`,
         tax: `₹${(o.tax || 0).toFixed(2)}`,
-        total: `₹${(o.total || 0).toFixed(2)}`,
+        total: `₹${orderTot.toFixed(2)}`,
         status: o.status || 'Completed',
       };
     });

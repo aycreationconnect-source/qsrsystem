@@ -6,7 +6,41 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-07 — Bugfix: Thermal Receipt Printing on Settlement & Payment Screen
+### 1. 2026-09-07 — Feature: Order History in All Terminals (Quick & Table POS)
+- **Type**: New Feature & Terminal Usability Enhancement
+- **Summary**:
+  - **Terminal Access**: Integrated direct access to **Order History** from all POS terminals (both Quick POS and Table POS) without forcing cashiers/waiters to leave the active terminal or switch to the admin dashboard.
+  - **Top Navigation Trigger (`POSTopNav`)**: Added a prominent `Order History` button in the top navigation bar with a dedicated history icon and responsive label (`History` on mobile/small screens).
+  - **Floor Sidebar Shortcut (`POSTableSidebar`)**: In Dine-in / Table mode, added an `Order History` quick action button directly on the floor sidebar header for fast waiter access.
+  - **Dedicated Terminal Modal (`POSOrderHistoryModal`)**:
+    - **Date Filters**: Fast preset switching for `Today` (default for quick counter operation), `Yesterday`, `Last 7 Days`, and `All Orders`.
+    - **Real-Time Search**: Search orders on-the-fly by daily token # (`#1`, `#2`), database ID, dish name, customer info, or payment method.
+    - **Filter Pills**: Filter by Payment Mode (`All`, `Cash`, `UPI`, `Card`, `Split`) and Settlement Status (`All`, `Completed`, `Partial`).
+    - **Live Counters**: Displays live order counts and total sales revenue for the current view.
+    - **Order Table**: Shows daily sequence token, timestamp, preview of items, payment badge, rounded net amount, and completion status.
+    - **One-Click Thermal Reprint**: Instant `Reprint` button on each order row that prints an 80mm/58mm thermal receipt directly via isolated iframe sandbox without opening popups.
+    - **Itemized Details Inspection**: Clicking any row or "View" opens the full `OrderDetailsModal` showing centered cafe details, taxes, payment installments, and itemized quantities.
+- **Documentation**:
+  - [**Order History Report Specification**](report/order-history-report.md)
+  - [**System README**](../README.md)
+
+---
+
+### 2. 2026-09-07 — Feature: POS Amount Round Up & Decimal Transparency
+- **Type**: Financial Calculation & UI Enhancement
+- **Summary**:
+  - **POS Amount Rounding Rule**: Added standard half-up rounding logic (`roundPOSAmount`) where amounts with decimal $\ge 0.50$ round UP to the nearest integer (e.g. ₹1192.50 $\rightarrow$ ₹1193) and amounts $< 0.50$ round DOWN to the previous integer (e.g. ₹1192.49 $\rightarrow$ ₹1192).
+  - **Settlement & Payment Modal (`CheckoutModal`)**: Displays the rounded total prominently in bold font (e.g. `₹1193`), with the exact decimal figure displayed directly below in a smaller font (e.g. `(₹1192.50)`). Cash tendered change, remaining balance, and single payment actions calculate against the rounded amount.
+  - **POS Cart Sidebar (`POSCartSidebar`)**: Shows the rounded amount prominently and the exact unrounded decimal in smaller font below, with the "Pay" button displaying the rounded figure.
+  - **Thermal Receipt Printing**: Both isolated iframe and direct printable receipt formats show `NET PAYABLE: ₹1193` along with an explicit `Round Off: +₹0.50` line item.
+  - **Reports & Export Reflection**: Stored order records, Total Summary Report, Order History Report, Order Details inspection modal, and PDF/XLS exports consistently reflect the rounded integer total to ensure sales revenue and drawer tenders balance without discrepancy.
+- **Documentation**:
+  - [**Order History Report Specification**](report/order-history-report.md)
+  - [**Total Summary Report Specification**](report/total-summary-report.md)
+
+---
+
+### 2. 2026-09-07 — Bugfix: Thermal Receipt Printing on Settlement & Payment Screen
 - **Type**: Bugfix & Printing Improvement
 - **Summary**:
   - **Issue Resolved**: When clicking "Print Receipt" on the Settlement & Payment modal (`CheckoutModal`), the browser preview was completely blank due to `display: none` (`hidden`) overriding print styles, fixed backdrop modal trapping, and full-page `window.print()` quirks.

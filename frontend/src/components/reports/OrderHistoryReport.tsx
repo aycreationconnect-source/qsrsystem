@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
-import { buildDailyOrderNumberMap } from '../../lib/orderUtils';
+import { buildDailyOrderNumberMap, roundPOSAmount } from '../../lib/orderUtils';
 import { Search, Eye, Filter, CheckCircle2, Clock, CreditCard } from 'lucide-react';
 
 interface OrderHistoryReportProps {
@@ -69,7 +69,7 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
       (acc, o) => {
         acc.subtotal += o.subtotal || 0;
         acc.tax += o.tax || 0;
-        acc.total += o.total || 0;
+        acc.total += roundPOSAmount(o.total || 0);
         return acc;
       },
       { subtotal: 0, tax: 0, total: 0 }
@@ -224,7 +224,7 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
                     </td>
 
                     <td className="py-3.5 px-4 text-right font-mono font-black text-stone-900 dark:text-stone-100">
-                      {currency}{(o.total || 0).toFixed(2)}
+                      {currency}{roundPOSAmount(o.total || 0).toFixed(2)}
                     </td>
 
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">

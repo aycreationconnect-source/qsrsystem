@@ -2,6 +2,8 @@ import React from 'react';
 import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
 import { Modal } from '../ui/Modal';
+import { roundPOSAmount } from '../../lib/orderUtils';
+import { printThermalReceipt } from '../../lib/thermalPrintUtils';
 import { Printer, CheckCircle2, Clock, CreditCard, Utensils, Hash, Calendar } from 'lucide-react';
 
 interface OrderDetailsModalProps {
@@ -15,9 +17,11 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onClose,
   order,
 }) => {
-  const { storeProfile } = useApp();
+  const { storeProfile, appData, currentUser } = useApp();
 
   if (!order) return null;
+
+  const roundedTotal = roundPOSAmount(order.total || 0);
 
   const cafeName = storeProfile?.businessName || 'Velora Cafe & POS';
   const cafeCode = storeProfile?.cafeCode || 'CF-001';
@@ -42,88 +46,13 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   const isPartiallyPaid = order.status === 'Partially Paid' || (order.balanceAmount || 0) > 0;
 
   const handlePrintReceipt = () => {
-    // Printable thermal receipt trigger
-    const printWindow = window.open('', '_blank', 'width=350,height=600');
-    if (!printWindow) {
-      alert('Please allow popups to print receipt');
-      return;
-    }
-
-    const itemsRows = (order.items || []).map((item: any) => {
-      const name = item.menuItem?.name || `Item #${item.menuItemId || item.id}`;
-      const qty = item.quantity || 1;
-      const price = (item.price || 0) * qty;
-      return `
-        <tr>
-          <td style="padding: 3px 0;">${escapeXml(name)} x${qty}</td>
-          <td style="text-align: right; padding: 3px 0;">₹${price.toFixed(2)}</td>
-        </tr>
-      `;
-    }).join('');
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Receipt - Order #${dailyNum}</title>
-        <style>
-          body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; width: 280px; }
-          .center { text-align: center; }
-          .bold { font-weight: bold; }
-          .divider { border-top: 1px dashed #000; margin: 6px 0; }
-          table { width: 100%; border-collapse: collapse; }
-        </style>
-      </head>
-      <body>
-        <div class="center">
-          <h2 style="margin: 0;">${escapeXml(cafeName)}</h2>
-          <div>${escapeXml(cafeCode)}${address ? ' - ' + escapeXml(address) : ''}</div>
-          ${phone ? `<div>Tel: ${escapeXml(phone)}</div>` : ''}
-          ${gstin ? `<div>GSTIN: ${escapeXml(gstin)}</div>` : ''}
-          <div class="divider"></div>
-          <div class="bold" style="font-size: 14px;">ORDER #${dailyNum}</div>
-          <div>Ref ID: #${order.id}</div>
-          <div>${dateFormatted} ${timeFormatted}</div>
-          <div>Mode: ${escapeXml(order.paymentMethod || 'Cash')}</div>
-        </div>
-        <div class="divider"></div>
-        <table>
-          <thead>
-            <tr>
-              <th style="text-align: left; padding: 3px 0;">ITEM</th>
-              <th style="text-align: right; padding: 3px 0;">AMT</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsRows}
-          </tbody>
-        </table>
-        <div class="divider"></div>
-        <table>
-          <tr><td>Subtotal</td><td style="text-align: right;">₹${(order.subtotal || 0).toFixed(2)}</td></tr>
-          <tr><td>Tax</td><td style="text-align: right;">₹${(order.tax || 0).toFixed(2)}</td></tr>
-          <tr class="bold" style="font-size: 13px;">
-            <td>TOTAL</td>
-            <td style="text-align: right;">₹${(order.total || 0).toFixed(2)}</td>
-          </tr>
-          ${order.paidAmount !== undefined ? `
-            <tr><td>Paid</td><td style="text-align: right;">₹${(order.paidAmount || 0).toFixed(2)}</td></tr>
-            <tr><td>Balance</td><td style="text-align: right;">₹${(order.balanceAmount || 0).toFixed(2)}</td></tr>
-          ` : ''}
-        </table>
-        <div class="divider"></div>
-        <div class="center" style="margin-top: 10px; font-size: 11px;">
-          ${escapeXml(storeProfile?.receiptFooter || 'Thank you for dining with us!')}
-        </div>
-        <script>
-          window.onload = function() { window.print(); window.close(); }
-        </script>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
+    printThermalReceipt({
+      order,
+      storeProfile,
+      dailySeq: dailyNum,
+      settings: appData?.settings,
+      currentUser,
+    });
   };
 
   return (
@@ -300,11 +229,18 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             <span>Taxes & GST</span>
             <span className="font-mono font-bold">₹{(order.tax || 0).toFixed(2)}</span>
           </div>
-          <div className="pt-2 border-t border-stone-200 dark:border-stone-750 flex justify-between items-center text-sm sm:text-base font-black text-stone-900 dark:text-stone-100">
+          <div className="pt-2 border-t border-stone-200 dark:border-stone-750 flex justify-between items-start text-sm sm:text-base font-black text-stone-900 dark:text-stone-100">
             <span>Total Bill Amount</span>
-            <span className="font-mono text-amber-600 dark:text-amber-400">
-              ₹{(order.total || 0).toFixed(2)}
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="font-mono text-amber-600 dark:text-amber-400">
+                ₹{roundedTotal}
+              </span>
+              {roundedTotal !== (order.total || 0) && (
+                <span className="text-[11px] font-mono font-normal text-stone-400">
+                  (Exact: ₹{(order.total || 0).toFixed(2)})
+                </span>
+              )}
+            </div>
           </div>
 
           {order.paidAmount !== undefined && (
@@ -338,16 +274,3 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     </Modal>
   );
 };
-
-function escapeXml(unsafe: string): string {
-  return (unsafe || '').replace(/[<>&'"]/g, (c) => {
-    switch (c) {
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '&': return '&amp;';
-      case '\'': return '&apos;';
-      case '"': return '&quot;';
-      default: return c;
-    }
-  });
-}
