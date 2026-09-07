@@ -4,7 +4,6 @@ import { usePOS } from '../../context/POSContext';
 import { StatCards } from './StatCards';
 import { RevenueChart } from './RevenueChart';
 import { QuickActions } from './QuickActions';
-import { RecentActivity } from './RecentActivity';
 import { LayoutDashboard } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -90,10 +89,6 @@ export const DashboardView: React.FC = () => {
   });
   const maxRev = Math.max(...revenueByDay, 1);
 
-  const recentOrders = [...(appData.orders || [])]
-    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Header Card */}
@@ -125,9 +120,8 @@ export const DashboardView: React.FC = () => {
           <RevenueChart last7Days={last7Days} revenueByDay={revenueByDay} maxRev={maxRev} />
         </div>
 
-        <div className="lg:col-span-5 xl:col-span-4 space-y-6 flex flex-col">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
           <QuickActions />
-          <RecentActivity recentOrders={recentOrders} />
         </div>
       </div>
     </div>

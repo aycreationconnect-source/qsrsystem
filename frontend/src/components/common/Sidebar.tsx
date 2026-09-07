@@ -12,6 +12,7 @@ import {
   Utensils,
   Tablet,
   LogOut,
+  FileBarChart2,
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -30,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobileNav }) => {
     { label: 'Menu Management', path: '/menu', icon: UtensilsCrossed },
     { label: 'Inventory', path: '/inventory', icon: Boxes },
     { label: 'Table Setup', path: '/tables', icon: Armchair },
+    { label: 'Report', path: '/reports', icon: FileBarChart2 },
     { label: 'Settings', path: '/settings', icon: Settings },
   ];
 

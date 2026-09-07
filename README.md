@@ -385,6 +385,12 @@ qsrsystem/
 ├── package.json                       # Root project definition
 │
 ├── docs/                              # Local POS Architecture & Feature Documentation
+│   ├── features & modifications.md    # Date-wise changelog & QA testing reference
+│   ├── report/                        # Store Reports & Analytics Documentation
+│   │   ├── README.md                  # Reports suite overview & export specifications
+│   │   ├── total-summary-report.md    # Total sales, tax, tender distributions & daily aggregation
+│   │   ├── order-history-report.md    # Itemized order tickets, daily sequence & modal
+│   │   └── stock-summary-report.md    # Recipe-linked ingredient deductions & inventory
 │   ├── Brand Name Selection.md        # Branding and naming strategy
 │   ├── frontend-architecture-and-design-system.md  # UI design tokens and component structure
 │   ├── local-pos-onboarding.md        # Local store setup & offline activation guide
@@ -419,14 +425,15 @@ qsrsystem/
 │       │   ├── AdminLayout.tsx        # Dashboard layout with sidebar navigation
 │       │   └── POSLayout.tsx          # POS terminal layout (Counter & Dine-In)
 │       └── components/                # Modular domain components
-│           ├── auth/                  # LoginView, RegisterView
-│           ├── common/                # Header, Sidebar
-│           ├── dashboard/             # DashboardView, StatCards, RevenueChart, RecentActivity, QuickActions
+│           ├── auth/                  # LoginView, RegisterView, ActivateLicenseView
+│           ├── common/                # Header, Sidebar, OrderNotificationToast
+│           ├── dashboard/             # DashboardView, StatCards, RevenueChart, QuickActions
+│           ├── reports/               # ReportsView, TotalSummaryReport, OrderHistoryReport, OrderDetailsModal
 │           ├── menu/                  # MenuView, MenuItemsGrid, CategorySidebar, Modals, AddonsManagement
 │           ├── inventory/             # InventoryView, InventoryTable, UpdateStockModal, HistoryModal
 │           ├── tables/                # FloorManagement, AreaModal, TableModal
 │           ├── pos/                   # POSTopNav, CategoryTabs, ProductGrid, CartSidebar, CheckoutModal, Modals
-│           └── settings/              # SettingsView
+│           └── settings/              # SettingsView, StoreProfileModal
 │
 ├── backend/                           # Backend Application (NestJS 11 + Prisma ORM 7)
 │   ├── .env                           # Environment variables (DB credentials & Port)

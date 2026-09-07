@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { UtensilsCrossed, Armchair, Boxes, Settings, Zap } from 'lucide-react';
+import { UtensilsCrossed, Armchair, Boxes, Settings, Zap, FileSpreadsheet } from 'lucide-react';
 
 export const QuickActions: React.FC = () => {
   const actions = [
     { label: 'Add Dish', path: '/menu', icon: UtensilsCrossed, color: 'text-amber-600 bg-amber-500/10' },
     { label: 'New Table', path: '/tables', icon: Armchair, color: 'text-sky-600 bg-sky-500/10' },
     { label: 'Stock Audit', path: '/inventory', icon: Boxes, color: 'text-emerald-600 bg-emerald-500/10' },
+    { label: 'Reports', path: '/reports', icon: FileSpreadsheet, color: 'text-indigo-600 bg-indigo-500/10' },
     { label: 'Settings', path: '/settings', icon: Settings, color: 'text-stone-600 bg-stone-500/10' },
   ];
 
@@ -21,7 +22,7 @@ export const QuickActions: React.FC = () => {
         </h3>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
         {actions.map((act) => {
           const Icon = act.icon;
           return (
