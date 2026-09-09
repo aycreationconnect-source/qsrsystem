@@ -2,8 +2,10 @@ export interface Category {
   id?: number;
   name: string;
   description?: string | null;
-  displayOrder?: number | null;
   status?: string;
+  parentId?: number | null;
+  parentName?: string | null;
+  subcategories?: string[];
 }
 
 export interface MenuItemTax {
@@ -41,6 +43,8 @@ export interface MenuItem {
   addonIds?: string | null;
   categoryId?: number;
   category?: string | { id: number; name: string };
+  subcategory?: string | null;
+  useGlobalTax?: boolean;
   ingredients?: RecipeIngredient[];
   taxes?: MenuItemTax[];
 }
@@ -50,6 +54,14 @@ export interface Addon {
   name: string;
   description?: string | null;
   price: number | string;
+}
+
+export interface InventoryCategory {
+  id: number;
+  name: string;
+  description?: string | null;
+  itemCount?: number;
+  lowStockCount?: number;
 }
 
 export interface InventoryHistory {
@@ -68,6 +80,8 @@ export interface InventoryItem {
   stock: number;
   threshold: number;
   status: string; // 'Good' | 'Low Stock' | 'Out of Stock'
+  category?: string;
+  categoryId?: number;
   history?: InventoryHistory[];
 }
 

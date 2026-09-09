@@ -7,7 +7,9 @@ export interface TooltipProps {
   align?: 'center' | 'end' | 'start';
   children: React.ReactNode;
   className?: string;
+  wrapperClassName?: string;
   delay?: number;
+  disabled?: boolean;
 }
 
 export const Tooltip: React.FC<TooltipProps> = ({
@@ -16,7 +18,9 @@ export const Tooltip: React.FC<TooltipProps> = ({
   align = 'center',
   children,
   className,
+  wrapperClassName,
   delay = 150,
+  disabled = false,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [timeoutId, setTimeoutId] = useState<number | null>(null);
@@ -71,11 +75,13 @@ export const Tooltip: React.FC<TooltipProps> = ({
     return 'right-full top-1/2 -translate-y-1/2 border-r-stone-900 dark:border-r-stone-800 border-y-transparent border-l-transparent';
   };
 
-  if (!content) return <>{children}</>;
+  if (disabled || !content) {
+    return wrapperClassName ? <div className={wrapperClassName}>{children}</div> : <>{children}</>;
+  }
 
   return (
     <div
-      className="relative inline-flex items-center"
+      className={cn('relative inline-flex items-center', wrapperClassName)}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}

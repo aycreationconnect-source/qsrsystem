@@ -6,7 +6,67 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-07 — Feature: Order History in All Terminals (Quick & Table POS)
+### 1. 2026-09-08 — Feature: Inventory Category Management & Stock Tracking (Requirement 9)
+- **Type**: New Feature & Inventory Architecture
+- **Summary**:
+  - **Database Schema Expansion**: Added `InventoryCategory` entity to `schema.prisma` with unique category names, descriptions, and linked relation to `InventoryItem`. Added `categoryName` (default: `"General"`) and `categoryId` to `InventoryItem` table.
+  - **Backend API Layer (`InventoryController` & `InventoryService`)**:
+    - Added `GET /inventory/categories` returning all categories with live counts for total items and low-stock items.
+    - Added `POST /inventory/categories` to create custom inventory categories on-the-fly.
+    - Added `DELETE /inventory/categories/:id` to remove categories with automatic safe re-association of orphaned items to `"General"`.
+    - Seeded standard default categories on empty database: `"General"`, `"Dairy"`, `"Bakery"`, `"Beverages"`, `"Produce"`, `"Packaging"`, `"Spices & Dry Goods"`.
+    - Updated `create` and `update` methods to accept and persist category names and IDs.
+  - **Category Navigation Bar (`InventoryView`)**: Added top category filter pills (`All Categories`, `Dairy`, `Bakery`, etc.) displaying item count badges and red alert dots for categories containing depleted/low-stock items.
+  - **Category Summary Header**: Shows live breakdown for the active category filter: total items, optimal count, low-stock count, and depleted count.
+  - **Dedicated Category Creator Modal (`AddCategoryModal`)**: Quick modal triggered by `+ Add Category` to create new categories.
+  - **Direct Raw Item Creator (`AddInventoryItemModal`)**: Added `+ Add Raw Item` button enabling creation of new ingredients with Name, Category dropdown, Unit of measure (`pcs`, `kg`, `g`, `L`, `ml`, `slice`, `portion`, `box`), initial stock, and minimum alert threshold.
+  - **Inventory Table (`InventoryTable`)**: Added a styled **Category** badge column and filtered table view reflecting the selected category pill.
+  - **Stock Adjustment Modal (`UpdateStockModal`)**: Added an **Inventory Category** selector allowing managers to reassign an ingredient's category while updating stock levels and alert thresholds.
+- **Documentation**:
+  - [**Stock Summary & Inventory Linkage**](report/stock-summary-report.md)
+  - [**System README**](../README.md#3-📦-recipe-linked-inventory--automated-stock-tracking)
+
+---
+
+### 2. 2026-09-08 — Enhancement: Item Configuration UI Simplification, Inline Add-on Creation & Global Tax Toggle (Issue 8)
+- **Type**: UI Simplification, Usability & Financial Calculation
+- **Summary**:
+  - **Modal Tabs Renaming (`ConfigItemModal`)**: Renamed confusing tab titles to clear, user-friendly labels:
+    - `Recipe & Stock Consumption` $\rightarrow$ **`Inventory`**
+    - `Modifiers & Add-ons` $\rightarrow$ **`Add-ons`**
+    - `Taxes & GST` $\rightarrow$ **`Taxes`**
+  - **Inventory Tab (Stock Deduction)**: Renamed section header to **"Raw Ingredients (Stock Deduction)"** with intuitive subtitle explaining automatic depletion on POS billing. Column headers simplified to `Ingredient Name`, `Qty per Dish`, `Unit`, and delete action.
+  - **Add-ons Tab with Inline Creation**:
+    - Added an **`+ Add New Add-on`** button directly in the tab.
+    - Clicking opens an inline creation form with Add-on Name, Price (₹), and optional description.
+    - Saves directly via `menuApi.createAddon`, refreshes the add-on catalog, and immediately selects the newly created add-on for the dish.
+  - **Taxes Tab with Global Tax vs. Manual Tax Toggle**:
+    - Added an **`Apply Global Tax`** toggle button with active (emerald) / inactive (stone) state badges.
+    - **Active State (Default)**: Automatically applies the store's global tax rate configured in Settings (e.g. 5% GST), hiding manual inputs to prevent cashier/manager confusion and accidental duplicate taxation.
+    - **Inactive State**: Disables global tax for this specific item and unlocks the **Manual Tax Rates** editor with `+ Add Tax Rate` (Tax Label, Rate %), or allows 0% tax-exempt dishes if left empty.
+  - **POS Tax Calculation Engine (`POSContext.tsx`)**: Updated `getCartTotals` to calculate taxes per item based on `useGlobalTax`: items with manual taxes use their custom rate and are exempt from global tax, while global tax items inherit the store-wide rate.
+- **Documentation**:
+  - [**System README**](../README.md#2-🍽️-menu--dynamic-categories-management)
+  - [**Total Summary Report Specification**](report/total-summary-report.md)
+
+---
+
+### 3. 2026-09-08 — UI Polish: Dish Edit Modal Status & Subcategory Row Alignment
+- **Type**: UI Polish & Layout Fix
+- **Summary**:
+  - **Dish Status Box Compacted (`ItemModal`)**: Removed the multi-line descriptive text (`Active (Visible and available for ordering on POS)` / `Inactive...`) that occupied excessive vertical space and triggered unnecessary `overflow-y` scrollbars. Replaced with a compact inline status pill (`ACTIVE` / `INACTIVE`) and switch toggle.
+  - **Row Alignment Fix (`Dish / Beverage Name`, `Category`, `Subcategory`)**:
+    - Resolved misalignment caused by the `Subcategory (Optional)` label wrapping into two lines and pushing its select dropdown down.
+    - Standardized all labels to single-line `h-4 flex items-center` with `uppercase tracking-wider` and `whitespace-nowrap`.
+    - Unified `<select>` dropdown styles to match the `<Input>` field: height `h-[42px]`, rounded corners `rounded-xl`, background `bg-white dark:bg-stone-900`, and borders `border-stone-300 dark:border-stone-700`.
+    - Balanced column widths to `sm:col-span-5` (Name), `sm:col-span-3` (Category), and `sm:col-span-4` (Subcategory).
+  - **Vertical Spacing Reduction**: Reduced form spacing to `space-y-3.5` ensuring modal content fits comfortably in standard laptop screens without vertical clipping.
+- **Documentation**:
+  - [**Frontend Architecture & Design System**](frontend-architecture-and-design-system.md)
+
+---
+
+### 4. 2026-09-07 — Feature: Order History in All Terminals (Quick & Table POS)
 - **Type**: New Feature & Terminal Usability Enhancement
 - **Summary**:
   - **Terminal Access**: Integrated direct access to **Order History** from all POS terminals (both Quick POS and Table POS) without forcing cashiers/waiters to leave the active terminal or switch to the admin dashboard.
@@ -26,7 +86,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 2. 2026-09-07 — Feature: POS Amount Round Up & Decimal Transparency
+### 5. 2026-09-07 — Feature: POS Amount Round Up & Decimal Transparency
 - **Type**: Financial Calculation & UI Enhancement
 - **Summary**:
   - **POS Amount Rounding Rule**: Added standard half-up rounding logic (`roundPOSAmount`) where amounts with decimal $\ge 0.50$ round UP to the nearest integer (e.g. ₹1192.50 $\rightarrow$ ₹1193) and amounts $< 0.50$ round DOWN to the previous integer (e.g. ₹1192.49 $\rightarrow$ ₹1192).
@@ -40,7 +100,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 2. 2026-09-07 — Bugfix: Thermal Receipt Printing on Settlement & Payment Screen
+### 6. 2026-09-07 — Bugfix: Thermal Receipt Printing on Settlement & Payment Screen
 - **Type**: Bugfix & Printing Improvement
 - **Summary**:
   - **Issue Resolved**: When clicking "Print Receipt" on the Settlement & Payment modal (`CheckoutModal`), the browser preview was completely blank due to `display: none` (`hidden`) overriding print styles, fixed backdrop modal trapping, and full-page `window.print()` quirks.
@@ -53,7 +113,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 2. 2026-09-07 — Reports Suite (Total Summary & Order History) + Dashboard Cleanup
+### 7. 2026-09-07 — Reports Suite (Total Summary & Order History) + Dashboard Cleanup
 - **Type**: New Feature & UI Modification
 - **Summary**:
   - **Dashboard Cleanup**: Removed the "Recent Completed Orders" card from the Admin Dashboard (`DashboardView`) and rebalanced the grid layout (`RevenueChart` + `QuickActions`). Added a direct **Reports** workflow shortcut.
@@ -71,7 +131,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 2. 2026-09-07 — Architecture Decoupling: Dedicated Support Platform (`qsrsystem-hq`)
+### 8. 2026-09-07 — Architecture Decoupling: Dedicated Support Platform (`qsrsystem-hq`)
 - **Type**: Architectural Modification
 - **Summary**:
   - Decoupled the central Developer/Superadmin Support Platform, Golden DB (Supabase PostgreSQL), and Master Licensing Authority into a separate, independent repository: `qsrsystem-hq`.
@@ -83,7 +143,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 3. 2026-09-06 — Daily Sequential Order Numbering & Live Audio Notifications
+### 9. 2026-09-06 — Daily Sequential Order Numbering & Live Audio Notifications
 - **Type**: New Feature & Workflow Improvement
 - **Summary**:
   - **Daily Order Sequence**: Added logic resetting sequential order numbers everyday at midnight (`#1, #2, #3...`) instead of exposing raw auto-incrementing database IDs on customer bills and kitchen tokens.
@@ -94,7 +154,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 4. 2026-09-04 — Multi-Tender & Partial Payment Settlement
+### 10. 2026-09-04 — Multi-Tender & Partial Payment Settlement
 - **Type**: New Feature & Financial Enhancement
 - **Summary**:
   - Enabled split and partial payment billing at checkout. Customers can split a single order across multiple tenders (e.g. part Cash, part UPI, part Card).
@@ -105,7 +165,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 5. 2026-09-04 — Secure Cookie-Based Authentication & Navigation Route Guards
+### 11. 2026-09-04 — Secure Cookie-Based Authentication & Navigation Route Guards
 - **Type**: Security & Routing Modification
 - **Summary**:
   - Replaced legacy client-side localStorage token reliance with secure, HttpOnly cookie-based session verification via `cookie-parser`.
@@ -116,7 +176,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 6. 2026-09-03 — Dynamic Cafe Branding & Store Profile Management
+### 12. 2026-09-03 — Dynamic Cafe Branding & Store Profile Management
 - **Type**: New Feature & UI Customization
 - **Summary**:
   - Added a Store Profile Modal in Settings allowing managers to customize Business Name, Cafe Code, Address, Phone, GSTIN, Logo URL, and Receipt Footer note.
@@ -127,7 +187,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 7. 2026-09-02 — Offline Cryptographic Licensing & Local Staff PIN Login
+### 13. 2026-09-02 — Offline Cryptographic Licensing & Local Staff PIN Login
 - **Type**: Security & Onboarding Feature
 - **Summary**:
   - Built an offline mathematical license validation system using HMAC-SHA256 tokens and hardware binding (Machine ID + Cafe Code + Expiry Timestamp).
@@ -138,7 +198,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 8. 2026-09-01 — Frontend Modularization & Decoupled REST API Client Layer
+### 14. 2026-09-01 — Frontend Modularization & Decoupled REST API Client Layer
 - **Type**: Architecture & Code Quality Refactoring
 - **Summary**:
   - Refactored monolithic frontend into modular domain folders: `auth/`, `dashboard/`, `menu/`, `inventory/`, `tables/`, `pos/`, `reports/`, `settings/`, and `ui/`.
@@ -149,7 +209,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 9. 2026-08-21 — Add-ons & Modifiers Module with Recipe-Based Stock Deductions
+### 15. 2026-08-21 — Add-ons & Modifiers Module with Recipe-Based Stock Deductions
 - **Type**: New Feature & Inventory Automation
 - **Summary**:
   - Added `Addon` entities allowing customizable extras (extra cheese, sauces, toppings) linked to menu items.
@@ -160,7 +220,7 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
-### 10. 2026-08-19 to 2026-08-31 — Core POS Engine, Dine-In Tables & Setup
+### 16. 2026-08-19 to 2026-08-31 — Core POS Engine, Dine-In Tables & Setup
 - **Type**: Core Foundation & Initial Release
 - **Summary**:
   - Initialized NestJS 11 backend with Prisma ORM (v7) and MariaDB/MySQL database integration.
@@ -175,6 +235,10 @@ This document provides a concise, chronological log of all features, enhancement
 
 | Feature Area | Key Testing Verification Steps | Reference Document |
 | :--- | :--- | :--- |
+| **Inventory Categories (Req 9)** | Go to Inventory. Click category pills (`All`, `Dairy`, `Bakery`) to filter rows. Click `+ Add Category` to create a category. Click `+ Add Raw Item` to create ingredient under that category. Verify `Category` column in table and live counters. | [System README](../README.md#3-📦-recipe-linked-inventory--automated-stock-tracking) |
+| **Item Config: Add-ons (Issue 8)** | Menu Management $\rightarrow$ Configure dish $\rightarrow$ `Add-ons` tab. Click `+ Add New Add-on`, enter Name & Price, save. Verify new add-on appears in selection grid and auto-attaches. | [System README](../README.md#2-🍽️-menu--dynamic-categories-management) |
+| **Item Config: Taxes (Issue 8)** | Menu Management $\rightarrow$ Configure dish $\rightarrow$ `Taxes` tab. Verify `Apply Global Tax` toggle. Switch toggle Inactive and add manual tax. Add item to POS cart and verify tax calculates accurately without double-taxing. | [Total Summary Report](report/total-summary-report.md) |
+| **Edit Dish Modal Layout** | Menu Management $\rightarrow$ Edit dish. Verify Dish Status box is compact with no vertical scrolling (`overflow-y`). Verify Dish Name, Category, and Subcategory labels and inputs align on the exact same horizontal baseline. | [Frontend Architecture](frontend-architecture-and-design-system.md) |
 | **Total Summary Report** | Verify date presets (Today, Yesterday, Last 7 Days, Month, Custom). Check that cash, card, UPI, split totals match the grand total. | [Total Summary Report](report/total-summary-report.md) |
 | **Order History Report** | Test search bar with daily order # and dish name. Test payment & status filters. Confirm horizontal scroll is inside table container only. | [Order History Report](report/order-history-report.md) |
 | **Order Details Modal** | Click any order row. Verify items list, quantities, subtotal, tax, and total. Click "Print Receipt" and verify printable output. | [Order History Report](report/order-history-report.md) |

@@ -13,19 +13,22 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#faf8f5] dark:bg-[#0c0f17] text-stone-900 dark:text-stone-100">
-      {/* Desktop Sidebar (Permanent on >= lg screen) */}
-      <div className="hidden lg:flex h-full shrink-0">
+      {/* Sidebar Rail (Permanent on Tablet & Desktop >= 768px: 72px rail width, expands on hover/arrow tap with 0 layout shift) */}
+      <div className="hidden md:block w-[72px] shrink-0 h-full relative z-30">
         <Sidebar onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)} />
       </div>
 
-      {/* Mobile Navigation Drawer (For phones and small tablets) */}
+      {/* Mobile Drawer (Phones < 768px) */}
       <Drawer
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
         side="left"
-        title="Store Navigation"
+        hideHeader={true}
+        contentClassName="p-0 h-full"
+        className="max-w-[280px] w-[280px]"
       >
         <Sidebar
+          isMobileDrawer={true}
           onOpenStoreProfile={() => {
             setIsMobileNavOpen(false);
             setIsStoreProfileModalOpen(true);
@@ -35,7 +38,7 @@ export const AdminLayout: React.FC = () => {
       </Drawer>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         <Header
           onToggleMobileNav={() => setIsMobileNavOpen(true)}
           onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
@@ -46,7 +49,7 @@ export const AdminLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Store Profile & Logo Upload Modal */}
+      {/* Store Profile Modal */}
       <StoreProfileModal
         isOpen={isStoreProfileModalOpen}
         onClose={() => setIsStoreProfileModalOpen(false)}

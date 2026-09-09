@@ -8,8 +8,9 @@ interface UpdateStockModalProps {
   show: boolean;
   onClose: () => void;
   editingInventoryIndex: number | null;
-  inventoryUpdateData: { stock: string; threshold: string };
-  setInventoryUpdateData: React.Dispatch<React.SetStateAction<{ stock: string; threshold: string }>>;
+  inventoryUpdateData: { stock: string; threshold: string; category?: string };
+  setInventoryUpdateData: React.Dispatch<React.SetStateAction<{ stock: string; threshold: string; category?: string }>>;
+  categories?: { id: number; name: string }[];
 }
 
 export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
@@ -18,6 +19,7 @@ export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
   editingInventoryIndex,
   inventoryUpdateData,
   setInventoryUpdateData,
+  categories = [],
 }) => {
   const { appData, setAppData, refreshInventory } = useApp();
   const [isSaving, setIsSaving] = useState(false);
@@ -47,10 +49,13 @@ export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
       if (stockVal <= 0) status = 'Out of Stock';
       else if (stockVal <= threshVal) status = 'Low Stock';
 
+      const selectedCategory = inventoryUpdateData.category || currentItem.category || 'General';
+
       if (currentItem.id) {
         await inventoryApi.updateInventory(currentItem.id, {
           stock: stockVal,
           threshold: threshVal,
+          category: selectedCategory,
         });
         await refreshInventory();
       } else {
@@ -59,6 +64,7 @@ export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
         item.stock = stockVal;
         item.threshold = threshVal;
         item.status = status;
+        item.category = selectedCategory;
         setAppData(newAppData);
       }
 
@@ -75,7 +81,7 @@ export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
       isOpen={show}
       onClose={onClose}
       title={`Adjust Stock: ${currentItem.item}`}
-      description={`Update current on-hand inventory levels and low-stock replenishment alert limits (${currentItem.unit}).`}
+      description={`Update current on-hand inventory levels, category, and alert limits (${currentItem.unit}).`}
       maxWidth="md"
       footer={
         <>
@@ -106,6 +112,38 @@ export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
           <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${badgeClass}`}>
             {computedStatus}
           </span>
+        </div>
+
+        {/* Category Selection */}
+        <div>
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
+            Inventory Category
+          </label>
+          <select
+            value={inventoryUpdateData.category || currentItem.category || 'General'}
+            onChange={(e) =>
+              setInventoryUpdateData({ ...inventoryUpdateData, category: e.target.value })
+            }
+            className="w-full h-10 px-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer"
+          >
+            {categories.length > 0 ? (
+              categories.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="General">General</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Bakery">Bakery</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Produce">Produce</option>
+                <option value="Packaging">Packaging</option>
+                <option value="Spices & Dry Goods">Spices & Dry Goods</option>
+              </>
+            )}
+          </select>
         </div>
 
         {/* Stock Level Input */}

@@ -5,15 +5,73 @@ import { PrismaService } from '../prisma/prisma.service';
 export class CategoryService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: any) {
-    return this.prisma.category.create({ data });
+  private formatCategory(cat: any) {
+    if (!cat) return cat;
+    let subcategories: string[] = [];
+    if (cat.subcategories) {
+      try {
+        const parsed = JSON.parse(cat.subcategories);
+        subcategories = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        subcategories = typeof cat.subcategories === 'string'
+          ? cat.subcategories.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : [];
+      }
+    }
+    const { displayOrder, ...rest } = cat;
+    return {
+      ...rest,
+      subcategories,
+    };
   }
 
-  findAll() {
-    return this.prisma.category.findMany({ orderBy: { displayOrder: 'asc' } });
+  private serializeSubcategories(subcategories: any): string | null {
+    if (!subcategories) return null;
+    if (Array.isArray(subcategories)) {
+      const filtered = subcategories.map((s) => String(s).trim()).filter(Boolean);
+      return filtered.length > 0 ? JSON.stringify(filtered) : null;
+    }
+    if (typeof subcategories === 'string') {
+      const parts = subcategories.split(',').map((s) => s.trim()).filter(Boolean);
+      return parts.length > 0 ? JSON.stringify(parts) : null;
+    }
+    return null;
   }
 
-  update(id: number, data: any) {
-    return this.prisma.category.update({ where: { id }, data });
+  async create(data: any) {
+    const { subcategories, parentId, parentName, displayOrder, ...categoryData } = data;
+    const subcatsSerialized = this.serializeSubcategories(subcategories);
+
+    const created = await this.prisma.category.create({
+      data: {
+        ...categoryData,
+        subcategories: subcatsSerialized,
+      },
+    });
+
+    return this.formatCategory(created);
+  }
+
+  async findAll() {
+    const categories = await this.prisma.category.findMany({
+      orderBy: { id: 'asc' },
+    });
+    return categories.map((c) => this.formatCategory(c));
+  }
+
+  async update(id: number, data: any) {
+    const { subcategories, parentId, parentName, id: catId, displayOrder, ...categoryData } = data;
+    const updateData: any = { ...categoryData };
+
+    if (subcategories !== undefined) {
+      updateData.subcategories = this.serializeSubcategories(subcategories);
+    }
+
+    const updated = await this.prisma.category.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return this.formatCategory(updated);
   }
 }

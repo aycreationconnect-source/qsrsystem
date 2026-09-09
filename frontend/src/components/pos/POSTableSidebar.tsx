@@ -13,7 +13,6 @@ import {
   ArrowUpDown,
   CheckCircle2,
   FilterX,
-  History,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -33,7 +32,6 @@ export const POSTableSidebar: React.FC = () => {
     setCart,
     now,
     setShowAddTableModal,
-    setShowOrderHistoryModal,
   } = usePOS();
 
   const [selectedAreaId, setSelectedAreaId] = useState<string | number>('ALL');

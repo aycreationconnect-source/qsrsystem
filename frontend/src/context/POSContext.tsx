@@ -335,25 +335,34 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     let subtotal = 0;
     let tax = 0;
+    let globalTaxRate = 0;
+    if (appData.settings && appData.settings.globalTaxRate) {
+      globalTaxRate = parseFloat(appData.settings.globalTaxRate) || 0;
+    }
+
     combinedItems.forEach((item) => {
       const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
       const itemSubtotal = price * item.quantity;
       subtotal += itemSubtotal;
 
-      let itemTaxRate = 0;
-      if (item.taxes && item.taxes.length > 0) {
-        itemTaxRate = item.taxes.reduce((sum: number, t: any) => sum + (parseFloat(t.rate) || 0), 0);
-      } else if (item.tax) {
-        itemTaxRate = parseFloat(String(item.tax));
-      }
-      tax += itemSubtotal * (itemTaxRate / 100);
-    });
+      const isManualTax =
+        item.useGlobalTax === false ||
+        (item.taxes && item.taxes.length > 0) ||
+        (item.tax !== undefined && item.tax !== null && item.tax !== '');
 
-    let globalTaxRate = 0;
-    if (appData.settings && appData.settings.globalTaxRate) {
-      globalTaxRate = parseFloat(appData.settings.globalTaxRate) || 0;
-    }
-    tax += subtotal * (globalTaxRate / 100);
+      if (isManualTax) {
+        let itemTaxRate = 0;
+        if (item.taxes && item.taxes.length > 0) {
+          itemTaxRate = item.taxes.reduce((sum: number, t: any) => sum + (parseFloat(t.rate) || 0), 0);
+        } else if (item.tax) {
+          itemTaxRate = parseFloat(String(item.tax)) || 0;
+        }
+        tax += itemSubtotal * (itemTaxRate / 100);
+      } else {
+        // Global tax applies to this item
+        tax += itemSubtotal * (globalTaxRate / 100);
+      }
+    });
 
     const total = subtotal + tax;
 

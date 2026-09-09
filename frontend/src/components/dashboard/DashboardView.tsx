@@ -3,7 +3,6 @@ import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { StatCards } from './StatCards';
 import { RevenueChart } from './RevenueChart';
-import { QuickActions } from './QuickActions';
 import { LayoutDashboard } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -114,15 +113,9 @@ export const DashboardView: React.FC = () => {
         totalTables={totalTables}
       />
 
-      {/* 2. Main Analytics & Quick Actions Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 xl:col-span-8">
-          <RevenueChart last7Days={last7Days} revenueByDay={revenueByDay} maxRev={maxRev} />
-        </div>
-
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
-          <QuickActions />
-        </div>
+      {/* 2. Main Analytics Grid */}
+      <div className="w-full">
+        <RevenueChart last7Days={last7Days} revenueByDay={revenueByDay} maxRev={maxRev} />
       </div>
     </div>
   );

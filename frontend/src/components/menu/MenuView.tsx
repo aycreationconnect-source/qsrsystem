@@ -21,6 +21,7 @@ export const MenuView: React.FC = () => {
     const firstCat = appData.categories?.[0];
     return firstCat ? (typeof firstCat === 'string' ? firstCat : firstCat.name) : null;
   });
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   // Item Modal State
   const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -38,6 +39,7 @@ export const MenuView: React.FC = () => {
     available: true,
     status: 'Active',
     isAddon: false,
+    subcategory: '',
   });
 
   // Category Modal State
@@ -46,8 +48,8 @@ export const MenuView: React.FC = () => {
   const [newCategory, setNewCategory] = useState<any>({
     name: '',
     description: '',
-    displayOrder: '',
     status: 'Active',
+    subcategories: [],
   });
 
   // Config Modal State
@@ -99,6 +101,7 @@ export const MenuView: React.FC = () => {
       type: item.type || 'Veg',
       available: item.available !== false,
       status: item.status || 'Active',
+      subcategory: item.subcategory || '',
       sku: item.sku || '',
       prepTime: item.prepTime || '',
       isAddon: item.isAddon || false,
@@ -185,10 +188,15 @@ export const MenuView: React.FC = () => {
           <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
             <CategorySidebar
               selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
+              setSelectedCategory={(cat) => {
+                setSelectedCategory(cat);
+                setSelectedSubcategory(null);
+              }}
+              selectedSubcategory={selectedSubcategory}
+              setSelectedSubcategory={setSelectedSubcategory}
               onAddCategory={() => {
                 setEditingCategoryName(null);
-                setNewCategory({ name: '', description: '', displayOrder: '', status: 'Active' });
+                setNewCategory({ name: '', description: '', status: 'Active', subcategories: [] });
                 setShowAddCategoryModal(true);
               }}
               onEditCategory={(catObj) => {
@@ -197,7 +205,7 @@ export const MenuView: React.FC = () => {
                 setNewCategory(
                   typeof catObj === 'object'
                     ? catObj
-                    : { name: catName, description: '', displayOrder: 1, status: 'Active' }
+                    : { name: catName, description: '', status: 'Active', subcategories: [] }
                 );
                 setShowAddCategoryModal(true);
               }}
@@ -205,6 +213,8 @@ export const MenuView: React.FC = () => {
 
             <MenuItemsGrid
               selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              setSelectedSubcategory={setSelectedSubcategory}
               onAddItem={() => {
                 setEditingItemIndex(null);
                 setNewItem({
@@ -216,6 +226,7 @@ export const MenuView: React.FC = () => {
                   type: 'Veg',
                   available: true,
                   status: 'Active',
+                  subcategory: selectedSubcategory || '',
                   sku: '',
                   prepTime: '',
                 });

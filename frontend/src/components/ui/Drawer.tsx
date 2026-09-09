@@ -10,6 +10,8 @@ export interface DrawerProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  hideHeader?: boolean;
+  contentClassName?: string;
 }
 
 export const Drawer: React.FC<DrawerProps> = ({
@@ -20,6 +22,8 @@ export const Drawer: React.FC<DrawerProps> = ({
   children,
   footer,
   className,
+  hideHeader = false,
+  contentClassName,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,18 +71,20 @@ export const Drawer: React.FC<DrawerProps> = ({
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800/80">
-          <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        {!hideHeader && (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800/80">
+            <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">{title}</h3>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        <div className={cn('flex-1 overflow-y-auto', contentClassName || 'p-6')}>{children}</div>
 
         {/* Footer */}
         {footer && (

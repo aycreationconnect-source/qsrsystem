@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Button, Tooltip } from '../ui';
-import { Plus, Edit2, FolderTree, Search } from 'lucide-react';
+import { Plus, Edit2, FolderTree, Search, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface CategorySidebarProps {
   selectedCategory: string | null;
   setSelectedCategory: (cat: string | null) => void;
+  selectedSubcategory?: string | null;
+  setSelectedSubcategory?: (sub: string | null) => void;
   onAddCategory: () => void;
   onEditCategory: (catObj: any) => void;
 }
@@ -14,6 +16,7 @@ interface CategorySidebarProps {
 export const CategorySidebar: React.FC<CategorySidebarProps> = ({
   selectedCategory,
   setSelectedCategory,
+  setSelectedSubcategory,
   onAddCategory,
   onEditCategory,
 }) => {
@@ -73,15 +76,19 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
             typeof catObj === 'object' && catObj.status === 'Inactive' ? false : true;
           const items = (appData.menu || []).filter((m: any) => m.category === catName);
           const activeCount = items.filter(
-            (m: any) => m.available !== false && m.status === 'Active'
+            (m: any) => m.status === 'Active' || (m.status !== 'Inactive' && m.available !== false)
           ).length;
           const inactiveCount = items.length - activeCount;
           const isSelected = selectedCategory === catName;
+          const subcats: string[] = Array.isArray(catObj?.subcategories) ? catObj.subcategories : [];
 
           return (
             <div
               key={i}
-              onClick={() => setSelectedCategory(catName)}
+              onClick={() => {
+                setSelectedCategory(catName);
+                if (setSelectedSubcategory) setSelectedSubcategory(null);
+              }}
               className={cn(
                 'p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex flex-col gap-2',
                 isSelected
@@ -119,13 +126,19 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
               </div>
 
               {/* Count Pills */}
-              <div className="flex items-center gap-2 text-[10px] font-bold">
+              <div className="flex items-center gap-1.5 flex-wrap text-[10px] font-bold">
                 <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
                   {activeCount} Active
                 </span>
                 {inactiveCount > 0 && (
                   <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500">
                     {inactiveCount} Paused
+                  </span>
+                )}
+                {subcats.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 flex items-center gap-1">
+                    <Layers className="w-2.5 h-2.5" />
+                    <span>{subcats.length} Subcats</span>
                   </span>
                 )}
               </div>

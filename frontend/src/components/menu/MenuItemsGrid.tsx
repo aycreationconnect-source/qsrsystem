@@ -1,11 +1,13 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { Button, Badge, Tooltip } from '../ui';
-import { Plus, Settings2, Edit2, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Plus, Settings2, Edit2, Trash2, UtensilsCrossed, Layers, Filter } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface MenuItemsGridProps {
   selectedCategory: string | null;
+  selectedSubcategory?: string | null;
+  setSelectedSubcategory?: (sub: string | null) => void;
   onAddItem: () => void;
   onConfigItem: (item: any) => void;
   onEditItem: (item: any) => void;
@@ -14,6 +16,8 @@ interface MenuItemsGridProps {
 
 export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
   selectedCategory,
+  selectedSubcategory = null,
+  setSelectedSubcategory,
   onAddItem,
   onConfigItem,
   onEditItem,
@@ -35,9 +39,25 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
     );
   }
 
-  const items = (appData.menu || []).filter(
+  // Find selected category object to check for subcategories
+  const currentCatObj = (appData.categories || []).find((c: any) => {
+    const name = typeof c === 'string' ? c : c.name;
+    return name === selectedCategory;
+  });
+
+  const subcategories: string[] =
+    currentCatObj && typeof currentCatObj !== 'string' && Array.isArray(currentCatObj.subcategories)
+      ? currentCatObj.subcategories
+      : [];
+
+  const allCategoryItems = (appData.menu || []).filter(
     (m: any) => m.category === selectedCategory && !m.isAddon
   );
+
+  // Filter items by subcategory if one is active
+  const filteredItems = selectedSubcategory
+    ? allCategoryItems.filter((m: any) => m.subcategory === selectedSubcategory)
+    : allCategoryItems;
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-stone-50/40 dark:bg-stone-950/20">
@@ -46,8 +66,15 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
         <div>
           <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
             <span>{selectedCategory}</span>
-            <span className="text-xs font-semibold text-stone-400">({items.length} items)</span>
+            <span className="text-xs font-semibold text-stone-400">
+              ({allCategoryItems.length} {allCategoryItems.length === 1 ? 'item' : 'items'})
+            </span>
           </h3>
+          {subcategories.length > 0 && (
+            <span className="text-[11px] text-stone-400 font-medium">
+              {subcategories.length} subcategories configured
+            </span>
+          )}
         </div>
 
         <Button
@@ -61,19 +88,93 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
         </Button>
       </div>
 
+      {/* Subcategories Filter Chips Bar */}
+      {subcategories.length > 0 && (
+        <div className="px-4 sm:px-6 py-2.5 bg-white dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1 shrink-0">
+            <Layers className="w-3.5 h-3.5 text-amber-500" />
+            <span>Subcategories:</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSelectedSubcategory?.(null)}
+            className={cn(
+              'px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer',
+              selectedSubcategory === null
+                ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-sm'
+                : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-750'
+            )}
+          >
+            All Items ({allCategoryItems.length})
+          </button>
+
+          {subcategories.map((sub) => {
+            const count = allCategoryItems.filter((m: any) => m.subcategory === sub).length;
+            const isSubSelected = selectedSubcategory === sub;
+            return (
+              <button
+                key={sub}
+                type="button"
+                onClick={() => setSelectedSubcategory?.(isSubSelected ? null : sub)}
+                className={cn(
+                  'px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5',
+                  isSubSelected
+                    ? 'bg-amber-500 text-stone-950 shadow-sm font-extrabold ring-1 ring-amber-400'
+                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-750'
+                )}
+              >
+                <span>{sub}</span>
+                <span className={cn('text-[10px]', isSubSelected ? 'text-stone-900 font-extrabold' : 'text-stone-400')}>
+                  ({count})
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Items Table Area */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center text-stone-400 text-xs">
-            <span>No menu items created under "{selectedCategory}" yet.</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAddItem}
-              className="mt-3 font-bold"
-            >
-              Add First Item
-            </Button>
+            {selectedSubcategory ? (
+              <>
+                <Filter className="w-8 h-8 text-stone-300 mb-2 opacity-60" />
+                <span className="font-semibold text-stone-600 dark:text-stone-300">
+                  No dishes tagged with "{selectedSubcategory}" yet.
+                </span>
+                <div className="flex items-center gap-2 mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedSubcategory?.(null)}
+                  >
+                    View All Items
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onAddItem}
+                    leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  >
+                    Add to {selectedSubcategory}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span>No menu items created under "{selectedCategory}" yet.</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAddItem}
+                  className="mt-3 font-bold"
+                >
+                  Add First Item
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm">
@@ -82,13 +183,14 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                 <tr className="border-b border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-850/60 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12">#</th>
                   <th className="py-3 px-4">Item Name & Diet</th>
+                  <th className="py-3 px-4">Subcategory</th>
                   <th className="py-3 px-4">Price</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                {items.map((item: any, i: number) => {
+                {filteredItems.map((item: any, i: number) => {
                   return (
                     <tr
                       key={item.id || i}
@@ -113,6 +215,17 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                         </div>
                       </td>
 
+                      <td className="py-3 px-4">
+                        {item.subcategory ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/50 text-xs font-bold">
+                            <Layers className="w-2.5 h-2.5 text-amber-500" />
+                            <span>{item.subcategory}</span>
+                          </span>
+                        ) : (
+                          <span className="text-stone-400 text-xs italic">General</span>
+                        )}
+                      </td>
+
                       <td className="py-3 px-4 font-mono font-bold text-amber-600 dark:text-amber-400">
                         ₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}
                       </td>
@@ -121,14 +234,12 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                         <span
                           className={cn(
                             'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider',
-                            item.available !== false && item.status === 'Active'
+                            item.status === 'Active'
                               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50'
                               : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50'
                           )}
                         >
-                          {item.available !== false && item.status === 'Active'
-                            ? 'Available'
-                            : 'Paused'}
+                          {item.status === 'Active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
 

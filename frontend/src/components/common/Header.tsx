@@ -13,6 +13,7 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Sparkles,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -249,10 +250,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
           <button
             type="button"
             onClick={onToggleMobileNav}
-            className="lg:hidden p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:text-stone-900 cursor-pointer"
+            className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 font-bold text-xs cursor-pointer active:scale-95 transition-all"
             aria-label="Open Navigation"
+            title="Open Navigation"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5 opacity-80" />
           </button>
         )}
 
