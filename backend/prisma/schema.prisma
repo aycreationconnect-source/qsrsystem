@@ -7,12 +7,12 @@ datasource db {
 }
 
 model Category {
-  id           Int        @id @default(autoincrement())
-  name         String     @unique
-  description  String?
-  displayOrder Int?
-  status       String     @default("Active")
-  menuItems    MenuItem[]
+  id            Int        @id @default(autoincrement())
+  name          String     @unique
+  description   String?
+  status        String     @default("Active")
+  subcategories String?
+  menuItems     MenuItem[]
 }
 
 model MenuItem {
@@ -29,6 +29,8 @@ model MenuItem {
   status      String   @default("Active")
   isAddon     Boolean  @default(false)
   addonIds    String?
+  subcategory String?
+  useGlobalTax Boolean  @default(true)
   
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
@@ -54,16 +56,27 @@ model Addon {
   price       Float
 }
 
+model InventoryCategory {
+  id          Int             @id @default(autoincrement())
+  name        String          @unique
+  description String?
+  items       InventoryItem[]
+}
+
 model InventoryItem {
-  id          Int      @id @default(autoincrement())
-  name        String
-  unit        String   // kg, L, pcs
-  stock       Float
-  threshold   Float
-  status      String   @default("Good")
+  id           Int                @id @default(autoincrement())
+  name         String
+  unit         String             // kg, L, pcs
+  stock        Float
+  threshold    Float
+  status       String             @default("Good")
+  categoryName String?            @default("General")
   
-  usedIn      RecipeIngredient[]
-  history     InventoryHistory[]
+  categoryId   Int?
+  category     InventoryCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  usedIn       RecipeIngredient[]
+  history      InventoryHistory[]
 }
 
 model RecipeIngredient {

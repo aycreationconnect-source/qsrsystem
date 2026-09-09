@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import type { CartItem, TableOrderState, OrderPayment } from '../types/app.types';
 import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
+import { roundPOSAmount } from '../lib/orderUtils';
 
 interface POSContextType {
   cart: CartItem[];
@@ -12,6 +13,8 @@ interface POSContextType {
   setPosSearchQuery: (query: string) => void;
   showCheckoutModal: boolean;
   setShowCheckoutModal: (show: boolean) => void;
+  showOrderHistoryModal: boolean;
+  setShowOrderHistoryModal: (show: boolean) => void;
   paymentType: string;
   setPaymentType: (type: string) => void;
   discountType: 'percent' | 'fixed';
@@ -66,6 +69,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [posCategory, setPosCategory] = useState<string>('All Items');
   const [posSearchQuery, setPosSearchQuery] = useState('');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
   const [paymentType, setPaymentType] = useState('Cash');
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('fixed');
   const [discountValue, setDiscountValue] = useState('');
@@ -331,25 +335,34 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     let subtotal = 0;
     let tax = 0;
+    let globalTaxRate = 0;
+    if (appData.settings && appData.settings.globalTaxRate) {
+      globalTaxRate = parseFloat(appData.settings.globalTaxRate) || 0;
+    }
+
     combinedItems.forEach((item) => {
       const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
       const itemSubtotal = price * item.quantity;
       subtotal += itemSubtotal;
 
-      let itemTaxRate = 0;
-      if (item.taxes && item.taxes.length > 0) {
-        itemTaxRate = item.taxes.reduce((sum: number, t: any) => sum + (parseFloat(t.rate) || 0), 0);
-      } else if (item.tax) {
-        itemTaxRate = parseFloat(String(item.tax));
-      }
-      tax += itemSubtotal * (itemTaxRate / 100);
-    });
+      const isManualTax =
+        item.useGlobalTax === false ||
+        (item.taxes && item.taxes.length > 0) ||
+        (item.tax !== undefined && item.tax !== null && item.tax !== '');
 
-    let globalTaxRate = 0;
-    if (appData.settings && appData.settings.globalTaxRate) {
-      globalTaxRate = parseFloat(appData.settings.globalTaxRate) || 0;
-    }
-    tax += subtotal * (globalTaxRate / 100);
+      if (isManualTax) {
+        let itemTaxRate = 0;
+        if (item.taxes && item.taxes.length > 0) {
+          itemTaxRate = item.taxes.reduce((sum: number, t: any) => sum + (parseFloat(t.rate) || 0), 0);
+        } else if (item.tax) {
+          itemTaxRate = parseFloat(String(item.tax)) || 0;
+        }
+        tax += itemSubtotal * (itemTaxRate / 100);
+      } else {
+        // Global tax applies to this item
+        tax += itemSubtotal * (globalTaxRate / 100);
+      }
+    });
 
     const total = subtotal + tax;
 
@@ -384,6 +397,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         finalTotal = baseTotal - dVal;
       }
       if (finalTotal < 0) finalTotal = 0;
+      const roundedTotal = roundPOSAmount(finalTotal);
 
       // Determine payments to send
       let paymentsToSend: Array<{ amount: number; paymentMethod: string; reference?: string | null }> = [];
@@ -405,7 +419,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         paymentsToSend = [
           {
-            amount: finalTotal,
+            amount: roundedTotal,
             paymentMethod: paymentType,
             reference: null,
           },
@@ -425,7 +439,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         })),
         subtotal,
         tax,
-        total: finalTotal,
+        total: roundedTotal,
         paymentMethod: methodToSave,
         payments: paymentsToSend,
       };
@@ -509,6 +523,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setPosSearchQuery,
         showCheckoutModal,
         setShowCheckoutModal,
+        showOrderHistoryModal,
+        setShowOrderHistoryModal,
         paymentType,
         setPaymentType,
         discountType,

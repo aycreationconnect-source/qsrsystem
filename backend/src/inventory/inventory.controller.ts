@@ -17,6 +17,21 @@ export class InventoryController {
     return this.inventoryService.findAll();
   }
 
+  @Get('categories')
+  getCategories() {
+    return this.inventoryService.getCategories();
+  }
+
+  @Post('categories')
+  createCategory(@Body() body: { name: string; description?: string }) {
+    return this.inventoryService.createCategory(body);
+  }
+
+  @Delete('categories/:id')
+  deleteCategory(@Param('id') id: string) {
+    return this.inventoryService.deleteCategory(+id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.inventoryService.findOne(+id);

@@ -1,6 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, IndianRupee, Armchair, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { ShoppingBag, IndianRupee, Armchair, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface StatCardsProps {
@@ -20,19 +19,18 @@ export const StatCards: React.FC<StatCardsProps> = ({
   activeTablesCount,
   totalTables,
 }) => {
-  const navigate = useNavigate();
   const occupancyRate = totalTables > 0 ? Math.round((activeTablesCount / totalTables) * 100) : 0;
   const availableTables = Math.max(0, totalTables - activeTablesCount);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {/* 1. Total Orders */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm flex flex-col justify-between">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm flex flex-col justify-between group relative">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             Orders Today
           </span>
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
             <ShoppingBag className="w-5 h-5" />
           </div>
         </div>
@@ -63,12 +61,12 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* 2. Total Revenue */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm flex flex-col justify-between">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm flex flex-col justify-between group relative">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
             Today's Gross
           </span>
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
             <IndianRupee className="w-5 h-5" />
           </div>
         </div>
@@ -100,11 +98,9 @@ export const StatCards: React.FC<StatCardsProps> = ({
 
       {/* 3. Active Floor Tables */}
       <div
-        onClick={() => navigate('/pos')}
         role="button"
         tabIndex={0}
-        title="Click to view live floor & table terminal"
-        className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer group select-none relative overflow-hidden"
+        className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 flex items-center gap-1.5">
@@ -115,7 +111,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
               </span>
             )}
           </span>
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-500/15 group-hover:text-amber-500 transition-all duration-200">
+          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
             <Armchair className="w-5 h-5" />
           </div>
         </div>
@@ -128,10 +124,6 @@ export const StatCards: React.FC<StatCardsProps> = ({
                 / {totalTables}
               </span>
             </div>
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span>View Tables</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </span>
           </div>
 
           {/* Mini Capacity Progress Bar */}
@@ -142,10 +134,10 @@ export const StatCards: React.FC<StatCardsProps> = ({
                 occupancyRate >= 90
                   ? 'bg-rose-500'
                   : occupancyRate >= 50
-                  ? 'bg-amber-500'
-                  : activeTablesCount > 0
-                  ? 'bg-sky-500'
-                  : 'bg-stone-300 dark:bg-stone-700'
+                    ? 'bg-amber-500'
+                    : activeTablesCount > 0
+                      ? 'bg-sky-500'
+                      : 'bg-stone-300 dark:bg-stone-700'
               )}
               style={{ width: `${Math.min(100, Math.max(0, occupancyRate))}%` }}
             />

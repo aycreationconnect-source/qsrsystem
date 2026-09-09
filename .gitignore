@@ -38,3 +38,7 @@ Thumbs.db
 # Coverage / Testing
 coverage/
 .nyc_output/
+
+# Decoupled Superadmin HQ
+support-platform/
+

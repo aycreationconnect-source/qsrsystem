@@ -8,6 +8,7 @@ export interface CafeBrandBadgeProps {
   size?: 'sm' | 'md' | 'lg';
   showCode?: boolean;
   showStatusDot?: boolean;
+  showName?: boolean;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
   size = 'md',
   showCode = true,
   showStatusDot = true,
+  showName = true,
   className,
 }) => {
   // Generate 2-letter monogram (e.g. "Mocha Bliss Cafe" => "MB", "The Urban Bistro" => "UB")
@@ -84,24 +86,26 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
       </div>
 
       {/* Name and Cafe ID details */}
-      <div className="flex flex-col min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              'truncate font-bold text-stone-900 dark:text-stone-100 leading-tight',
-              nameSizes[size]
-            )}
-          >
-            {name || 'Velora Cafe'}
-          </span>
-        </div>
+      {showName && (
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                'truncate font-bold text-stone-900 dark:text-stone-100 leading-tight',
+                nameSizes[size]
+              )}
+            >
+              {name || 'Velora Cafe'}
+            </span>
+          </div>
 
-        {showCode && cafeCode && (
-          <span className="text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400/90 tracking-wide mt-0.5">
-            {cafeCode}
-          </span>
-        )}
-      </div>
+          {showCode && cafeCode && (
+            <span className="text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400/90 tracking-wide mt-0.5">
+              {cafeCode}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

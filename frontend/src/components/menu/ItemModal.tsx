@@ -33,6 +33,25 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const currentCatName =
+    newItem.category ||
+    selectedCategory ||
+    (appData.categories.length > 0
+      ? typeof appData.categories[0] === 'string'
+        ? appData.categories[0]
+        : appData.categories[0].name
+      : '');
+
+  const selectedCategoryObj = appData.categories.find(
+    (c: any) => (typeof c === 'string' ? c : c.name) === currentCatName
+  ) as any;
+
+  const subcategoriesList: string[] = Array.isArray(selectedCategoryObj?.subcategories)
+    ? selectedCategoryObj.subcategories
+    : typeof selectedCategoryObj?.subcategories === 'string'
+    ? selectedCategoryObj.subcategories.split(',').map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!newItem.name?.trim() || !newItem.price) {
@@ -60,6 +79,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         name: newItem.name.trim(),
         price: `₹${numericPrice.toFixed(2)}`,
         category: catToUse,
+        subcategory: newItem.subcategory || null,
         available: newItem.available !== false,
         status: newItem.status || 'Active',
       };
@@ -122,63 +142,52 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         </>
       }
     >
-      <form onSubmit={handleSave} className="space-y-4">
+      <form onSubmit={handleSave} className="space-y-3.5">
         {error && (
           <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
             {error}
           </div>
         )}
 
-        {/* Visibility & Availability Bar */}
+        {/* Dish Status Toggle (Single Active / Inactive) */}
         {!newItem.isAddon && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200/80 dark:border-stone-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-stone-900 dark:text-stone-100 block">
-                  Available for Order
-                </span>
-                <span className="text-[11px] text-stone-500 dark:text-stone-400">
-                  {newItem.available !== false ? 'In stock on POS' : 'Marked sold out'}
-                </span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={newItem.available !== false}
-                  onChange={(e) => setNewItem({ ...newItem, available: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-10 h-5 bg-stone-300 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-              </label>
+          <div className="px-3.5 py-2 rounded-xl bg-stone-50 dark:bg-stone-850 border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                Dish Status
+              </span>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  newItem.status === 'Active'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+                    : 'bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                }`}
+              >
+                {newItem.status === 'Active' ? 'Active' : 'Inactive'}
+              </span>
             </div>
-
-            <div className="flex items-center justify-between sm:border-l sm:border-stone-200 sm:dark:border-stone-800 sm:pl-3">
-              <div>
-                <span className="text-xs font-bold text-stone-900 dark:text-stone-100 block">
-                  Item Status
-                </span>
-                <span className="text-[11px] text-stone-500 dark:text-stone-400">
-                  {newItem.status === 'Active' ? 'Active on menu' : 'Archived / Inactive'}
-                </span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={newItem.status === 'Active'}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, status: e.target.checked ? 'Active' : 'Inactive' })
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-10 h-5 bg-stone-300 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-              </label>
-            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newItem.status === 'Active'}
+                onChange={(e) => {
+                  const active = e.target.checked;
+                  setNewItem({
+                    ...newItem,
+                    status: active ? 'Active' : 'Inactive',
+                    available: active,
+                  });
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-5.5 bg-stone-300 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
           </div>
         )}
 
-        {/* Item Name & Category */}
+        {/* Item Name, Category & Subcategory */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div className="sm:col-span-7">
+          <div className={subcategoriesList.length > 0 ? "sm:col-span-5" : "sm:col-span-7"}>
             <Input
               label="Dish / Beverage Name"
               required
@@ -189,31 +198,70 @@ export const ItemModal: React.FC<ItemModalProps> = ({
             />
           </div>
 
-          <div className="sm:col-span-5">
-            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 block">
-              Category
-            </label>
-            <select
-              value={newItem.category || selectedCategory || ''}
-              onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-              className="w-full h-10 px-3 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer"
-            >
-              {appData.categories.map((c: any) => {
-                const name = typeof c === 'string' ? c : c.name;
-                return (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                );
-              })}
-            </select>
+          <div className={subcategoriesList.length > 0 ? "sm:col-span-3" : "sm:col-span-5"}>
+            <div className="w-full flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none h-4 flex items-center">
+                Category
+              </label>
+              <div className="relative flex items-center w-full">
+                <select
+                  value={newItem.category || selectedCategory || ''}
+                  onChange={(e) => setNewItem({ ...newItem, category: e.target.value, subcategory: '' })}
+                  className="w-full h-[42px] px-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer transition-all"
+                >
+                  {appData.categories.map((c: any) => {
+                    const name = typeof c === 'string' ? c : c.name;
+                    return (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
           </div>
+
+          {subcategoriesList.length > 0 && (
+            <div className="sm:col-span-4">
+              <div className="w-full flex flex-col gap-1.5">
+                <div className="flex items-center justify-between h-4">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none whitespace-nowrap">
+                    Subcategory <span className="text-[10px] text-stone-400 font-normal lowercase tracking-normal">(opt)</span>
+                  </label>
+                  {newItem.subcategory && (
+                    <button
+                      type="button"
+                      onClick={() => setNewItem({ ...newItem, subcategory: '' })}
+                      className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="relative flex items-center w-full">
+                  <select
+                    value={newItem.subcategory || ''}
+                    onChange={(e) => setNewItem({ ...newItem, subcategory: e.target.value })}
+                    className="w-full h-[42px] px-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer transition-all"
+                  >
+                    <option value="">None / General</option>
+                    {subcategoriesList.map((subName: string) => (
+                      <option key={subName} value={subName}>
+                        {subName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Dietary Classification */}
         {!newItem.isAddon && (
           <div>
-            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 block">
+            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
               Dietary Preference
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -224,7 +272,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                     key={dt.label}
                     type="button"
                     onClick={() => setNewItem({ ...newItem, type: dt.label })}
-                    className={`py-2 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       isSelected
                         ? `${dt.color} ring-2 ring-amber-500/20 shadow-sm`
                         : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-850'
@@ -282,7 +330,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
         {/* Description */}
         <div>
-          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center gap-1.5">
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-stone-400" />
             <span>Description</span>
           </label>
@@ -291,13 +339,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({
             placeholder="Ingredients, allergen warnings, or taste highlights..."
             value={newItem.description || ''}
             onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-            className="w-full px-3.5 py-2.5 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none"
           />
         </div>
 
         {/* Image File */}
         <div>
-          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center gap-1.5">
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5 text-stone-400" />
             <span>Dish Photo (Optional)</span>
           </label>

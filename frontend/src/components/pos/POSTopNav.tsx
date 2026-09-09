@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { CafeBrandBadge, Button, Tooltip } from '../ui';
-import { LayoutDashboard, ShoppingBag, Utensils, Zap } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Utensils, Zap, History } from 'lucide-react';
 
 export interface POSTopNavProps {
   onOpenMobileCart?: () => void;
@@ -11,7 +11,7 @@ export interface POSTopNavProps {
 
 export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
   const { posMode, appData, storeProfile } = useApp();
-  const { selectedTableId, cart } = usePOS();
+  const { selectedTableId, cart, setShowOrderHistoryModal } = usePOS();
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -103,6 +103,21 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
             )}
           </button>
         )}
+
+        {/* Order History Button (Available in Quick and Table POS) */}
+        <Tooltip content="Terminal Order History & Reprint Bills" position="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowOrderHistoryModal(true)}
+            leftIcon={<History className="w-4 h-4 text-amber-500" />}
+            className="font-bold cursor-pointer"
+          >
+            <span className="hidden sm:inline">Order History</span>
+            <span className="sm:hidden">History</span>
+          </Button>
+        </Tooltip>
 
         <Tooltip content="Return to Management Dashboard" position="bottom">
           <Link to="/dashboard">

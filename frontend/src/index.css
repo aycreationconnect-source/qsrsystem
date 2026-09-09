@@ -66,6 +66,29 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* 🖋️ Universal High-Contrast Text Selection (WCAG AAA Compliant) */
+  ::selection {
+    background-color: #fde68a !important; /* Warm honey gold amber-200 */
+    color: #1c1917 !important;            /* Deep obsidian stone-900 (13.7:1 AAA contrast) */
+  }
+
+  ::-moz-selection {
+    background-color: #fde68a !important;
+    color: #1c1917 !important;
+  }
+
+  html.dark ::selection,
+  html.dark *::selection {
+    background-color: #f59e0b !important; /* Vibrant amber-500 */
+    color: #0c0a09 !important;            /* Deep obsidian stone-950 (8.2:1 AAA contrast) */
+  }
+
+  html.dark ::-moz-selection,
+  html.dark *::-moz-selection {
+    background-color: #f59e0b !important;
+    color: #0c0a09 !important;
+  }
+
   body {
     min-height: 100%;
     font-family: var(--font-sans);
@@ -206,6 +229,7 @@ html.dark .cafe-glass {
     visibility: visible !important;
   }
   #thermal-receipt {
+    display: block !important;
     position: absolute;
     left: 0;
     top: 0;

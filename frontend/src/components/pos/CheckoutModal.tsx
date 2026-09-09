@@ -15,9 +15,10 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { roundPOSAmount } from '../../lib/orderUtils';
 
 export const CheckoutModal: React.FC = () => {
-  const { posMode, appData } = useApp();
+  const { posMode, appData, storeProfile, currentUser } = useApp();
   const {
     showCheckoutModal,
     setShowCheckoutModal,
@@ -136,6 +137,7 @@ export const CheckoutModal: React.FC = () => {
     discountAmount = dVal;
   }
   const finalTotal = Math.max(0, baseTotal - discountAmount);
+  const roundedTotal = roundPOSAmount(finalTotal);
 
   // Active payments for current session
   const currentPayments: OrderPayment[] =
@@ -147,11 +149,11 @@ export const CheckoutModal: React.FC = () => {
     (sum, p) => sum + (parseFloat(String(p.amount ?? '').replace(/[^0-9.]/g, '')) || 0),
     0
   );
-  const currentRemaining = Math.max(0, parseFloat((finalTotal - currentPaid).toFixed(2)));
+  const currentRemaining = Math.max(0, parseFloat((roundedTotal - currentPaid).toFixed(2)));
 
   // Cash tender change calculation (for single payment tab)
   const tenderedAmount = parseFloat(tenderCash) || 0;
-  const changeDue = Math.max(0, tenderedAmount - finalTotal);
+  const changeDue = Math.max(0, tenderedAmount - roundedTotal);
 
   // When modal opens, auto-switch to split tab if table has recorded advance/payments
   useEffect(() => {
@@ -224,6 +226,315 @@ export const CheckoutModal: React.FC = () => {
       default:
         return <Banknote className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
     }
+  };
+
+  // Handler: Thermal Receipt Printing for Settlement & Payment
+  const handlePrintThermalReceipt = () => {
+    if (posMode === 'table' && selectedTableId) {
+      setTablePrinted((prev) => ({ ...prev, [selectedTableId]: true }));
+    }
+
+    const storeName = storeProfile?.businessName || appData?.settings?.storeName || 'Velora Cafe';
+    const cafeCode = storeProfile?.cafeCode || '';
+    const address = storeProfile?.address || appData?.settings?.address || '';
+    const cityState = [storeProfile?.city, storeProfile?.state].filter(Boolean).join(', ');
+    const phone = storeProfile?.phone || appData?.settings?.phone || '';
+    const gstin = storeProfile?.gstin || appData?.settings?.taxNo || '';
+    const receiptFooter = storeProfile?.receiptFooter || 'Thank you for dining with us! Please visit again.';
+
+    const tableName = posMode === 'table'
+      ? (appData.tables?.find((t) => String(t.id) === String(selectedTableId))?.name || `Table #${selectedTableId}`)
+      : 'Quick POS / Counter';
+
+    const orderDate = new Date();
+    const dateFormatted = orderDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeFormatted = orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    // Generate batches or items HTML
+    let itemsHtml = '';
+    if (orderGroups.length > 0) {
+      itemsHtml = orderGroups.map((group) => {
+        const groupHeader = orderGroups.length > 1
+          ? `<tr><td colspan="3" style="padding: 4px 0 2px 0; font-weight: bold; border-bottom: 1px dotted #000; font-size: 10px; text-transform: uppercase;">${escapeXml(group.title)}${group.time ? ` (${new Date(group.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })})` : ''}</td></tr>`
+          : '';
+        const itemsList = group.items.map((it) => `
+          <tr>
+            <td style="padding: 2.5px 0; vertical-align: top;">${escapeXml(it.name)}</td>
+            <td style="padding: 2.5px 0; text-align: center; vertical-align: top; white-space: nowrap;">x${it.quantity}</td>
+            <td style="padding: 2.5px 0; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap;">₹${(it.price * it.quantity).toFixed(2)}</td>
+          </tr>
+        `).join('');
+        return `${groupHeader}${itemsList}`;
+      }).join('');
+    } else {
+      itemsHtml = combinedItems.map((it) => {
+        const p = parseFloat(String(it.price).replace(/[^0-9.]/g, '')) || 0;
+        const q = it.quantity || 1;
+        return `
+          <tr>
+            <td style="padding: 2.5px 0; vertical-align: top;">${escapeXml(it.name)}</td>
+            <td style="padding: 2.5px 0; text-align: center; vertical-align: top; white-space: nowrap;">x${q}</td>
+            <td style="padding: 2.5px 0; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap;">₹${(p * q).toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Payment details HTML
+    let paymentLinesHtml = '';
+    if (currentPayments.length > 0) {
+      paymentLinesHtml = currentPayments.map((p) => `
+        <div style="display: flex; justify-content: space-between; padding: 1px 0;">
+          <span>• ${escapeXml(p.paymentMethod)}${p.reference ? ` (${escapeXml(p.reference)})` : ''}:</span>
+          <span style="font-weight: bold;">₹${parseFloat(String(p.amount)).toFixed(2)}</span>
+        </div>
+      `).join('');
+    } else {
+      paymentLinesHtml = `
+        <div style="display: flex; justify-content: space-between; padding: 1px 0;">
+          <span>• Mode: ${escapeXml(paymentType)}</span>
+          <span style="font-weight: bold;">₹${roundedTotal}</span>
+        </div>
+      `;
+      if (paymentType.toLowerCase() === 'cash' && tenderedAmount > 0) {
+        paymentLinesHtml += `
+          <div style="display: flex; justify-content: space-between; padding: 1px 0; color: #333;">
+            <span>  Tendered:</span>
+            <span>₹${tenderedAmount.toFixed(2)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 1px 0; color: #333;">
+            <span>  Change Return:</span>
+            <span>₹${changeDue.toFixed(2)}</span>
+          </div>
+        `;
+      }
+    }
+
+    const receiptHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Receipt - ${escapeXml(tableName)}</title>
+        <style>
+          @page {
+            size: 80mm auto;
+            margin: 0mm 2mm;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+            width: 74mm;
+            max-width: 74mm;
+            margin: 0 auto;
+            padding: 8px 2px 24px 2px;
+            font-size: 11px;
+            line-height: 1.35;
+            color: #000;
+            background: #fff;
+          }
+          .center { text-align: center; }
+          .right { text-align: right; }
+          .bold { font-weight: bold; }
+          .store-name {
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+          }
+          .store-info {
+            font-size: 10px;
+            color: #222;
+            margin: 1px 0;
+          }
+          .divider {
+            border-top: 1px dashed #000;
+            margin: 6px 0;
+          }
+          .divider-double {
+            border-top: 2px dashed #000;
+            margin: 6px 0;
+          }
+          .order-meta {
+            font-size: 10.5px;
+            margin: 4px 0;
+          }
+          .order-meta div {
+            display: flex;
+            justify-content: space-between;
+            padding: 1px 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin: 4px 0;
+          }
+          th {
+            font-size: 10px;
+            font-weight: bold;
+            text-align: left;
+            padding-bottom: 3px;
+            border-bottom: 1px dashed #000;
+          }
+          .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1.5px 0;
+            font-size: 11px;
+          }
+          .total-banner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 900;
+            padding: 4px 0;
+          }
+          .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 10px;
+            line-height: 1.4;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="center">
+          <div class="store-name">${escapeXml(storeName)}</div>
+          ${cafeCode ? `<div class="store-info">Code: ${escapeXml(cafeCode)}</div>` : ''}
+          ${address ? `<div class="store-info">${escapeXml(address)}</div>` : ''}
+          ${cityState ? `<div class="store-info">${escapeXml(cityState)}</div>` : ''}
+          ${phone ? `<div class="store-info">Tel: ${escapeXml(phone)}</div>` : ''}
+          ${gstin ? `<div class="store-info">GSTIN: ${escapeXml(gstin)}</div>` : ''}
+        </div>
+
+        <div class="divider-double"></div>
+
+        <div class="order-meta">
+          <div>
+            <span>Order Type: <strong>${escapeXml(tableName)}</strong></span>
+            <span>${timeFormatted}</span>
+          </div>
+          <div>
+            <span>Date: ${dateFormatted}</span>
+            <span>Staff: ${escapeXml(currentUser?.fullName || currentUser?.username || 'Counter')}</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 55%;">ITEM</th>
+              <th style="width: 18%; text-align: center;">QTY</th>
+              <th style="width: 27%; text-align: right;">AMT</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <div class="calc-row">
+          <span>Subtotal:</span>
+          <span class="bold">₹${subtotal.toFixed(2)}</span>
+        </div>
+
+        <div class="calc-row">
+          <span>Taxes & GST:</span>
+          <span class="bold">₹${tax.toFixed(2)}</span>
+        </div>
+
+        ${discountAmount > 0 ? `
+          <div class="calc-row bold" style="color: #000;">
+            <span>Discount Applied${discountType === 'percent' ? ` (${dVal}%)` : ''}:</span>
+            <span>-₹${discountAmount.toFixed(2)}</span>
+          </div>
+        ` : ''}
+
+        ${roundedTotal !== finalTotal ? `
+          <div class="calc-row" style="color: #222;">
+            <span>Round Off:</span>
+            <span>${roundedTotal > finalTotal ? '+' : ''}₹${(roundedTotal - finalTotal).toFixed(2)}</span>
+          </div>
+        ` : ''}
+
+        <div class="divider-double"></div>
+
+        <div class="total-banner">
+          <span>NET PAYABLE:</span>
+          <span>₹${roundedTotal}</span>
+        </div>
+
+        <div class="divider-double"></div>
+
+        <div style="font-size: 10.5px; margin: 4px 0;">
+          <div class="bold" style="margin-bottom: 2px;">PAYMENT DETAILS:</div>
+          ${paymentLinesHtml}
+          <div style="display: flex; justify-content: space-between; margin-top: 3px; font-weight: bold; border-top: 1px dotted #000; padding-top: 2px;">
+            <span>Paid Amount:</span>
+            <span>₹${currentPaid.toFixed(2)}</span>
+          </div>
+          ${currentRemaining > 0 ? `
+            <div style="display: flex; justify-content: space-between; font-weight: bold; color: #000;">
+              <span>Balance Due:</span>
+              <span>₹${currentRemaining.toFixed(2)}</span>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="footer">
+          <div class="bold">${escapeXml(receiptFooter)}</div>
+          <div style="margin-top: 4px; font-size: 9px; opacity: 0.7;">*** Velora QSR POS ***</div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Trigger isolated iframe printing
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      document.body.removeChild(iframe);
+      window.print();
+      return;
+    }
+
+    doc.open();
+    doc.write(receiptHtml);
+    doc.close();
+
+    iframe.contentWindow?.focus();
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.print();
+      } catch (e) {
+        console.error('Receipt print failed:', e);
+      } finally {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      }
+    }, 350);
   };
 
   return (
@@ -333,12 +644,7 @@ export const CheckoutModal: React.FC = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  window.print();
-                  if (posMode === 'table' && selectedTableId) {
-                    setTablePrinted((prev) => ({ ...prev, [selectedTableId]: true }));
-                  }
-                }}
+                onClick={handlePrintThermalReceipt}
                 leftIcon={<Printer className="w-4 h-4 text-stone-600 dark:text-stone-300" />}
                 className="w-full font-bold text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 py-2 rounded-xl cursor-pointer"
               >
@@ -362,13 +668,20 @@ export const CheckoutModal: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex justify-between items-baseline pt-0.5">
+                <div className="flex justify-between items-start pt-0.5">
                   <span className="text-sm font-extrabold text-stone-900 dark:text-stone-100">
                     Total Amount:
                   </span>
-                  <span className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-blue-400">
-                    ₹{finalTotal.toFixed(2)}
-                  </span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-xl sm:text-2xl font-black font-mono text-blue-900 dark:text-blue-400">
+                      ₹{roundedTotal}
+                    </span>
+                    {roundedTotal !== finalTotal && (
+                      <span className="text-[11px] font-mono text-stone-500 dark:text-stone-400">
+                        (₹{finalTotal.toFixed(2)})
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* If partial payments recorded, display live running balance */}
@@ -525,7 +838,7 @@ export const CheckoutModal: React.FC = () => {
 
                       <input
                         type="number"
-                        placeholder={finalTotal.toFixed(0)}
+                        placeholder={roundedTotal.toString()}
                         value={tenderCash}
                         onChange={(e) => setTenderCash(e.target.value)}
                         className="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-1.5 text-sm font-mono font-bold focus:border-amber-500 focus:outline-none"
@@ -554,7 +867,7 @@ export const CheckoutModal: React.FC = () => {
                     onClick={() => confirmPaymentAndOrder()}
                     className="w-full font-bold text-sm py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
                   >
-                    Confirm & Pay ₹{finalTotal.toFixed(2)}
+                    Confirm & Pay ₹{roundedTotal}
                   </button>
                 </div>
               </div>
@@ -722,7 +1035,7 @@ export const CheckoutModal: React.FC = () => {
                       onClick={() => confirmPaymentAndOrder(currentPayments)}
                       className="w-full font-bold text-sm py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
                     >
-                      Confirm & Settle Final Bill (₹{finalTotal.toFixed(2)})
+                      Confirm & Settle Final Bill (₹{roundedTotal})
                     </button>
                   ) : posMode === 'table' && selectedTableId ? (
                     <Button
@@ -750,107 +1063,139 @@ export const CheckoutModal: React.FC = () => {
       </Modal>
 
       {/* 🖨️ Thermal Receipt Printable Container (Rendered off-screen, visible only on print) */}
-      <div id="thermal-receipt" className="hidden">
+      {/* 🖨️ Thermal Receipt Printable Container (Rendered off-screen, visible on direct print fallback) */}
+      <div id="thermal-receipt" className="hidden print:block">
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            {appData?.settings?.storeName || 'VELORA QSR'}
+          <div style={{ fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+            {storeProfile?.businessName || appData?.settings?.storeName || 'VELORA QSR'}
           </div>
-          <div style={{ fontSize: '10px' }}>
-            {appData?.settings?.address || 'Fresh Food & Artisan Kitchen'}
-          </div>
-          {appData?.settings?.phone && (
-            <div style={{ fontSize: '10px' }}>Phone: {appData.settings.phone}</div>
+          {storeProfile?.cafeCode && (
+            <div style={{ fontSize: '10px' }}>Code: {storeProfile.cafeCode}</div>
           )}
-          {appData?.settings?.taxNo && (
-            <div style={{ fontSize: '10px' }}>GST/Tax: {appData.settings.taxNo}</div>
+          {(storeProfile?.address || appData?.settings?.address) && (
+            <div style={{ fontSize: '10px' }}>{storeProfile?.address || appData?.settings?.address}</div>
           )}
-          <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
+          {[storeProfile?.city, storeProfile?.state].filter(Boolean).length > 0 && (
+            <div style={{ fontSize: '10px' }}>{[storeProfile?.city, storeProfile?.state].filter(Boolean).join(', ')}</div>
+          )}
+          {(storeProfile?.phone || appData?.settings?.phone) && (
+            <div style={{ fontSize: '10px' }}>Phone: {storeProfile?.phone || appData?.settings?.phone}</div>
+          )}
+          {(storeProfile?.gstin || appData?.settings?.taxNo) && (
+            <div style={{ fontSize: '10px' }}>GSTIN: {storeProfile?.gstin || appData?.settings?.taxNo}</div>
+          )}
+          <div style={{ borderBottom: '2px dashed #000', margin: '6px 0' }} />
         </div>
 
-        <div style={{ fontSize: '10px', display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-          <span>Date: {new Date().toLocaleDateString()}</span>
-          <span>Time: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        <div style={{ fontSize: '10px', display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+          <span>Date: {new Date().toLocaleDateString('en-GB')}</span>
+          <span>Time: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
         </div>
-        <div style={{ fontSize: '10px', marginBottom: '6px' }}>
-          <span>Mode: {posMode === 'table' ? `Table #${selectedTableId}` : 'Quick Counter'}</span>
+        <div style={{ fontSize: '10px', display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <span>Type: {posMode === 'table' ? `Table #${selectedTableId}` : 'Quick Counter'}</span>
+          <span>Staff: {currentUser?.fullName || currentUser?.username || 'Counter'}</span>
         </div>
 
         <div style={{ borderBottom: '1px dashed #000', margin: '4px 0' }} />
 
         {/* Itemized Table */}
-        <table style={{ width: '100%', fontSize: '10px', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', fontSize: '10.5px', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #000', textAlign: 'left' }}>
-              <th style={{ paddingBottom: '3px' }}>Item</th>
-              <th style={{ textAlign: 'center', paddingBottom: '3px' }}>Qty</th>
-              <th style={{ textAlign: 'right', paddingBottom: '3px' }}>Amt</th>
+            <tr style={{ borderBottom: '1px dashed #000', textAlign: 'left' }}>
+              <th style={{ paddingBottom: '3px', width: '55%' }}>Item</th>
+              <th style={{ textAlign: 'center', paddingBottom: '3px', width: '18%' }}>Qty</th>
+              <th style={{ textAlign: 'right', paddingBottom: '3px', width: '27%' }}>Amt</th>
             </tr>
           </thead>
           <tbody>
-            {combinedItems.map((it: any, i: number) => {
-              const p = parseFloat(String(it.price).replace(/[^0-9.]/g, '')) || 0;
-              const q = it.quantity || 1;
-              return (
-                <tr key={i}>
-                  <td style={{ padding: '2px 0' }}>{it.name}</td>
-                  <td style={{ textAlign: 'center' }}>{q}</td>
-                  <td style={{ textAlign: 'right' }}>₹{(p * q).toFixed(2)}</td>
-                </tr>
-              );
-            })}
+            {orderGroups.length > 0
+              ? orderGroups.map((group) => (
+                  <React.Fragment key={group.id}>
+                    {orderGroups.length > 1 && (
+                      <tr>
+                        <td colSpan={3} style={{ fontWeight: 'bold', fontSize: '10px', paddingTop: '4px', borderBottom: '1px dotted #ccc' }}>
+                          {group.title}
+                        </td>
+                      </tr>
+                    )}
+                    {group.items.map((it, i) => (
+                      <tr key={i}>
+                        <td style={{ padding: '2px 0' }}>{it.name}</td>
+                        <td style={{ textAlign: 'center' }}>x{it.quantity}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{(it.price * it.quantity).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))
+              : combinedItems.map((it: any, i: number) => {
+                  const p = parseFloat(String(it.price).replace(/[^0-9.]/g, '')) || 0;
+                  const q = it.quantity || 1;
+                  return (
+                    <tr key={i}>
+                      <td style={{ padding: '2px 0' }}>{it.name}</td>
+                      <td style={{ textAlign: 'center' }}>x{q}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 'bold' }}>₹{(p * q).toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
           </tbody>
         </table>
 
         <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
 
         {/* Totals */}
-        <div style={{ fontSize: '10px', lineHeight: '1.4' }}>
+        <div style={{ fontSize: '10.5px', lineHeight: '1.4' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Subtotal:</span>
-            <span>₹{subtotal.toFixed(2)}</span>
+            <span style={{ fontWeight: 'bold' }}>₹{subtotal.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Taxes & Charges:</span>
-            <span>₹{tax.toFixed(2)}</span>
+            <span>Taxes & GST:</span>
+            <span style={{ fontWeight: 'bold' }}>₹{tax.toFixed(2)}</span>
           </div>
           {discountAmount > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-              <span>Discount:</span>
+              <span>Discount Applied:</span>
               <span>-₹{discountAmount.toFixed(2)}</span>
             </div>
           )}
-          <div style={{ borderBottom: '1px solid #000', margin: '4px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold' }}>
-            <span>TOTAL:</span>
-            <span>₹{finalTotal.toFixed(2)}</span>
+          {roundedTotal !== finalTotal && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Round Off:</span>
+              <span>{roundedTotal > finalTotal ? '+' : ''}₹{(roundedTotal - finalTotal).toFixed(2)}</span>
+            </div>
+          )}
+          <div style={{ borderBottom: '2px dashed #000', margin: '5px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: '900' }}>
+            <span>NET PAYABLE:</span>
+            <span>₹{roundedTotal}</span>
           </div>
+          <div style={{ borderBottom: '2px dashed #000', margin: '5px 0' }} />
         </div>
 
-        <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
-
         {/* Payment Breakdown */}
-        <div style={{ fontSize: '10px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>PAYMENT BREAKDOWN:</div>
+        <div style={{ fontSize: '10.5px', marginTop: '4px' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>PAYMENT DETAILS:</div>
           {currentPayments.length > 0 ? (
             currentPayments.map((cp, idx) => (
               <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '1px 0' }}>
                 <span>• {cp.paymentMethod}{cp.reference ? ` (${cp.reference})` : ''}:</span>
-                <span>₹{parseFloat(String(cp.amount)).toFixed(2)}</span>
+                <span style={{ fontWeight: 'bold' }}>₹{parseFloat(String(cp.amount)).toFixed(2)}</span>
               </div>
             ))
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>• {paymentType}:</span>
-              <span>₹{finalTotal.toFixed(2)}</span>
+              <span>• Mode: {paymentType}:</span>
+              <span style={{ fontWeight: 'bold' }}>₹{roundedTotal}</span>
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3px', fontWeight: 'bold' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3px', fontWeight: 'bold', borderTop: '1px dotted #000', paddingTop: '2px' }}>
             <span>Paid Amount:</span>
             <span>₹{currentPaid.toFixed(2)}</span>
           </div>
           {currentRemaining > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#000' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
               <span>Balance Due:</span>
               <span>₹{currentRemaining.toFixed(2)}</span>
             </div>
@@ -860,10 +1205,24 @@ export const CheckoutModal: React.FC = () => {
         <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }} />
 
         <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '6px' }}>
-          <div>THANK YOU FOR DINING WITH US!</div>
-          <div style={{ fontStyle: 'italic', marginTop: '2px' }}>Velora QSR POS Terminal</div>
+          <div style={{ fontWeight: 'bold' }}>{storeProfile?.receiptFooter || 'THANK YOU FOR DINING WITH US!'}</div>
+          <div style={{ fontStyle: 'italic', marginTop: '2px' }}>*** Velora QSR POS Terminal ***</div>
         </div>
       </div>
     </>
   );
 };
+
+function escapeXml(unsafe: string): string {
+  return (unsafe || '').replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+

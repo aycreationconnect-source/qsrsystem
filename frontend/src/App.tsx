@@ -13,6 +13,7 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { MenuView } from './components/menu/MenuView';
 import { InventoryView } from './components/inventory/InventoryView';
 import { FloorManagement } from './components/tables/FloorManagement';
+import { ReportsView } from './components/reports/ReportsView';
 import { SettingsView } from './components/settings/SettingsView';
 import { PageTitleUpdater } from './components/common/PageTitleUpdater';
 import { OrderNotificationToast } from './components/common/OrderNotificationToast';
@@ -58,6 +59,8 @@ const AppRoutes: React.FC = () => {
             <Route path="/menu" element={<MenuView />} />
             <Route path="/inventory" element={<InventoryView />} />
             <Route path="/tables" element={<FloorManagement />} />
+            <Route path="/reports" element={<ReportsView />} />
+            <Route path="/report" element={<Navigate to="/reports" replace />} />
             <Route path="/settings" element={<SettingsView />} />
           </Route>
 

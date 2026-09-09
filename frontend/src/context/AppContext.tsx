@@ -156,6 +156,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
+  const sanitizeCategories = (cats: any[]): Category[] => {
+    if (!Array.isArray(cats)) return [];
+    return cats.map((c: any) => {
+      if (typeof c === 'string') return { name: c, subcategories: [] };
+      let subcats: string[] = [];
+      if (Array.isArray(c.subcategories)) {
+        subcats = c.subcategories;
+      } else if (typeof c.subcategories === 'string') {
+        try {
+          const p = JSON.parse(c.subcategories);
+          subcats = Array.isArray(p) ? p : [];
+        } catch {
+          subcats = c.subcategories.split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+      }
+      const { displayOrder, ...rest } = c;
+      return {
+        ...rest,
+        subcategories: subcats,
+      };
+    });
+  };
+
   const fetchBackendData = useCallback(async () => {
     try {
       const [catsRes, menusRes, invRes, areasRes, tablesRes, ordersRes, addonsRes, settingsRes] =
@@ -170,8 +193,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           settingsApi.getSettings(),
         ]);
 
-      const cats: Category[] =
-        catsRes.status === 'fulfilled' && Array.isArray(catsRes.value) ? catsRes.value : [];
+      const cats: Category[] = sanitizeCategories(
+        catsRes.status === 'fulfilled' && Array.isArray(catsRes.value) ? catsRes.value : []
+      );
       const menus: any[] =
         menusRes.status === 'fulfilled' && Array.isArray(menusRes.value) ? menusRes.value : [];
       const inventory: InventoryItem[] =
@@ -206,8 +230,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               .map((m: any) => ({
                 ...m,
                 image: m.imageUrl,
-                available: m.isAvailable,
+                status: m.status || (m.isAvailable === false ? 'Inactive' : 'Active'),
+                available: m.status ? m.status === 'Active' : m.isAvailable !== false,
                 category: m.category?.name || 'Uncategorized',
+                subcategory: m.subcategory || null,
                 price: `₹${
                   typeof m.price === 'number' ? m.price.toFixed(2) : parseFloat(m.price || 0).toFixed(2)
                 }`,
@@ -253,7 +279,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setAppData((prev) => ({
         ...prev,
-        ...(cats !== null ? { categories: cats } : {}),
+        ...(cats !== null ? { categories: sanitizeCategories(cats) } : {}),
         ...(orders !== null ? { orders: orders } : {}),
         ...(menus !== null
           ? {
@@ -262,8 +288,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 .map((m: any) => ({
                   ...m,
                   image: m.imageUrl,
-                  available: m.isAvailable,
+                  status: m.status || (m.isAvailable === false ? 'Inactive' : 'Active'),
+                  available: m.status ? m.status === 'Active' : m.isAvailable !== false,
                   category: m.category?.name || 'Uncategorized',
+                  subcategory: m.subcategory || null,
                   price: `₹${
                     typeof m.price === 'number'
                       ? m.price.toFixed(2)
@@ -283,7 +311,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const cats = await menuApi.getCategories();
       if (Array.isArray(cats)) {
-        setAppData((prev) => ({ ...prev, categories: cats }));
+        setAppData((prev) => ({ ...prev, categories: sanitizeCategories(cats) }));
       }
     } catch (e) {
       console.error('Failed to refresh categories:', e);
@@ -301,8 +329,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             .map((m: any) => ({
               ...m,
               image: m.imageUrl,
-              available: m.isAvailable,
+              status: m.status || (m.isAvailable === false ? 'Inactive' : 'Active'),
+              available: m.status ? m.status === 'Active' : m.isAvailable !== false,
               category: m.category?.name || 'Uncategorized',
+              subcategory: m.subcategory || null,
               price: `₹${
                 typeof m.price === 'number'
                   ? m.price.toFixed(2)

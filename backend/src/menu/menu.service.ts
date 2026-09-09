@@ -19,7 +19,7 @@ export class MenuService {
        categoryId = defaultCat ? defaultCat.id : 1;
     }
 
-    const { category, image, available, ingredients, taxes, taxName, ...itemData } = data; // Remove unmapped fields
+    const { category, subcategory, image, available, ingredients, taxes, taxName, ...itemData } = data; // Remove unmapped fields
 
     const menuItem = await this.prisma.menuItem.create({
       data: {
@@ -29,6 +29,7 @@ export class MenuService {
         isAvailable: available !== undefined ? available : true,
         price: parseFloat(String(itemData.price).replace('₹', '') || "0"),
         prepTime: itemData.prepTime ? parseInt(itemData.prepTime) : null,
+        subcategory: subcategory || data.subcategory || null,
         categoryId
       }
     });
@@ -92,13 +93,15 @@ export class MenuService {
       if (cat) updatedCategoryId = cat.id;
     }
 
-    const { category, categoryId, id: itemId, image, available, ingredients, taxes, taxName, ...itemData } = data;
+    const { category, subcategory, categoryId, id: itemId, image, available, ingredients, taxes, taxName, ...itemData } = data;
     
     const menuItem = await this.prisma.menuItem.update({
       where: { id },
       data: {
         ...itemData,
+        ...(data.useGlobalTax !== undefined && { useGlobalTax: Boolean(data.useGlobalTax) }),
         ...(updatedCategoryId !== undefined && { categoryId: updatedCategoryId }),
+        ...(data.subcategory !== undefined && { subcategory: data.subcategory || null }),
         ...(itemData.tax !== undefined && { tax: itemData.tax ? parseFloat(itemData.tax) : null }),
         ...(image !== undefined && { imageUrl: image }),
         ...(available !== undefined && { isAvailable: available }),

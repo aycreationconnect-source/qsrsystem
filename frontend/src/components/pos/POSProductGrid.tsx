@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { MenuItem } from '../../types/app.types';
 import { Badge } from '../ui';
-import { Search, Plus, Minus, X, AlertCircle, Utensils } from 'lucide-react';
+import { Search, Plus, Minus, X, Utensils } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const POSProductGrid: React.FC = () => {
@@ -18,7 +18,7 @@ export const POSProductGrid: React.FC = () => {
   } = usePOS();
 
   const [dietFilter, setDietFilter] = useState<'ALL' | 'Veg' | 'Non-Veg' | 'Egg'>('ALL');
-  const [stockWarning, setStockWarning] = useState<string | null>(null);
+  const [catSubcategoryMap, setCatSubcategoryMap] = useState<Record<string, string | null>>({});
 
   // Set of inactive category names to completely exclude from POS terminal
   const inactiveCategoryNames = new Set(
@@ -106,7 +106,17 @@ export const POSProductGrid: React.FC = () => {
       {/* Food Items Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         {categoriesToRender.map((catName: string) => {
-          const itemsInCat = appData.menu.filter((m: any) => {
+          const catObj = (appData.categories || []).find((c: any) => {
+            const name = typeof c === 'string' ? c : c.name;
+            return name === catName;
+          });
+          const catSubcats: string[] =
+            catObj && typeof catObj !== 'string' && Array.isArray(catObj.subcategories)
+              ? catObj.subcategories
+              : [];
+          const activeSub = catSubcategoryMap[catName];
+
+          const allItemsInCat = appData.menu.filter((m: any) => {
             if (m.isAddon || m.status !== 'Active') return false;
             if (inactiveCategoryNames.has(m.category)) return false;
             if (m.category !== catName) return false;
@@ -116,17 +126,69 @@ export const POSProductGrid: React.FC = () => {
             return true;
           });
 
-          if (itemsInCat.length === 0) return null;
+          const itemsInCat = activeSub
+            ? allItemsInCat.filter((m: any) => m.subcategory === activeSub)
+            : allItemsInCat;
+
+          if (allItemsInCat.length === 0) return null;
 
           return (
             <div key={catName}>
               {/* Category Title Header */}
-              <div className="flex items-center justify-between pb-2 mb-3 border-b border-stone-200 dark:border-stone-800">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-200 dark:border-stone-800">
                 <h3 className="text-sm font-extrabold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
                   {catName}
                 </h3>
-                <span className="text-xs font-semibold text-stone-400">{itemsInCat.length} items</span>
+                <span className="text-xs font-semibold text-stone-400">
+                  {itemsInCat.length} {itemsInCat.length === 1 ? 'item' : 'items'}
+                </span>
               </div>
+
+              {/* Subcategories Filter Chips (if category has subcategories) */}
+              {catSubcats.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setCatSubcategoryMap((prev) => ({ ...prev, [catName]: null }))}
+                    className={cn(
+                      'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
+                      !activeSub
+                        ? 'bg-amber-500 text-stone-950 shadow-xs ring-1 ring-amber-400'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-750'
+                    )}
+                  >
+                    All ({allItemsInCat.length})
+                  </button>
+
+                  {catSubcats.map((sub: string) => {
+                    const subCount = allItemsInCat.filter((m: any) => m.subcategory === sub).length;
+                    const isSelected = activeSub === sub;
+                    return (
+                      <button
+                        key={sub}
+                        type="button"
+                        onClick={() =>
+                          setCatSubcategoryMap((prev) => ({
+                            ...prev,
+                            [catName]: isSelected ? null : sub,
+                          }))
+                        }
+                        className={cn(
+                          'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1',
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950 shadow-xs ring-1 ring-amber-400'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-750'
+                        )}
+                      >
+                        <span>{sub}</span>
+                        <span className={cn('text-[10px]', isSelected ? 'text-stone-900 font-extrabold' : 'text-stone-400')}>
+                          ({subCount})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Responsive Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1920px]:grid-cols-5 gap-3 sm:gap-4">
@@ -135,55 +197,21 @@ export const POSProductGrid: React.FC = () => {
                     .filter((c) => c.id === item.id)
                     .reduce((sum, c) => sum + c.quantity, 0);
 
-                  // Calculate stock
-                  let isLowStock = false;
-                  const availableStock = (() => {
-                    if (!item.ingredients || item.ingredients.length === 0) return '∞';
-                    let minPortions = Infinity;
-                    for (const ing of item.ingredients) {
-                      const invItem = appData.inventory.find(
-                        (inv: any) => (inv.item || inv.name) === ing.name
-                      );
-                      if (!invItem) return 0;
-                      const reqQty = parseFloat(String(ing.quantity));
-                      if (reqQty <= 0) continue;
-                      const portions = Math.floor(invItem.stock / reqQty);
-                      if (portions < minPortions) minPortions = portions;
-                    }
-                    if (minPortions !== Infinity && minPortions <= 5) isLowStock = true;
-                    return minPortions === Infinity ? '∞' : minPortions;
-                  })();
-
-                  const isUnavailable = item.available === false;
-                  const isOutOfStock = typeof availableStock === 'number' && availableStock <= 0;
-                  const isSoldOut = isUnavailable || isOutOfStock;
-
                   return (
                     <div
                       key={item.id || i}
                       onClick={() => {
-                        if (isSoldOut) {
-                          setStockWarning(
-                            isUnavailable
-                              ? `"${item.name}" is paused and marked Sold Out by admin.`
-                              : `"${item.name}" is currently out of stock (depleted inventory).`
-                          );
-                          setTimeout(() => setStockWarning(null), 3000);
-                          return;
-                        }
                         if (qty === 0 || (item.addonIds && item.addonIds.trim() !== '')) {
                           handleAddToCart(item);
                         }
                       }}
                       className={cn(
                         'relative bg-white dark:bg-stone-900 border rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-150 select-none min-h-[160px] sm:min-h-[170px]',
-                        isSoldOut
-                          ? 'opacity-70 bg-stone-100/90 dark:bg-stone-900/70 border-stone-300 dark:border-stone-800 cursor-not-allowed shadow-none'
-                          : 'border-stone-200/80 dark:border-stone-800 cursor-pointer hover:shadow-md hover:border-amber-500/40 hover:-translate-y-0.5',
-                        qty > 0 && !isSoldOut && 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/20 dark:bg-amber-950/10'
+                        'border-stone-200/80 dark:border-stone-800 cursor-pointer hover:shadow-md hover:border-amber-500/40 hover:-translate-y-0.5',
+                        qty > 0 && 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/20 dark:bg-amber-950/10'
                       )}
                     >
-                      {/* Top Header Row: Dietary Badge + Stock */}
+                      {/* Top Header Row: Dietary Badge & Subcategory Tag */}
                       <div className="flex items-center justify-between gap-1.5 mb-2.5 min-w-0">
                         <div className="shrink-0">
                           {item.type === 'Non-Veg' ? (
@@ -194,20 +222,11 @@ export const POSProductGrid: React.FC = () => {
                             <Badge variant="veg" size="sm">Veg</Badge>
                           )}
                         </div>
-
-                        {isUnavailable ? (
-                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shrink-0">
-                            Sold Out
+                        {item.subcategory && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/40 truncate max-w-[120px]">
+                            {item.subcategory}
                           </span>
-                        ) : isOutOfStock ? (
-                          <span className="text-[10px] font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900/60 shrink-0">
-                            Out of Stock
-                          </span>
-                        ) : isLowStock ? (
-                          <span className="text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded shrink-0">
-                            {availableStock} left
-                          </span>
-                        ) : null}
+                        )}
                       </div>
 
                       {/* Item Details */}
@@ -232,22 +251,11 @@ export const POSProductGrid: React.FC = () => {
                         className="flex items-center justify-between gap-2 pt-2.5 border-t border-stone-100 dark:border-stone-800 shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span
-                          className={cn(
-                            'text-sm font-extrabold font-mono shrink-0',
-                            isSoldOut
-                              ? 'text-stone-400 dark:text-stone-500'
-                              : 'text-amber-600 dark:text-amber-400'
-                          )}
-                        >
+                        <span className="text-sm font-extrabold font-mono shrink-0 text-amber-600 dark:text-amber-400">
                           ₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}
                         </span>
 
-                        {isSoldOut ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-xl bg-stone-200/90 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-extrabold text-[11px] select-none border border-stone-300/80 dark:border-stone-750 cursor-not-allowed shrink-0">
-                            Sold Out
-                          </span>
-                        ) : qty === 0 ? (
+                        {qty === 0 ? (
                           <button
                             type="button"
                             onClick={() => handleAddToCart(item)}
@@ -280,7 +288,6 @@ export const POSProductGrid: React.FC = () => {
 
                             <button
                               type="button"
-                              disabled={isOutOfStock}
                               onClick={() => {
                                 if (item.addonIds && item.addonIds.trim() !== '') {
                                   handleAddToCart(item);
@@ -322,20 +329,6 @@ export const POSProductGrid: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Out of Stock Floating Toast Alert */}
-      {stockWarning && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-stone-900 dark:bg-stone-100 text-stone-100 dark:text-stone-900 font-bold text-xs px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <AlertCircle className="w-4 h-4 text-amber-500" />
-          <span>{stockWarning}</span>
-          <button
-            onClick={() => setStockWarning(null)}
-            className="ml-2 opacity-60 hover:opacity-100 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
     </main>
   );
 };
