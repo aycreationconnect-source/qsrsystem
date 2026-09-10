@@ -15,6 +15,7 @@ import {
   FilterX,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getAreaColorTheme } from '../../utils/areaColors';
 
 type StatusFilterType = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'BILLED' | 'PARTIAL';
 type SortByType = 'default' | 'occupied' | 'name' | 'seats';
@@ -386,22 +387,25 @@ export const POSTableSidebar: React.FC = () => {
             All ({tables.length})
           </button>
 
-          {areas.map((area: any) => {
+          {areas.map((area: any, idx: number) => {
             const count = tables.filter((t: Table) => t.areaId === area.id).length;
             const isSelected = String(selectedAreaId) === String(area.id);
+            const theme = getAreaColorTheme(area, idx);
             return (
               <button
                 key={area.id}
                 type="button"
                 onClick={() => setSelectedAreaId(area.id)}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer',
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5',
                   isSelected
-                    ? 'bg-amber-500 text-stone-950 shadow-sm'
+                    ? theme.filterActive
                     : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200/80 dark:hover:bg-stone-750'
                 )}
               >
-                {area.name} ({count})
+                <span className={cn('w-2 h-2 rounded-full shrink-0 shadow-xs', theme.dot)} />
+                <span>{area.name}</span>
+                <span className="text-[10px] opacity-80">({count})</span>
               </button>
             );
           })}
