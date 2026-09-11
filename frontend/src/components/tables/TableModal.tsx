@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { tableApi } from '../../api/tableApi';
 import { useApp } from '../../context/AppContext';
-import { Modal, Button, Input } from '../ui';
-import { Armchair, Users, Layers, CheckCircle2 } from 'lucide-react';
+import { Modal, Button, Input, ConfirmModal, Select, type SelectOption } from '../ui';
+import { Armchair, Users, Layers, CheckCircle2, Trash2 } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { getAreaColorTheme } from '../../utils/areaColors';
 
 interface TableModalProps {
   show: boolean;
@@ -21,6 +23,8 @@ export const TableModal: React.FC<TableModalProps> = ({
 }) => {
   const { appData, refreshTables } = useApp();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!show) return null;
@@ -62,32 +66,117 @@ export const TableModal: React.FC<TableModalProps> = ({
     }
   };
 
+  const handleDeleteTable = async () => {
+    if (!editingTableId) return;
+    try {
+      setIsDeleting(true);
+      setError(null);
+      await tableApi.deleteTable(Number(editingTableId));
+      await refreshTables();
+      setShowConfirmDelete(false);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete table');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const seatPresets = [2, 4, 6, 8, 10];
 
+  const areaOptions: SelectOption[] = (appData.areas || []).map((area: any, idx: number) => {
+    const tableCount =
+      appData.tables?.filter((t: any) => Number(t.areaId) === Number(area.id)).length ??
+      (area.tables?.length ?? 0);
+    const theme = getAreaColorTheme(area, idx);
+    return {
+      value: area.id,
+      label: area.name,
+      description: area.description || undefined,
+      badge: `${tableCount} ${tableCount === 1 ? 'Table' : 'Tables'}`,
+      icon: <span className={cn('w-2.5 h-2.5 rounded-full shrink-0 shadow-xs', theme.dot)} />,
+    };
+  });
+
+  const statusOptions: SelectOption[] = [
+    {
+      value: 'Available',
+      label: 'Available',
+      badge: 'Ready',
+      description: 'Clean & ready for new guests',
+      icon: (
+        <span className="relative flex h-2.5 w-2.5 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+        </span>
+      ),
+    },
+    {
+      value: 'Reserved',
+      label: 'Reserved',
+      badge: 'Booked',
+      description: 'Pre-booked or held for reservation',
+      icon: (
+        <span className="relative flex h-2.5 w-2.5 shrink-0">
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+        </span>
+      ),
+    },
+    {
+      value: 'Occupied',
+      label: 'Occupied',
+      badge: 'In Use',
+      description: 'Guests currently seated & dining',
+      icon: (
+        <span className="relative flex h-2.5 w-2.5 shrink-0">
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-sm shadow-rose-500/50"></span>
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <Modal
-      isOpen={show}
-      onClose={onClose}
-      title={editingTableId ? 'Edit Table' : 'Add New Dining Table'}
-      description="Configure table identifier, seating capacity, and assign it to a floor section."
-      maxWidth="md"
-      footer={
-        <>
-          <Button variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSaveTable}
-            isLoading={isSaving}
-            leftIcon={<CheckCircle2 className="w-4 h-4" />}
-          >
-            {editingTableId ? 'Update Table' : 'Create Table'}
-          </Button>
-        </>
-      }
-    >
+    <>
+      <Modal
+        isOpen={show}
+        onClose={onClose}
+        title={editingTableId ? 'Edit Table' : 'Add New Dining Table'}
+        description="Configure table identifier, seating capacity, and assign it to a floor section."
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <div>
+              {editingTableId && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setShowConfirmDelete(true)}
+                  disabled={isSaving || isDeleting}
+                  leftIcon={<Trash2 className="w-4 h-4" />}
+                  className="cursor-pointer"
+                >
+                  Delete Table
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={onClose} disabled={isSaving || isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSaveTable}
+                isLoading={isSaving}
+                leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                className="cursor-pointer"
+              >
+                {editingTableId ? 'Update Table' : 'Create Table'}
+              </Button>
+            </div>
+          </div>
+        }
+      >
       <form onSubmit={handleSaveTable} className="space-y-4">
         {error && (
           <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
@@ -106,23 +195,15 @@ export const TableModal: React.FC<TableModalProps> = ({
         />
 
         {/* Section / Area Assignment */}
-        <div>
-          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-stone-400" />
-            <span>Floor Section / Area</span>
-          </label>
-          <select
-            value={newTableConfig.areaId || (appData.areas[0]?.id ?? '')}
-            onChange={(e) => setNewTableConfig({ ...newTableConfig, areaId: e.target.value })}
-            className="w-full h-10 px-3 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer"
-          >
-            {appData.areas.map((area: any) => (
-              <option key={area.id} value={area.id}>
-                {area.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Floor Section / Area"
+          options={areaOptions}
+          value={newTableConfig.areaId || (appData.areas[0]?.id ?? '')}
+          onChange={(val) => setNewTableConfig({ ...newTableConfig, areaId: val })}
+          searchable={areaOptions.length > 5}
+          leftIcon={<Layers className="w-4 h-4" />}
+          placeholder="Select floor section..."
+        />
 
         {/* Seating Capacity */}
         <div>
@@ -167,21 +248,32 @@ export const TableModal: React.FC<TableModalProps> = ({
         </div>
 
         {/* Initial Status */}
-        <div>
-          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 block">
-            Table Availability Status
-          </label>
-          <select
-            value={newTableConfig.status || 'Available'}
-            onChange={(e) => setNewTableConfig({ ...newTableConfig, status: e.target.value })}
-            className="w-full h-10 px-3 rounded-2xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer"
-          >
-            <option value="Available">🟢 Available</option>
-            <option value="Reserved">🟡 Reserved</option>
-            <option value="Occupied">🔴 Occupied</option>
-          </select>
-        </div>
+        <Select
+          label="Table Availability Status"
+          options={statusOptions}
+          value={newTableConfig.status || 'Available'}
+          onChange={(val) => setNewTableConfig({ ...newTableConfig, status: val })}
+          searchable={false}
+          dropdownDirection="up"
+          placeholder="Select table status..."
+        />
       </form>
     </Modal>
+
+    <ConfirmModal
+      isOpen={showConfirmDelete}
+      onClose={() => setShowConfirmDelete(false)}
+      onConfirm={handleDeleteTable}
+      title="Delete Dining Table"
+      message={
+        <span>
+          Are you sure you want to delete table <strong>"{newTableConfig.name}"</strong>? This table will be permanently removed.
+        </span>
+      }
+      confirmText="Delete Table"
+      variant="danger"
+      isLoading={isDeleting}
+    />
+  </>
   );
 };

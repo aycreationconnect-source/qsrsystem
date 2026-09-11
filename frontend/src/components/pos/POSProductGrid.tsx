@@ -17,7 +17,7 @@ export const POSProductGrid: React.FC = () => {
     updateCartQty,
   } = usePOS();
 
-  const [dietFilter, setDietFilter] = useState<'ALL' | 'Veg' | 'Non-Veg' | 'Egg'>('ALL');
+  const [dietFilter, setDietFilter] = useState<'ALL' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan'>('ALL');
   const [catSubcategoryMap, setCatSubcategoryMap] = useState<Record<string, string | null>>({});
 
   // Set of inactive category names to completely exclude from POS terminal
@@ -79,7 +79,7 @@ export const POSProductGrid: React.FC = () => {
 
         {/* Dietary Filters */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar">
-          {(['ALL', 'Veg', 'Non-Veg', 'Egg'] as const).map((filter) => (
+          {(['ALL', 'Veg', 'Non-Veg', 'Egg', 'Vegan'] as const).map((filter) => (
             <button
               key={filter}
               type="button"
@@ -97,7 +97,9 @@ export const POSProductGrid: React.FC = () => {
                 ? '🟢 Veg'
                 : filter === 'Non-Veg'
                 ? '🔴 Non-Veg'
-                : '🟡 Egg'}
+                : filter === 'Egg'
+                ? '🟡 Egg'
+                : '🌱 Vegan'}
             </button>
           ))}
         </div>
@@ -218,6 +220,8 @@ export const POSProductGrid: React.FC = () => {
                             <Badge variant="nonveg" size="sm">Non-Veg</Badge>
                           ) : item.type === 'Egg' ? (
                             <Badge variant="egg" size="sm">Egg</Badge>
+                          ) : item.type === 'Vegan' ? (
+                            <Badge variant="vegan" size="sm">Vegan</Badge>
                           ) : (
                             <Badge variant="veg" size="sm">Veg</Badge>
                           )}

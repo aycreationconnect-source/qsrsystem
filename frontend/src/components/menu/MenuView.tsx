@@ -23,6 +23,14 @@ export const MenuView: React.FC = () => {
   });
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
+  // Auto-select first category when categories finish loading
+  React.useEffect(() => {
+    if (!selectedCategory && appData.categories && appData.categories.length > 0) {
+      const firstCat = appData.categories[0];
+      setSelectedCategory(typeof firstCat === 'string' ? firstCat : firstCat.name);
+    }
+  }, [appData.categories, selectedCategory]);
+
   // Item Modal State
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
@@ -215,7 +223,7 @@ export const MenuView: React.FC = () => {
               selectedCategory={selectedCategory}
               selectedSubcategory={selectedSubcategory}
               setSelectedSubcategory={setSelectedSubcategory}
-              onAddItem={() => {
+              onAddItem={(dietType?: string) => {
                 setEditingItemIndex(null);
                 setNewItem({
                   name: '',
@@ -223,7 +231,7 @@ export const MenuView: React.FC = () => {
                   description: '',
                   image: '',
                   price: '',
-                  type: 'Veg',
+                  type: dietType || 'Veg',
                   available: true,
                   status: 'Active',
                   subcategory: selectedSubcategory || '',

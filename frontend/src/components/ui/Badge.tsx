@@ -8,6 +8,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     | 'veg'
     | 'nonveg'
     | 'egg'
+    | 'vegan'
     | 'drink'
     | 'success'
     | 'warning'
@@ -35,6 +36,8 @@ export const Badge: React.FC<BadgeProps> = ({
     nonveg:
       'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60',
     egg: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-800/60',
+    vegan:
+      'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400 border border-green-300 dark:border-green-800/60',
     drink:
       'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-300 dark:border-sky-800/60',
     success:
@@ -56,6 +59,7 @@ export const Badge: React.FC<BadgeProps> = ({
     <span className={cn(base, variants[variant], sizes[size], className)} {...props}>
       {variant === 'veg' && <span className="badge-diet-veg shrink-0" />}
       {variant === 'nonveg' && <span className="badge-diet-nonveg shrink-0" />}
+      {variant === 'vegan' && <span className="text-[10px] leading-none shrink-0">🌱</span>}
       {children}
     </span>
   );
