@@ -110,6 +110,7 @@ model Order {
   paidAmount    Float          @default(0)
   balanceAmount Float          @default(0)
   status        String         @default("Completed")
+  description   String?        @db.Text
   
   items         OrderItem[]
   payments      OrderPayment[]

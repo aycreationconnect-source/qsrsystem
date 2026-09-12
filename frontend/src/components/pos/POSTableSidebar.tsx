@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { Table } from '../../types/app.types';
-import { Button, Tooltip } from '../ui';
+import { Tooltip } from '../ui';
 import {
   Plus,
   Armchair,
@@ -259,11 +259,8 @@ export const POSTableSidebar: React.FC = () => {
             <Armchair className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-tight flex items-center gap-1.5">
-              <span>Floor & Tables</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-bold">
-                {tables.length}
-              </span>
+            <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-tight">
+              Floor & Tables
             </h3>
             <div className="flex items-center gap-1.5 text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-0.5">
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
@@ -331,16 +328,6 @@ export const POSTableSidebar: React.FC = () => {
               </div>
             )}
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAddTableModal(true)}
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
-            className="text-xs py-1.5 px-3 font-bold"
-          >
-            Add
-          </Button>
         </div>
       </div>
 
@@ -679,6 +666,34 @@ export const POSTableSidebar: React.FC = () => {
             );
           })
         )}
+
+        {/* Extra Table Option in the last row */}
+        <div
+          onClick={() => setShowAddTableModal(true)}
+          className="p-3 rounded-2xl border-2 border-dashed border-stone-200 dark:border-stone-750 hover:border-amber-500/80 dark:hover:border-amber-500/80 bg-stone-50/50 dark:bg-stone-850/40 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all duration-150 flex items-center justify-between cursor-pointer select-none group"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-stone-950 flex items-center justify-center font-extrabold text-sm shrink-0 border border-dashed border-amber-500/30 group-hover:border-amber-500 transition-all">
+              <Plus className="w-5 h-5" />
+            </div>
+
+            <div className="min-w-0 flex flex-col">
+              <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 leading-tight transition-colors">
+                Extra Table
+              </h4>
+              <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5 truncate">
+                Add temporary or dining table
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-950/60 group-hover:bg-amber-500 group-hover:text-stone-950 px-2.5 py-1 rounded-full border border-amber-300/60 dark:border-amber-800/40 transition-all flex items-center gap-1">
+              <Plus className="w-3 h-3" />
+              <span>Add</span>
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* 6. Footer Floor Summary */}

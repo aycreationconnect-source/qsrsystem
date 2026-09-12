@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { OrderPayment } from '../../types/app.types';
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Layers,
   ArrowRight,
+  FileText,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { roundPOSAmount } from '../../lib/orderUtils';
@@ -52,6 +53,9 @@ export const CheckoutModal: React.FC = () => {
   const [installmentAmount, setInstallmentAmount] = useState('');
   const [installmentMethod, setInstallmentMethod] = useState<'Cash' | 'UPI' | 'Card'>('Cash');
   const [installmentRef, setInstallmentRef] = useState('');
+
+  // Order Description / Note state
+  const [orderDescription, setOrderDescription] = useState('');
 
   const tableKey = selectedTableId ? String(selectedTableId) : '';
   const tableData =
@@ -155,6 +159,61 @@ export const CheckoutModal: React.FC = () => {
   const tenderedAmount = parseFloat(tenderCash) || 0;
   const changeDue = Math.max(0, tenderedAmount - roundedTotal);
 
+  // Smart dynamic cash suggestions based on the rounded total bill
+  const smartCashOptions = useMemo(() => {
+    if (roundedTotal <= 0) return [];
+    const options: Array<{ amount: number; label: string; change: number }> = [];
+
+    // Option 1: Exact Amount
+    options.push({
+      amount: roundedTotal,
+      label: `Exact (₹${roundedTotal})`,
+      change: 0,
+    });
+
+    // Options 2+: Compute sensible higher currency notes that a customer would realistically give
+    const higherValues = new Set<number>();
+
+    if (roundedTotal < 100) {
+      if (roundedTotal < 50) higherValues.add(50);
+      higherValues.add(100);
+      higherValues.add(200);
+      higherValues.add(500);
+    } else if (roundedTotal < 500) {
+      const next50 = Math.ceil(roundedTotal / 50) * 50;
+      if (next50 > roundedTotal) higherValues.add(next50);
+      const next100 = Math.ceil(roundedTotal / 100) * 100;
+      if (next100 > roundedTotal) higherValues.add(next100);
+      higherValues.add(500);
+    } else if (roundedTotal < 2000) {
+      const next100 = Math.ceil(roundedTotal / 100) * 100;
+      if (next100 > roundedTotal) higherValues.add(next100);
+      const next500 = Math.ceil(roundedTotal / 500) * 500;
+      if (next500 > roundedTotal) higherValues.add(next500);
+      if (next500 + 500 > roundedTotal && next500 + 500 <= 3000) higherValues.add(next500 + 500);
+    } else {
+      const next500 = Math.ceil(roundedTotal / 500) * 500;
+      if (next500 > roundedTotal) higherValues.add(next500);
+      const next1000 = Math.ceil(roundedTotal / 1000) * 1000;
+      if (next1000 > roundedTotal) higherValues.add(next1000);
+    }
+
+    // Filter, sort, and take up to 3 higher denomination options
+    Array.from(higherValues)
+      .filter((amt) => amt > roundedTotal)
+      .sort((a, b) => a - b)
+      .slice(0, 3)
+      .forEach((amt) => {
+        options.push({
+          amount: amt,
+          label: `₹${amt}`,
+          change: amt - roundedTotal,
+        });
+      });
+
+    return options;
+  }, [roundedTotal]);
+
   // When modal opens, auto-switch to split tab if table has recorded advance/payments
   useEffect(() => {
     if (showCheckoutModal) {
@@ -165,6 +224,14 @@ export const CheckoutModal: React.FC = () => {
       setInstallmentRef('');
     }
   }, [showCheckoutModal, currentPayments.length, currentRemaining]);
+
+  // Reset order description and cash input when modal is freshly opened
+  useEffect(() => {
+    if (showCheckoutModal) {
+      setOrderDescription('');
+      setTenderCash('');
+    }
+  }, [showCheckoutModal]);
 
   // Update prefilled installment amount when remaining changes
   useEffect(() => {
@@ -423,6 +490,11 @@ export const CheckoutModal: React.FC = () => {
             <span>Date: ${dateFormatted}</span>
             <span>Staff: ${escapeXml(currentUser?.fullName || currentUser?.username || 'Counter')}</span>
           </div>
+          ${orderDescription ? `
+          <div style="margin-top: 3px; font-style: italic;">
+            <span>Note / Desc:</span>
+            <span>${escapeXml(orderDescription)}</span>
+          </div>` : ''}
         </div>
 
         <div class="divider"></div>
@@ -824,47 +896,128 @@ export const CheckoutModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Cash Tender Calculation (If Cash Selected) */}
+                  {/* Cash Payment & Change Return Calculator */}
                   {paymentType === 'Cash' && (
-                    <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/80 dark:border-stone-700/80 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                          Cash Tendered (₹)
-                        </span>
-                        <span className="text-xs text-stone-500">
-                          Change: <strong className="text-emerald-600 font-mono font-bold">₹{changeDue.toFixed(2)}</strong>
-                        </span>
+                    <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-850/60 border border-stone-200 dark:border-stone-750 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <label className="text-xs font-bold text-stone-800 dark:text-stone-200 block">
+                            Cash Received from Customer (₹)
+                          </label>
+                          <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                            Calculate physical change to return
+                          </span>
+                        </div>
+
+                        {/* Live Change Feedback Badge */}
+                        <div className="text-right">
+                          {tenderCash && tenderedAmount > roundedTotal ? (
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs shadow-2xs">
+                              <span>Return Change:</span>
+                              <span className="font-mono font-black text-sm">₹{changeDue.toFixed(2)}</span>
+                            </div>
+                          ) : tenderCash && tenderedAmount > 0 && tenderedAmount < roundedTotal ? (
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 font-bold text-xs shadow-2xs">
+                              <span>Short by:</span>
+                              <span className="font-mono font-black text-sm">₹{(roundedTotal - tenderedAmount).toFixed(2)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-bold text-stone-500 dark:text-stone-400">
+                              Change: ₹0.00
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <input
-                        type="number"
-                        placeholder={roundedTotal.toString()}
-                        value={tenderCash}
-                        onChange={(e) => setTenderCash(e.target.value)}
-                        className="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-1.5 text-sm font-mono font-bold focus:border-amber-500 focus:outline-none"
-                      />
-
-                      <div className="flex gap-1.5 pt-0.5">
-                        {[50, 100, 200, 500].map((amt) => (
+                      {/* Cash Input with Clear Button */}
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder={`Enter cash given (e.g. ₹${roundedTotal})`}
+                          value={tenderCash}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || parseFloat(val) >= 0) {
+                              setTenderCash(val);
+                            }
+                          }}
+                          className="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-xl pl-3 pr-8 py-2 text-sm font-mono font-bold text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:border-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        {tenderCash && (
                           <button
-                            key={amt}
                             type="button"
-                            onClick={() => setTenderCash(amt.toString())}
-                            className="flex-1 py-1 text-[11px] font-bold rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-stone-700 dark:text-stone-300 transition-colors"
+                            onClick={() => setTenderCash('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1 text-xs cursor-pointer"
+                            title="Clear"
                           >
-                            ₹{amt}
+                            ✕
                           </button>
-                        ))}
+                        )}
                       </div>
+
+                      {/* Smart Quick-Picks (Exact + Logical Higher Currency Notes) */}
+                      {smartCashOptions.length > 0 && (
+                        <div>
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                            Quick Cash Suggestions:
+                          </div>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {smartCashOptions.map((opt) => {
+                              const isSelected = tenderCash === opt.amount.toString();
+                              return (
+                                <button
+                                  key={opt.amount}
+                                  type="button"
+                                  onClick={() => setTenderCash(opt.amount.toString())}
+                                  className={cn(
+                                    'flex-1 min-w-[80px] py-1.5 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center flex flex-col items-center justify-center',
+                                    isSelected
+                                      ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-xs'
+                                      : 'bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                                  )}
+                                >
+                                  <span>{opt.label}</span>
+                                  {opt.change > 0 && (
+                                    <span className={cn(
+                                      'text-[10px] font-mono',
+                                      isSelected ? 'text-stone-900 font-bold' : 'text-emerald-600 dark:text-emerald-400'
+                                    )}>
+                                      Return ₹{opt.change}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
+
+                  {/* Order Description / Note (Optional) */}
+                  <div className="space-y-1 pt-1">
+                    <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-stone-400" />
+                      <span>Order Description / Note</span>
+                      <span className="text-[10px] text-stone-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={orderDescription}
+                      onChange={(e) => setOrderDescription(e.target.value)}
+                      placeholder="e.g. Takeaway, customer note, special instruction..."
+                      className="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-xs text-stone-800 dark:text-stone-200 placeholder-stone-400 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 {/* Settle Order Action Button (FIXED at bottom) */}
                 <div className="shrink-0 pt-2.5 border-t border-stone-100 dark:border-stone-800 mt-auto bg-white dark:bg-stone-900">
                   <button
                     type="button"
-                    onClick={() => confirmPaymentAndOrder()}
+                    onClick={() => confirmPaymentAndOrder(undefined, orderDescription)}
                     className="w-full font-bold text-sm py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
                   >
                     Confirm & Pay ₹{roundedTotal}
@@ -1025,6 +1178,22 @@ export const CheckoutModal: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Order Description / Note (Optional) */}
+                  <div className="space-y-1 pt-1">
+                    <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-stone-400" />
+                      <span>Order Description / Note</span>
+                      <span className="text-[10px] text-stone-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={orderDescription}
+                      onChange={(e) => setOrderDescription(e.target.value)}
+                      placeholder="e.g. Takeaway, customer note, special instruction..."
+                      className="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-xs text-stone-800 dark:text-stone-200 placeholder-stone-400 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 {/* Partial Payment Actions (FIXED at bottom) */}
@@ -1032,7 +1201,7 @@ export const CheckoutModal: React.FC = () => {
                   {currentRemaining <= 0.01 ? (
                     <button
                       type="button"
-                      onClick={() => confirmPaymentAndOrder(currentPayments)}
+                      onClick={() => confirmPaymentAndOrder(currentPayments, orderDescription)}
                       className="w-full font-bold text-sm py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-center gap-2"
                     >
                       Confirm & Settle Final Bill (₹{roundedTotal})
@@ -1095,6 +1264,11 @@ export const CheckoutModal: React.FC = () => {
           <span>Type: {posMode === 'table' ? `Table #${selectedTableId}` : 'Quick Counter'}</span>
           <span>Staff: {currentUser?.fullName || currentUser?.username || 'Counter'}</span>
         </div>
+        {orderDescription && (
+          <div style={{ fontSize: '9.5px', fontStyle: 'italic', marginBottom: '4px' }}>
+            <span>Note: {orderDescription}</span>
+          </div>
+        )}
 
         <div style={{ borderBottom: '1px dashed #000', margin: '4px 0' }} />
 

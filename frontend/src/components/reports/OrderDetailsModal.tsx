@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { Modal } from '../ui/Modal';
 import { roundPOSAmount } from '../../lib/orderUtils';
 import { printThermalReceipt } from '../../lib/thermalPrintUtils';
-import { Printer, CheckCircle2, Clock, CreditCard, Utensils, Hash, Calendar } from 'lucide-react';
+import { Printer, CheckCircle2, Clock, CreditCard, Utensils, Hash, Calendar, FileText } from 'lucide-react';
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -125,6 +125,21 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Order Description / Note if present */}
+        {order.description && (
+          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl flex items-start gap-2.5">
+            <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <span className="font-bold text-amber-900 dark:text-amber-200 block mb-0.5">
+                Order Note / Description:
+              </span>
+              <p className="text-stone-700 dark:text-stone-300 font-medium">
+                {order.description}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* 3. Items Breakdown Table */}
         <div>

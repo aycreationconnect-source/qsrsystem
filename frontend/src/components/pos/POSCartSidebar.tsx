@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   IndianRupee,
   Utensils,
+  X,
 } from 'lucide-react';
 
 export interface POSCartSidebarProps {
@@ -130,9 +131,9 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
   return (
     <aside className="h-full w-full flex flex-col bg-white dark:bg-stone-900 border-l border-stone-200/80 dark:border-stone-800 select-none">
       {/* Top Header Row */}
-      <div className="p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+      <div className="p-3.5 sm:p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-2 shrink-0 bg-stone-50/50 dark:bg-stone-900/50">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <IndianRupee className="w-4 h-4" />
           </div>
           <div className="min-w-0">
@@ -155,6 +156,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                 type="button"
                 onClick={() => setShowShiftTableModal(true)}
                 className="p-2 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer"
+                title="Shift Table"
               >
                 <ArrowRightLeft className="w-4 h-4" />
               </button>
@@ -167,26 +169,49 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
               disabled={cart.length === 0 && !hasSavedOrders}
               onClick={handleClearCart}
               className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              title="Clear All Items"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           </Tooltip>
+
+          {onCloseMobileDrawer && (
+            <button
+              type="button"
+              onClick={onCloseMobileDrawer}
+              className="lg:hidden p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+              title="Close Drawer"
+              aria-label="Close cart drawer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Bill Table Column Headers (Item Name | Quantity | Price | Actions) */}
+      {(cart.length > 0 || hasSavedOrders) && (
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 border-b border-stone-200/80 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/80 shrink-0 select-none">
+          <span className="flex-1 min-w-0">Item Name</span>
+          <span className="w-24 sm:w-26 text-center shrink-0">Quantity</span>
+          <span className="w-20 sm:w-24 text-right shrink-0">Price</span>
+          <span className="w-8 text-right shrink-0">Action</span>
+        </div>
+      )}
+
       {/* Cart Items List Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-1.5">
         {/* Saved Table Orders (KOT sent to kitchen) */}
         {hasSavedOrders &&
           tableOrders[selectedTableId]?.savedOrders.map((order, orderIdx) => (
             <div
               key={orderIdx}
-              className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-stone-700/60 space-y-2"
+              className="p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/60 dark:border-stone-700/60 space-y-1.5"
             >
               <div className="flex items-center justify-between text-xs font-bold text-stone-500 dark:text-stone-400 pb-1.5 border-b border-stone-200/60 dark:border-stone-700/60">
-                <span className="flex items-center gap-1">
-                  <Utensils className="w-3 h-3 text-amber-500" />
-                  KOT Batch #{orderIdx + 1}
+                <span className="flex items-center gap-1.5">
+                  <Utensils className="w-3.5 h-3.5 text-amber-500" />
+                  <span>KOT Batch #{orderIdx + 1}</span>
                 </span>
                 {order.time && (
                   <span className="text-[10px] font-mono text-stone-400">
@@ -198,19 +223,42 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                 )}
               </div>
 
-              {(order.items || (Array.isArray(order) ? order : [])).map((item: any, i: number) => (
-                <div key={i} className="flex items-center justify-between text-xs py-1">
-                  <div className="min-w-0 flex-1 pr-2">
-                    <span className="font-semibold text-stone-800 dark:text-stone-200 truncate block">
-                      {item.name}
-                    </span>
-                    <span className="text-[10px] text-stone-400">Qty: {item.quantity}</span>
-                  </div>
-                  <span className="font-mono font-bold text-stone-700 dark:text-stone-300">
-                    ₹{(parseFloat(String(item.price).replace('₹', '')) * item.quantity).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+              <div className="space-y-1">
+                {(order.items || (Array.isArray(order) ? order : [])).map((item: any, i: number) => {
+                  const unitPrice = parseFloat(String(item.price).replace('₹', '')) || 0;
+                  const itemTotal = unitPrice * item.quantity;
+                  return (
+                    <div key={i} className="flex items-center gap-2 py-1 px-1 text-xs">
+                      <div className="flex-1 min-w-0 pr-1">
+                        <span className="font-semibold text-stone-800 dark:text-stone-200 truncate block">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] font-mono text-stone-400">
+                          ₹{unitPrice.toFixed(2)} each
+                        </span>
+                      </div>
+
+                      <div className="w-24 sm:w-26 flex items-center justify-center shrink-0">
+                        <span className="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-700 text-stone-800 dark:text-stone-200 font-mono font-bold text-xs">
+                          Qty: {item.quantity}
+                        </span>
+                      </div>
+
+                      <div className="w-20 sm:w-24 text-right shrink-0">
+                        <span className="font-mono font-bold text-stone-700 dark:text-stone-300">
+                          ₹{itemTotal.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="w-8 flex items-center justify-end shrink-0">
+                        <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+                          KOT
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ))}
 
@@ -218,53 +266,43 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
         {cart.length > 0 && (
           <div className="space-y-1.5">
             {hasSavedOrders && (
-              <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider px-1">
+              <div className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider px-1 pt-1">
                 New Items to Add
               </div>
             )}
 
-            {cart.map((item, i) => (
-              <div
-                key={i}
-                className="p-2 rounded-xl bg-white dark:bg-stone-850 border border-stone-200/80 dark:border-stone-750 shadow-2xs flex flex-col gap-1.5 transition-all"
-              >
-                {/* Row 1: Item Name & Subtotal & Delete */}
-                <div className="flex items-center justify-between gap-1.5 min-w-0">
-                  <div className="flex-1 min-w-0">
-                    <h5 className="text-xs font-extrabold text-stone-900 dark:text-stone-100 truncate leading-tight">
+            {cart.map((item, i) => {
+              const unitPrice = parseFloat(String(item.price).replace('₹', '')) || 0;
+              const itemTotal = unitPrice * item.quantity;
+
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 py-2 px-2.5 sm:px-3 rounded-xl bg-white dark:bg-stone-850 hover:bg-stone-50 dark:hover:bg-stone-800/80 border border-stone-200/80 dark:border-stone-750 shadow-2xs transition-all group"
+                >
+                  {/* 1. Item Name Column */}
+                  <div className="flex-1 min-w-0 pr-1">
+                    <h5
+                      className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight"
+                      title={item.name}
+                    >
                       {item.name}
                     </h5>
-                    <span className="text-[10px] font-mono font-medium text-stone-400 dark:text-stone-500">
-                      ₹{parseFloat(String(item.price).replace('₹', '')).toFixed(2)} each
+                    <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
+                      ₹{unitPrice.toFixed(2)} each
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-xs font-mono font-black text-amber-600 dark:text-amber-400">
-                      ₹{(parseFloat(String(item.price).replace('₹', '')) * item.quantity).toFixed(2)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => cancelCartItem(item.name)}
-                      className="text-stone-400 hover:text-rose-500 p-1 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-                      title="Remove item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Row 2: Quantity Controls & Breakdown */}
-                <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-stone-800/80">
-                  <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 p-0.5 rounded-lg">
+                  {/* 2. Quantity Column (Compact Stepper) */}
+                  <div className="w-24 sm:w-26 flex items-center justify-center gap-1 shrink-0 bg-stone-100/90 dark:bg-stone-800/90 p-0.5 rounded-lg border border-stone-200/60 dark:border-stone-700/60">
                     <button
                       type="button"
                       onClick={() => updateCartQty(item.name, -1)}
-                      className="w-6 h-6 flex items-center justify-center rounded-md bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:bg-stone-200 active:scale-90 transition-all cursor-pointer font-bold shadow-2xs"
+                      className="w-6 h-6 flex items-center justify-center rounded bg-white dark:bg-stone-700 text-stone-700 dark:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-600 active:scale-90 transition-all cursor-pointer font-bold shadow-2xs"
                       title="Decrease quantity by 1"
                       aria-label="Decrease quantity"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3 h-3 stroke-[2.5]" />
                     </button>
 
                     <CartItemQtyInput
@@ -276,22 +314,36 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                     <button
                       type="button"
                       onClick={() => updateCartQty(item.name, 1)}
-                      className="w-6 h-6 flex items-center justify-center rounded-md bg-amber-500 text-stone-950 hover:bg-amber-600 active:scale-90 transition-all cursor-pointer font-bold shadow-2xs"
+                      className="w-6 h-6 flex items-center justify-center rounded bg-amber-500 hover:bg-amber-600 text-stone-950 active:scale-90 transition-all cursor-pointer font-bold shadow-2xs"
                       title="Increase quantity by 1"
                       aria-label="Increase quantity"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3 h-3 stroke-[2.5]" />
                     </button>
                   </div>
 
-                  {item.quantity > 1 && (
-                    <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
-                      {item.quantity} × ₹{parseFloat(String(item.price).replace('₹', '')).toFixed(2)}
+                  {/* 3. Price Column */}
+                  <div className="w-20 sm:w-24 text-right shrink-0">
+                    <span className="font-mono font-black text-xs sm:text-sm text-amber-600 dark:text-amber-400">
+                      ₹{itemTotal.toFixed(2)}
                     </span>
-                  )}
+                  </div>
+
+                  {/* 4. Actions Column */}
+                  <div className="w-8 flex items-center justify-end shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => cancelCartItem(item.name)}
+                      className="w-7 h-7 flex items-center justify-center text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                      title="Remove item"
+                      aria-label={`Remove ${item.name} from ticket`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -306,7 +358,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
       </div>
 
       {/* Cart Summary & Checkout Footer */}
-      <div className="p-4 bg-stone-50/80 dark:bg-stone-950/60 border-t border-stone-200/80 dark:border-stone-800 shrink-0 space-y-3">
+      <div className="p-4 bg-stone-50/90 dark:bg-stone-950/80 border-t border-stone-200/80 dark:border-stone-800 shrink-0 space-y-3">
         {/* Subtotal & Tax Breakdown */}
         <div className="space-y-1.5 text-xs text-stone-600 dark:text-stone-400">
           <div className="flex justify-between">

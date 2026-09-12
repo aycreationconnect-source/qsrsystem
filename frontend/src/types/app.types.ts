@@ -113,6 +113,7 @@ export interface Order {
   paidAmount?: number;
   balanceAmount?: number;
   status: string;
+  description?: string | null;
   items?: OrderItem[];
   payments?: OrderPayment[];
 }

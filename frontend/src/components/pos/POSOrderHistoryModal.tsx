@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   X,
   ShoppingBag,
+  FileText,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -89,6 +90,7 @@ export const POSOrderHistoryModal: React.FC = () => {
         String(dailySeq) === q ||
         String(o.id) === q ||
         (o.paymentMethod || '').toLowerCase().includes(q) ||
+        (o.description || '').toLowerCase().includes(q) ||
         (o.items || []).some((it: any) =>
           (it.menuItem?.name || it.name || '').toLowerCase().includes(q)
         );
@@ -216,7 +218,7 @@ export const POSOrderHistoryModal: React.FC = () => {
                 <span className="font-mono font-extrabold">{currency}{metrics.totalSales}</span>
               </div>
 
-              <Tooltip content="Refresh Orders List" position="bottom">
+              <Tooltip content="Refresh Orders List" position="bottom" align="end">
                 <button
                   type="button"
                   onClick={handleRefresh}
@@ -362,8 +364,14 @@ export const POSOrderHistoryModal: React.FC = () => {
                         </td>
 
                         {/* Items Preview */}
-                        <td className="py-2.5 px-3.5 max-w-[220px] truncate text-stone-600 dark:text-stone-300">
-                          <span className="font-medium">{itemsDisplayText}</span>
+                        <td className="py-2.5 px-3.5 max-w-[220px] text-stone-600 dark:text-stone-300">
+                          <div className="font-medium truncate">{itemsDisplayText}</div>
+                          {o.description && (
+                            <div className="text-[10px] text-amber-600 dark:text-amber-400 truncate flex items-center gap-1 mt-0.5" title={o.description}>
+                              <FileText className="w-2.5 h-2.5 shrink-0" />
+                              <span className="truncate">{o.description}</span>
+                            </div>
+                          )}
                         </td>
 
                         {/* Payment Method */}
@@ -398,7 +406,7 @@ export const POSOrderHistoryModal: React.FC = () => {
                         <td className="py-2.5 px-3.5 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             {/* Fast Reprint Receipt Button */}
-                            <Tooltip content="Reprint Receipt" position="bottom">
+                            <Tooltip content="Reprint Receipt" position="bottom" align="end">
                               <button
                                 type="button"
                                 onClick={(e) => handleFastReprint(e, o, dailySeq)}
@@ -411,7 +419,7 @@ export const POSOrderHistoryModal: React.FC = () => {
                             </Tooltip>
 
                             {/* View Details Button */}
-                            <Tooltip content="View Order Details" position="bottom">
+                            <Tooltip content="View Order Details" position="bottom" align="end">
                               <button
                                 type="button"
                                 onClick={() => setSelectedOrder({ ...o, dailySeq })}
