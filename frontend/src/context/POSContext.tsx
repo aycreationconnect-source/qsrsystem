@@ -4,6 +4,8 @@ import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
 import { roundPOSAmount } from '../lib/orderUtils';
 
+export type DietFilterType = 'ALL' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan';
+
 interface POSContextType {
   cart: CartItem[];
   setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -11,6 +13,8 @@ interface POSContextType {
   setPosCategory: (cat: string) => void;
   posSearchQuery: string;
   setPosSearchQuery: (query: string) => void;
+  dietFilter: DietFilterType;
+  setDietFilter: (filter: DietFilterType) => void;
   showCheckoutModal: boolean;
   setShowCheckoutModal: (show: boolean) => void;
   showOrderHistoryModal: boolean;
@@ -68,6 +72,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [posCategory, setPosCategory] = useState<string>('All Items');
   const [posSearchQuery, setPosSearchQuery] = useState('');
+  const [dietFilter, setDietFilter] = useState<DietFilterType>('ALL');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
   const [paymentType, setPaymentType] = useState('Cash');
@@ -521,6 +526,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setPosCategory,
         posSearchQuery,
         setPosSearchQuery,
+        dietFilter,
+        setDietFilter,
         showCheckoutModal,
         setShowCheckoutModal,
         showOrderHistoryModal,

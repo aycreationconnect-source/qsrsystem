@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Tooltip } from '../ui';
@@ -14,7 +14,6 @@ import {
   FileBarChart2,
   ExternalLink,
   ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -36,66 +35,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { storeProfile, handleLogout } = useApp();
   const navigate = useNavigate();
   const sidebarRef = useRef<HTMLElement>(null);
-  const hoverTimeoutRef = useRef<number | null>(null);
 
-  // Desktop mouse hover expansion state
-  const [isHovered, setIsHovered] = useState(false);
-
-  // Tablet/Touch manual toggle expansion state
-  const [isManuallyExpanded, setIsManuallyExpanded] = useState(false);
+  // Uncontrolled fallback for collapse state
+  const [internalCollapsed, setInternalCollapsed] = useState<boolean>(() => {
+    const saved = localStorage.getItem('pos_sidebar_collapsed');
+    return saved !== null ? saved === 'true' : false;
+  });
 
   // Collapsed state calculation:
   // In mobile drawer: always false (expanded)
-  // Otherwise: collapsed unless hovered on desktop OR manually toggled on tablet
+  // Otherwise: controlled by parent or fallback to internal state
   const isCollapsed = isMobileDrawer
     ? false
     : controlledCollapsed !== undefined
-    ? controlledCollapsed && !isHovered && !isManuallyExpanded
-    : !isHovered && !isManuallyExpanded;
+    ? controlledCollapsed
+    : internalCollapsed;
 
-  // Manual toggle for tablet / touch view
+  // Toggle collapse on arrow button click
   const handleToggleCollapse = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onToggleCollapse) {
       onToggleCollapse();
     } else {
-      setIsManuallyExpanded((prev) => !prev);
+      setInternalCollapsed((prev) => {
+        const next = !prev;
+        localStorage.setItem('pos_sidebar_collapsed', String(next));
+        return next;
+      });
     }
   };
-
-  // Desktop hover expansion handlers (smooth 120ms debounce prevents flickering on border crossing)
-  const handleMouseEnter = () => {
-    if (isMobileDrawer) return;
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    setIsHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    if (isMobileDrawer) return;
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      setIsHovered(false);
-    }, 120);
-  };
-
-  // Close / collapse when clicking anywhere outside on screen
-  useEffect(() => {
-    if (!isHovered && !isManuallyExpanded) return;
-
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        setIsHovered(false);
-        setIsManuallyExpanded(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isHovered, isManuallyExpanded]);
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -130,34 +98,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       ref={sidebarRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       className={cn(
-        'h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 select-none transition-all duration-300 ease-in-out',
+        'h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 select-none transition-all duration-300 ease-in-out relative',
         isMobileDrawer
           ? 'w-full'
           : isCollapsed
-          ? 'w-[72px] relative z-30'
-          : 'w-[268px] absolute top-0 left-0 bottom-0 shadow-2xl z-40 ring-1 ring-black/5 dark:ring-white/5'
+          ? 'w-[72px]'
+          : 'w-[260px]'
       )}
     >
-      {/* Tablet Arrow Mark Toggle Button:
-          - Visible on tablet view (lg:hidden flex)
-          - Hidden on desktop (lg:hidden) where hover auto-expansion is used
-          - Smoothly moves with the sidebar border */}
+      {/* Arrow Mark Toggle Button:
+          - Visible across all device resolutions (hidden only inside mobile drawer)
+          - Centered on the sidebar right border (-right-3.5)
+          - Smooth transition on the button itself and 180° rotation on the chevron icon */}
       {!isMobileDrawer && (
         <button
           type="button"
           onClick={handleToggleCollapse}
-          className="flex lg:hidden absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-amber-500 hover:bg-amber-600 text-stone-950 shadow-md border-2 border-white dark:border-stone-900 items-center justify-center cursor-pointer transition-transform duration-200 active:scale-90"
-          aria-label={isCollapsed ? 'Open Sidebar' : 'Collapse Sidebar'}
-          title={isCollapsed ? 'Open Sidebar' : 'Collapse Sidebar'}
+          className="flex absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-white dark:bg-stone-850 hover:bg-amber-500 dark:hover:bg-amber-500 text-stone-600 dark:text-stone-300 hover:text-stone-950 dark:hover:text-stone-950 shadow-md border border-stone-200/90 dark:border-stone-700 items-center justify-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 group"
+          aria-label={isCollapsed ? 'Expand Navigation Sidebar' : 'Collapse Navigation Sidebar'}
+          title={isCollapsed ? 'Expand Navigation Sidebar' : 'Collapse Navigation Sidebar'}
         >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 stroke-[3]" />
-          ) : (
-            <ChevronLeft className="w-4 h-4 stroke-[3]" />
-          )}
+          <ChevronLeft
+            className={cn(
+              "w-4 h-4 stroke-[2.5] transition-transform duration-300 ease-in-out group-hover:stroke-[3]",
+              isCollapsed && "rotate-180"
+            )}
+          />
         </button>
       )}
 

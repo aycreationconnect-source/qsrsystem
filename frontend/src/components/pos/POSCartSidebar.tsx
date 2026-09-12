@@ -9,13 +9,72 @@ import {
   Plus,
   Minus,
   ArrowRightLeft,
-  Receipt,
+  IndianRupee,
   Utensils,
 } from 'lucide-react';
 
 export interface POSCartSidebarProps {
   onCloseMobileDrawer?: () => void;
 }
+
+interface CartItemQtyInputProps {
+  quantity: number;
+  itemName: string;
+  onUpdateExact: (name: string, qty: number) => void;
+}
+
+const CartItemQtyInput: React.FC<CartItemQtyInputProps> = ({
+  quantity,
+  itemName,
+  onUpdateExact,
+}) => {
+  const [localVal, setLocalVal] = React.useState(String(quantity));
+  const [isEditing, setIsEditing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isEditing) {
+      setLocalVal(String(quantity));
+    }
+  }, [quantity, isEditing]);
+
+  const commit = (newValStr: string) => {
+    setIsEditing(false);
+    const parsed = parseInt(newValStr, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      onUpdateExact(itemName, parsed);
+    } else {
+      setLocalVal(String(quantity));
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      min="0"
+      max="999"
+      value={localVal}
+      onFocus={(e) => {
+        setIsEditing(true);
+        e.target.select();
+      }}
+      onChange={(e) => setLocalVal(e.target.value)}
+      onBlur={(e) => commit(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          commit(localVal);
+          e.currentTarget.blur();
+        } else if (e.key === 'Escape') {
+          setIsEditing(false);
+          setLocalVal(String(quantity));
+          e.currentTarget.blur();
+        }
+      }}
+      className="w-10 h-6 text-center text-xs font-mono font-black bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 rounded-md border border-stone-300 dark:border-stone-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/25 focus:outline-none transition-all shadow-2xs cursor-text [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none no-spinner"
+      title="Click or type custom quantity (Enter to set)"
+      aria-label={`Quantity for ${itemName}`}
+    />
+  );
+};
 
 export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDrawer }) => {
   const { posMode, appData } = useApp();
@@ -74,7 +133,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
       <div className="p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-            <Receipt className="w-4 h-4" />
+            <IndianRupee className="w-4 h-4" />
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
@@ -91,7 +150,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
         {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
           {posMode === 'table' && selectedTableId && (
-            <Tooltip content="Shift / Transfer Order to Another Table" position="bottom">
+            <Tooltip content="Shift / Transfer Order to Another Table" position="bottom" align="end">
               <button
                 type="button"
                 onClick={() => setShowShiftTableModal(true)}
@@ -102,7 +161,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             </Tooltip>
           )}
 
-          <Tooltip content="Clear All Items" position="bottom">
+          <Tooltip content="Clear All Items" position="bottom" align="end">
             <button
               type="button"
               disabled={cart.length === 0 && !hasSavedOrders}
@@ -116,7 +175,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
       </div>
 
       {/* Cart Items List Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
         {/* Saved Table Orders (KOT sent to kitchen) */}
         {hasSavedOrders &&
           tableOrders[selectedTableId]?.savedOrders.map((order, orderIdx) => (
@@ -157,9 +216,9 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
 
         {/* Current Active Order */}
         {cart.length > 0 && (
-          <div className="space-y-2.5">
+          <div className="space-y-1.5">
             {hasSavedOrders && (
-              <div className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider px-1">
+              <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider px-1">
                 New Items to Add
               </div>
             )}
@@ -167,62 +226,69 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             {cart.map((item, i) => (
               <div
                 key={i}
-                className="p-3 rounded-2xl bg-white dark:bg-stone-850 border border-stone-200/80 dark:border-stone-750 shadow-sm flex flex-col gap-2"
+                className="p-2 rounded-xl bg-white dark:bg-stone-850 border border-stone-200/80 dark:border-stone-750 shadow-2xs flex flex-col gap-1.5 transition-all"
               >
-                <div className="flex items-start justify-between gap-2">
+                {/* Row 1: Item Name & Subtotal & Delete */}
+                <div className="flex items-center justify-between gap-1.5 min-w-0">
                   <div className="flex-1 min-w-0">
-                    <h5 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 truncate">
+                    <h5 className="text-xs font-extrabold text-stone-900 dark:text-stone-100 truncate leading-tight">
                       {item.name}
                     </h5>
-                    <span className="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="text-[10px] font-mono font-medium text-stone-400 dark:text-stone-500">
                       ₹{parseFloat(String(item.price).replace('₹', '')).toFixed(2)} each
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => cancelCartItem(item.name)}
-                    className="text-stone-400 hover:text-rose-500 p-1 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs font-mono font-black text-amber-600 dark:text-amber-400">
+                      ₹{(parseFloat(String(item.price).replace('₹', '')) * item.quantity).toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => cancelCartItem(item.name)}
+                      className="text-stone-400 hover:text-rose-500 p-1 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                      title="Remove item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Quantity Stepper & Subtotal Row */}
-                <div className="flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800">
-                  <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl">
+                {/* Row 2: Quantity Controls & Breakdown */}
+                <div className="flex items-center justify-between pt-1 border-t border-stone-100 dark:border-stone-800/80">
+                  <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 p-0.5 rounded-lg">
                     <button
                       type="button"
                       onClick={() => updateCartQty(item.name, -1)}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:bg-stone-200 active:scale-90 transition-all cursor-pointer font-bold"
+                      className="w-6 h-6 flex items-center justify-center rounded-md bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:bg-stone-200 active:scale-90 transition-all cursor-pointer font-bold shadow-2xs"
+                      title="Decrease quantity by 1"
+                      aria-label="Decrease quantity"
                     >
                       <Minus className="w-3 h-3" />
                     </button>
 
-                    <input
-                      type="number"
-                      min="0"
-                      value={item.quantity === 0 ? '' : item.quantity}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (!isNaN(val)) updateCartQtyExact(item.name, val);
-                        else if (e.target.value === '') updateCartQtyExact(item.name, 0);
-                      }}
-                      className="w-8 text-center text-xs font-mono font-extrabold bg-transparent text-stone-900 dark:text-stone-100 focus:outline-none"
+                    <CartItemQtyInput
+                      quantity={item.quantity}
+                      itemName={item.name}
+                      onUpdateExact={updateCartQtyExact}
                     />
 
                     <button
                       type="button"
                       onClick={() => updateCartQty(item.name, 1)}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-amber-500 text-stone-950 hover:bg-amber-600 active:scale-90 transition-all cursor-pointer font-bold"
+                      className="w-6 h-6 flex items-center justify-center rounded-md bg-amber-500 text-stone-950 hover:bg-amber-600 active:scale-90 transition-all cursor-pointer font-bold shadow-2xs"
+                      title="Increase quantity by 1"
+                      aria-label="Increase quantity"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
                   </div>
 
-                  <span className="text-sm font-mono font-extrabold text-stone-900 dark:text-stone-100">
-                    ₹{(parseFloat(String(item.price).replace('₹', '')) * item.quantity).toFixed(2)}
-                  </span>
+                  {item.quantity > 1 && (
+                    <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
+                      {item.quantity} × ₹{parseFloat(String(item.price).replace('₹', '')).toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
