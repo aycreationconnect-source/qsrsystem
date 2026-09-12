@@ -89,7 +89,7 @@ export const POSLayout: React.FC = () => {
       </div>
 
       {/* 3. Right Desktop Cart Sidebar (Hidden on mobile/small tablets, fixed on large desktop) */}
-      <div className="hidden lg:flex w-72 xl:w-80 2xl:w-88 h-full shrink-0">
+      <div className="hidden lg:flex w-96 xl:w-[420px] 2xl:w-[460px] h-full shrink-0">
         <POSCartSidebar />
       </div>
 
@@ -97,8 +97,10 @@ export const POSLayout: React.FC = () => {
       <Drawer
         isOpen={isMobileCartOpen}
         onClose={() => setIsMobileCartOpen(false)}
-        title="Live Order Ticket"
         side="right"
+        hideHeader={true}
+        contentClassName="p-0 h-full"
+        className="max-w-md sm:max-w-lg w-full"
       >
         <POSCartSidebar onCloseMobileDrawer={() => setIsMobileCartOpen(false)} />
       </Drawer>

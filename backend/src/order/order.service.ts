@@ -6,7 +6,7 @@ export class OrderService {
   constructor(private prisma: PrismaService) {}
 
   async create(data: any) {
-    const { items, paymentMethod, subtotal, tax, total, payments } = data;
+    const { items, paymentMethod, subtotal, tax, total, payments, description } = data;
     
     // Validate items
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -52,6 +52,7 @@ export class OrderService {
           paidAmount: totalPaid,
           balanceAmount: balanceDue,
           status: finalStatus,
+          description: description ? String(description).trim() : null,
           items: {
             create: items.map((item) => ({
               quantity: item.quantity,

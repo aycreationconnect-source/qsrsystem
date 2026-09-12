@@ -61,7 +61,7 @@ interface POSContextType {
   addTablePayment: (tableId: string, payment: OrderPayment) => void;
   removeTablePayment: (tableId: string, index: number) => void;
   getCartTotals: () => { subtotal: number; tax: number; total: number; paidAmount: number; balanceDue: number };
-  confirmPaymentAndOrder: (splitPayments?: OrderPayment[]) => Promise<void>;
+  confirmPaymentAndOrder: (splitPayments?: OrderPayment[], description?: string) => Promise<void>;
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
@@ -383,7 +383,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [cart, posMode, selectedTableId, tableOrders, tablePayments, appData.settings]);
 
   const confirmPaymentAndOrder = useCallback(
-    async (splitPayments?: OrderPayment[]) => {
+    async (splitPayments?: OrderPayment[], description?: string) => {
       let combinedItems: CartItem[] = [...cart];
       if (posMode === 'table' && selectedTableId && tableOrders[selectedTableId]) {
         tableOrders[selectedTableId].savedOrders.forEach((order) => {
@@ -447,6 +447,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         total: roundedTotal,
         paymentMethod: methodToSave,
         payments: paymentsToSend,
+        description: description?.trim() ? description.trim() : undefined,
       };
 
       try {

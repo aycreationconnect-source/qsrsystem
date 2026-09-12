@@ -6,7 +6,106 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-11 — Feature: Settings Hub UI/UX Redesign & Click-Driven Responsive Sidebar Collapse
+### 1. 2026-09-12 — Enhancement: Floor & Tables Header Cleanup & "Extra Table" Card in Table List ([`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx))
+- **Type**: Table POS Terminal Layout & Quick Table Creation UX
+- **Summary**:
+  - **Header Cleanup**:
+    - Removed the table total quantity badge (`{tables.length}`) in front of the **"Floor & Tables"** title.
+    - Removed the existing `+ Add` button from the top header to declutter the navigation bar and keep only the Sort tool.
+  - **"Extra Table" Card in Last Row**:
+    - Added an **"Extra Table"** option directly in the last row of the tables list.
+    - Styled consistently with existing table cards (`p-3 rounded-2xl` with dashed border and subtle hover feedback).
+    - Features a 40x40 `+` icon badge, bold title **"Extra Table"**, descriptive subtitle *"Add temporary or dining table"*, and an amber `+ Add` action pill.
+    - Clicking the card opens `AddTablePOSModal`, allowing instant creation of temporary or extra tables without leaving the floor view.
+
+---
+
+### 2. 2026-09-12 — Bug Fix: Tooltip Right-Side Clipping & Horizontal Scrollbar ([`POSOrderHistoryModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSOrderHistoryModal.tsx))
+- **Type**: POS Order History UX & Overflow Prevention
+- **Summary**:
+  - **Issue Identified**:
+    - When hovering over the **View** button in the orders table, the default centered tooltip (`align="center"`) extended past the right edge of the table, causing `overflow-x-auto` to trigger an unwanted horizontal scrollbar while clipping the right half of the tooltip.
+    - Similarly, hovering over the **Refresh / Reload** button in the header caused its tooltip to be partially hidden under the right side of the modal.
+  - **Solution**:
+    - Added `align="end"` to the `Tooltip` components for **View Order Details**, **Reprint Receipt**, and **Refresh Orders List**.
+    - Anchored tooltip right edges flush to the right edge of their trigger buttons (`right-0`), expanding tooltips safely towards the left.
+    - Completely eliminated horizontal table scrollbar triggers and right-edge modal clipping.
+
+---
+
+### 2. 2026-09-12 — UX Overhaul: Intuitive Cash Received & Change Calculator ([`CheckoutModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/CheckoutModal.tsx))
+- **Type**: Checkout Settlement UX & Cashier Financial Usability
+- **Summary**:
+  - **Replaced Accounting Jargon ("Cash Tendered")**:
+    - Replaced the confusing financial label `"Cash Tendered (₹)"` with the human, self-explanatory label **"Cash Received from Customer (₹)"** and helpful subtitle *"Calculate physical change to return"*.
+  - **Smart Dynamic Currency Suggestions (Replaced Static `[50, 100, 200, 500]`)**:
+    - Eliminated static buttons that made no sense for bills higher than ₹500 (e.g., offering a ₹50 button on a ₹1,430 bill).
+    - Introduced intelligent `smartCashOptions` that dynamically compute sensible payments based on the actual bill total:
+      1. **Exact Cash**: 1-click button for exact bill amount (`Exact (₹1430)`).
+      2. **Higher Realistic Currency Notes**: Suggests the next round currency notes a customer would realistically hand over (e.g. `₹1500` with subtitle `Return ₹70`, `₹2000` with subtitle `Return ₹570`).
+  - **Live Return Change & Shortfall Feedback**:
+    - Prominently displays an emerald badge **"Return Change: ₹XX.XX"** when cash given exceeds the total.
+    - Displays a rose alert badge **"Short by: ₹XX.XX"** if cash given is less than the bill amount.
+    - Displays **"Change: ₹0.00"** when exact cash is given.
+  - **Input Sanitization & Cleaner Controls**:
+    - Added `min="0"` and removed browser up/down number spin buttons (`[appearance:textfield]`) that previously allowed clicking into negative values like `-1`.
+    - Added an instant clear (`✕`) button inside the input to clear custom cash entry in 1 click.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Item Card Subtotal Display (Removed "Total:" Label)
+- **Type**: POS Terminal UX & Visual Cleanliness
+- **Summary**:
+  - In [`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), removed the redundant `"Total:"` text label displayed when an item has quantity > 1 in cart.
+  - Retained the calculated total amount (`₹X.XX`) formatted with bold monospaced typography (`text-[11px] sm:text-xs font-black text-amber-700 dark:text-amber-400 font-mono`) and tooltip preview.
+  - Added `gap-1` between unit price and total price in the card footer to ensure numbers never touch or overlap on narrow screens.
+
+---
+
+### 2. 2026-09-12 — Feature: Order Description / Note in Settlement & Payment Screen (Full-Stack)
+- **Type**: Order Settlement & Multi-Channel Note Support (Full-Stack Backend + Frontend)
+- **Summary**:
+  - **Database & Backend Persistence (`schema.prisma` & `order.service.ts`)**:
+    - Added `description String? @db.Text` to the `Order` model in Prisma schema and synced to MySQL (`npx prisma db push`).
+    - Regenerated Prisma Client (`npx prisma generate`).
+    - Updated `OrderService.create()` to accept `description` in payload and persist it as trimmed text/null in database transactions.
+  - **Settlement & Payment UI Input (`CheckoutModal.tsx`)**:
+    - Added clean **Order Description / Note (Optional)** input with `<FileText />` icon in the right settlement panel.
+    - Integrated across both **Single Full Payment** and **Partial Payment** modes.
+    - Form state is automatically cleared on new checkout openings.
+  - **Thermal Receipt Integration (`CheckoutModal.tsx` & `thermalPrintUtils.ts`)**:
+    - Displays order note/description in printed physical thermal receipts (80mm & 58mm) under order metadata.
+  - **POS Order History & Details Modal Integration (`POSOrderHistoryModal.tsx` & `OrderDetailsModal.tsx`)**:
+    - **Order History**: Search filter matches description text; order rows render description notes under item summaries with an icon tag.
+    - **Order Details Modal**: Displays a styled Order Note / Description card with `<FileText />` icon and clear formatting.
+  - **Frontend State & Context Flow (`POSContext.tsx`, `orderApi.ts`, `app.types.ts`)**:
+    - Extended `Order` interface with `description?: string | null`.
+    - Extended `PlaceOrderPayload` with `description?: string`.
+    - Extended `confirmPaymentAndOrder(splitPayments, description)` in POSContext to seamlessly pass description to the backend.
+
+---
+
+### 2. 2026-09-12 — Feature: Expanded Bill Panel & Single-Line Aligned Ticket Items (QSR POS Terminal)
+- **Type**: POS Cart UX & High-Density Ticket Alignment
+- **Summary**:
+  - **Expanded Bill Panel Width (`POSLayout.tsx`)**:
+    - Increased desktop Bill Panel width from `w-72 xl:w-80 2xl:w-88` (288px–352px) to `w-96 xl:w-[420px] 2xl:w-[460px]` (384px–460px), providing generous breathing room for item names, steppers, and pricing.
+    - Optimized mobile and tablet drawer cart container to `max-w-md sm:max-w-lg w-full` with borderless full-height scroll and mobile close (`X`) action.
+  - **Single-Line Aligned Ticket Items (`POSCartSidebar.tsx`)**:
+    - Replaced the chunky 2-row item card design with an ultra-clean, single-line horizontal layout.
+    - Explicitly aligns all 4 required information elements in each row:
+      1. **Item Name**: Left-aligned, bold title with unit price caption (`flex-1 min-w-0 pr-1`).
+      2. **Quantity**: Centered compact numeric stepper (`w-24 sm:w-26`) with 1-click `-` / `+` buttons and direct quantity input (`CartItemQtyInput`).
+      3. **Price**: Right-aligned, bold monospaced Indian Rupee total (`w-20 sm:w-24`).
+      4. **Actions**: Right-aligned trash can icon button (`w-8`) for fast 1-click line deletion.
+  - **Aligned Bill Column Header**:
+    - Added an uppercase column sub-header (`ITEM NAME | QUANTITY | PRICE | ACTION`) with identical column widths, providing clear table alignment down the entire ticket.
+  - **Consistent KOT Table Batches**:
+    - Standardized kitchen-routed orders in Table POS Mode to follow the same single-line column alignment.
+
+---
+
+### 2. 2026-09-11 — Feature: Settings Hub UI/UX Redesign & Click-Driven Responsive Sidebar Collapse
 - **Type**: Admin Settings Redesign & Global Sidebar Navigation
 - **Summary**:
   - **Click-Driven Sidebar Collapse/Expand (`Sidebar.tsx` & `AdminLayout.tsx`)**:

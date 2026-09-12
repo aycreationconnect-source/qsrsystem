@@ -238,13 +238,16 @@ export const POSProductGrid: React.FC = () => {
                       </div>
 
                       {/* Bottom Price & Subtotal Row */}
-                      <div className="flex items-center justify-between pt-1.5 border-t border-stone-100 dark:border-stone-800 shrink-0">
+                      <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-stone-100 dark:border-stone-800 shrink-0">
                         <span className="text-xs sm:text-sm font-extrabold font-mono text-amber-600 dark:text-amber-400">
                           ₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}
                         </span>
                         {qty > 1 && (
-                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 font-mono">
-                            Total: ₹{(parseFloat(item.price.toString().replace('₹', '')) * qty).toFixed(2)}
+                          <span
+                            title={`Total: ₹${(parseFloat(item.price.toString().replace('₹', '')) * qty).toFixed(2)}`}
+                            className="text-[11px] sm:text-xs font-black text-amber-700 dark:text-amber-400 font-mono"
+                          >
+                            ₹{(parseFloat(item.price.toString().replace('₹', '')) * qty).toFixed(2)}
                           </span>
                         )}
                       </div>

@@ -8,6 +8,7 @@ export interface PlaceOrderPayload {
   total: number;
   paymentMethod: string;
   payments?: { amount: number; paymentMethod: string; reference?: string | null }[];
+  description?: string;
 }
 
 export const orderApi = {

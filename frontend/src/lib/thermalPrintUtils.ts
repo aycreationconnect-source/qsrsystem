@@ -221,6 +221,11 @@ export function printThermalReceipt({
           <span>Ref ID: #${order.id}</span>
           <span>Status: <strong>${escapeXml(order.status || 'Completed')}</strong></span>
         </div>
+        ${order.description ? `
+        <div style="margin-top: 2px; font-style: italic;">
+          <span>Note:</span>
+          <span>${escapeXml(order.description)}</span>
+        </div>` : ''}
       </div>
 
       <div class="divider"></div>
