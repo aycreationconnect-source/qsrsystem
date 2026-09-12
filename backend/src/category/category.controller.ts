@@ -27,6 +27,16 @@ export class CategoryController {
     return this.categoryService.update(+id, updateCategoryDto);
   }
 
+  @Post(':id/subcategory')
+  addSubcategory(@Param('id') id: string, @Body() body: { name: string }) {
+    return this.categoryService.addSubcategory(+id, body.name);
+  }
+
+  @Delete(':id/subcategory/:name')
+  removeSubcategory(@Param('id') id: string, @Param('name') name: string) {
+    return this.categoryService.removeSubcategory(+id, name);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return null;

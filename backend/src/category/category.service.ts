@@ -74,4 +74,24 @@ export class CategoryService {
 
     return this.formatCategory(updated);
   }
+
+  async addSubcategory(id: number, subcategoryName: string) {
+    const category = await this.prisma.category.findUnique({ where: { id } });
+    if (!category) throw new Error('Category not found');
+    const formatted = this.formatCategory(category);
+    const existing: string[] = formatted.subcategories || [];
+    const trimmed = (subcategoryName || '').trim();
+    if (!trimmed || existing.includes(trimmed)) return formatted;
+    const updated = [...existing, trimmed];
+    return this.update(id, { subcategories: updated });
+  }
+
+  async removeSubcategory(id: number, subcategoryName: string) {
+    const category = await this.prisma.category.findUnique({ where: { id } });
+    if (!category) throw new Error('Category not found');
+    const formatted = this.formatCategory(category);
+    const existing: string[] = formatted.subcategories || [];
+    const updated = existing.filter((s) => s !== (subcategoryName || '').trim());
+    return this.update(id, { subcategories: updated });
+  }
 }

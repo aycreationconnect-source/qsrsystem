@@ -18,7 +18,6 @@ import {
 import { cn } from '../../lib/utils';
 
 export interface SidebarProps {
-  onOpenStoreProfile?: () => void;
   onCloseMobileNav?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -26,7 +25,6 @@ export interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  onOpenStoreProfile,
   onCloseMobileNav,
   isCollapsed: controlledCollapsed,
   onToggleCollapse,
@@ -132,8 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-16 border-b border-stone-200/80 dark:border-stone-800 flex items-center shrink-0 relative overflow-hidden">
         {/* Monogram / Logo Slot: Fixed in 72px slot (centered at x=36px) */}
         <div
-          onClick={onOpenStoreProfile}
-          className="w-[72px] shrink-0 flex items-center justify-center cursor-pointer"
+          className="w-[72px] shrink-0 flex items-center justify-center"
           title={storeProfile?.businessName || 'Velora Cafe'}
         >
           <div className="relative shrink-0">
@@ -157,9 +154,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Cafe Name & Code details: Smooth reveal without jerking */}
         <div
-          onClick={onOpenStoreProfile}
           className={cn(
-            'flex flex-col min-w-0 pr-3 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out cursor-pointer',
+            'flex flex-col min-w-0 pr-3 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out',
             isCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
           )}
         >

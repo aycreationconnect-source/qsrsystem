@@ -23,17 +23,17 @@ import {
   User,
   Zap,
   Utensils,
-  CheckCircle,
   Activity,
-  Laptop,
   Coins,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export type SettingsCategory = 'profile' | 'tax' | 'printer' | 'audio' | 'popup';
 
 export const SettingsView: React.FC = () => {
-  const { appData, setAppData, refreshSettings, storeProfile, setStoreProfile, licenseStatus, currentUser } =
+  const { appData, setAppData, refreshSettings, storeProfile, setStoreProfile } =
     useApp();
   const [isStoreProfileModalOpen, setIsStoreProfileModalOpen] = useState(false);
 
@@ -47,13 +47,82 @@ export const SettingsView: React.FC = () => {
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [configSuccess, setConfigSuccess] = useState(false);
 
-  // Local Tax Input states for immediate interactive simulation preview
-  const [taxNameInput, setTaxNameInput] = useState<string>(() => {
-    return appData.settings?.globalTaxName || 'GST';
+  // Tax Calculation Method: 'exclusive' (Manual / Standard) vs 'reverse' (Reverse Calculation / Inclusive)
+  const [taxCalculationType, setTaxCalculationType] = useState<'exclusive' | 'reverse'>(() => {
+    return (appData.settings?.taxCalculationType as 'exclusive' | 'reverse') || 'exclusive';
   });
-  const [taxRateInput, setTaxRateInput] = useState<string>(() => {
-    return appData.settings?.globalTaxRate || '5';
+
+  // Custom Taxes State List
+  const [customTaxes, setCustomTaxes] = useState<Array<{ id: string; name: string; rate: string }>>(() => {
+    if (appData.settings?.customTaxes) {
+      try {
+        const parsed = JSON.parse(appData.settings.customTaxes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((t: any, idx: number) => ({
+            id: t.id || `tax-${idx}-${Date.now()}`,
+            name: String(t.name ?? ''),
+            rate: String(t.rate ?? '0'),
+          }));
+        }
+      } catch {
+        // fallback
+      }
+    }
+    const defRate = parseFloat(appData.settings?.globalTaxRate || '5') || 5;
+    const defName = appData.settings?.globalTaxName || 'GST';
+    if (defName.toUpperCase().includes('GST')) {
+      const half = (defRate / 2).toString();
+      return [
+        { id: '1', name: 'CGST', rate: half },
+        { id: '2', name: 'SGST', rate: half },
+      ];
+    }
+    return [{ id: '1', name: defName, rate: defRate.toString() }];
   });
+
+  const handleAddTax = () => {
+    setCustomTaxes((prev) => [
+      ...prev,
+      { id: `tax-${Date.now()}`, name: '', rate: '0' },
+    ]);
+  };
+
+  const handleUpdateTax = (id: string, field: 'name' | 'rate', value: string) => {
+    setCustomTaxes((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
+    );
+  };
+
+  const handleRemoveTax = (id: string) => {
+    setCustomTaxes((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleApplyPreset = (preset: 'notax' | 'gst5' | 'gst12' | 'gst18' | 'vat5') => {
+    if (preset === 'notax') {
+      setCustomTaxes([
+        { id: `tax-notax-${Date.now()}`, name: 'No Tax', rate: '0' },
+      ]);
+    } else if (preset === 'gst5') {
+      setCustomTaxes([
+        { id: `tax-cgst-${Date.now()}`, name: 'CGST', rate: '2.5' },
+        { id: `tax-sgst-${Date.now() + 1}`, name: 'SGST', rate: '2.5' },
+      ]);
+    } else if (preset === 'gst12') {
+      setCustomTaxes([
+        { id: `tax-cgst-${Date.now()}`, name: 'CGST', rate: '6' },
+        { id: `tax-sgst-${Date.now() + 1}`, name: 'SGST', rate: '6' },
+      ]);
+    } else if (preset === 'gst18') {
+      setCustomTaxes([
+        { id: `tax-cgst-${Date.now()}`, name: 'CGST', rate: '9' },
+        { id: `tax-sgst-${Date.now() + 1}`, name: 'SGST', rate: '9' },
+      ]);
+    } else if (preset === 'vat5') {
+      setCustomTaxes([
+        { id: `tax-vat-${Date.now()}`, name: 'VAT', rate: '5' },
+      ]);
+    }
+  };
 
   // Owner Configuration Form States (initialized from appData.settings)
   const [orderSoundEnabled, setOrderSoundEnabled] = useState<boolean>(() => {
@@ -104,21 +173,38 @@ export const SettingsView: React.FC = () => {
     );
   };
 
+  const totalTaxRate = customTaxes.reduce(
+    (sum, t) => sum + (parseFloat(t.rate) || 0),
+    0
+  );
+  const combinedTaxName =
+    customTaxes
+      .filter((t) => t.name.trim() !== '')
+      .map((t) => t.name.trim())
+      .join(' + ') || 'Tax';
+
   const handleSaveTaxSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setIsSavingTax(true);
-      await settingsApi.saveSettings({
-        globalTaxName: taxNameInput,
-        globalTaxRate: taxRateInput,
-      });
+      const validTaxes = customTaxes.filter((t) => t.name.trim() !== '');
+      const calcTotalRate = validTaxes.reduce((sum, t) => sum + (parseFloat(t.rate) || 0), 0);
+      const calcCombinedName = validTaxes.map((t) => t.name.trim()).join(' + ') || 'Tax';
+
+      const payload: Record<string, string> = {
+        customTaxes: JSON.stringify(validTaxes),
+        taxCalculationType,
+        globalTaxName: calcCombinedName,
+        globalTaxRate: calcTotalRate.toString(),
+      };
+
+      await settingsApi.saveSettings(payload);
 
       setAppData((prev) => ({
         ...prev,
         settings: {
           ...prev.settings,
-          globalTaxName: taxNameInput,
-          globalTaxRate: taxRateInput,
+          ...payload,
         },
       }));
 
@@ -182,102 +268,128 @@ export const SettingsView: React.FC = () => {
 
   const initials = getInitials(storeProfile?.businessName || 'Velora Cafe');
 
-  // Categories configuration
+  // Categories configuration (icons with setting category names & descriptions)
   const categories: {
     id: SettingsCategory;
     label: string;
-    subtitle: string;
+    description: string;
     icon: React.ReactNode;
-    badge: string;
   }[] = [
     {
       id: 'profile',
       label: 'Store Profile',
-      subtitle: 'Branding & contact details',
+      description: 'Manage cafe identity, store logo, registered address and contact information.',
       icon: <Store className="w-4 h-4" />,
-      badge: storeProfile?.cafeCode || 'CF-NAG-001',
     },
     {
       id: 'tax',
       label: 'Tax & Billing',
-      subtitle: 'GST/VAT rates & plan',
+      description: 'Configure multi-tax rates (CGST, SGST, VAT), reverse calculation, and POS tax modes.',
       icon: <Percent className="w-4 h-4" />,
-      badge: `${taxRateInput || '0'}% ${taxNameInput || 'Tax'}`,
     },
     {
       id: 'printer',
       label: 'Printer Settings',
-      subtitle: 'Receipts, KOT & item labels',
+      description: 'Setup thermal receipt paper widths (80mm/58mm), KOT kitchen printing, and templates.',
       icon: <Printer className="w-4 h-4" />,
-      badge: `${appData.settings?.printer_default_paper_width || appData.settings?.printer_bill_paper_width || '80mm'} Roll`,
     },
     {
       id: 'audio',
       label: 'Audio Chimes',
-      subtitle: 'Order bell sounds & volume',
+      description: 'Configure order notification audio bells, chime tones, and terminal sound volume.',
       icon: <Volume2 className="w-4 h-4" />,
-      badge: orderSoundEnabled ? `${orderSoundVolume}% Vol` : 'Muted',
     },
     {
       id: 'popup',
       label: 'Popup Alerts',
-      subtitle: 'Onscreen order toasts',
-      icon: <Receipt className="w-4 h-4" />,
-      badge: orderPopupEnabled ? `${orderPopupDuration}s Duration` : 'Disabled',
+      description: 'Manage on-screen order toast notifications and display durations for cashiers.',
+      icon: <BellRing className="w-4 h-4" />,
     },
   ];
 
+  // Category-specific themes for connecting sidebar selection to content borders
+  const categoryThemes: Record<
+    SettingsCategory,
+    {
+      sidebarBorder: string;
+      sidebarBg: string;
+      sidebarText: string;
+      sidebarIconBg: string;
+      mobileActive: string;
+      cardBorder: string;
+    }
+  > = {
+    profile: {
+      sidebarBorder: 'border-amber-400 dark:border-amber-500/50',
+      sidebarBg: 'bg-amber-500/10 dark:bg-amber-500/15',
+      sidebarText: 'text-amber-950 dark:text-amber-200',
+      sidebarIconBg: 'bg-amber-500 text-stone-950 shadow-xs',
+      mobileActive: 'bg-amber-500 text-stone-950 border-amber-500 shadow-sm ring-1 ring-amber-400',
+      cardBorder: 'border-amber-500/40 dark:border-amber-500/30',
+    },
+    tax: {
+      sidebarBorder: 'border-emerald-400 dark:border-emerald-500/50',
+      sidebarBg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+      sidebarText: 'text-emerald-950 dark:text-emerald-200',
+      sidebarIconBg: 'bg-emerald-500 text-white shadow-xs',
+      mobileActive: 'bg-emerald-500 text-white border-emerald-500 shadow-sm ring-1 ring-emerald-400',
+      cardBorder: 'border-emerald-500/40 dark:border-emerald-500/30',
+    },
+    printer: {
+      sidebarBorder: 'border-sky-400 dark:border-sky-500/50',
+      sidebarBg: 'bg-sky-500/10 dark:bg-sky-500/15',
+      sidebarText: 'text-sky-950 dark:text-sky-200',
+      sidebarIconBg: 'bg-sky-500 text-white shadow-xs',
+      mobileActive: 'bg-sky-500 text-white border-sky-500 shadow-sm ring-1 ring-sky-400',
+      cardBorder: 'border-sky-500/40 dark:border-sky-500/30',
+    },
+    audio: {
+      sidebarBorder: 'border-purple-400 dark:border-purple-500/50',
+      sidebarBg: 'bg-purple-500/10 dark:bg-purple-500/15',
+      sidebarText: 'text-purple-950 dark:text-purple-200',
+      sidebarIconBg: 'bg-purple-500 text-white shadow-xs',
+      mobileActive: 'bg-purple-500 text-white border-purple-500 shadow-sm ring-1 ring-purple-400',
+      cardBorder: 'border-purple-500/40 dark:border-purple-500/30',
+    },
+    popup: {
+      sidebarBorder: 'border-rose-400 dark:border-rose-500/50',
+      sidebarBg: 'bg-rose-500/10 dark:bg-rose-500/15',
+      sidebarText: 'text-rose-950 dark:text-rose-200',
+      sidebarIconBg: 'bg-rose-500 text-white shadow-xs',
+      mobileActive: 'bg-rose-500 text-white border-rose-500 shadow-sm ring-1 ring-rose-400',
+      cardBorder: 'border-rose-500/40 dark:border-rose-500/30',
+    },
+  };
+
   // Tax simulator numbers
-  const simulatedRate = parseFloat(taxRateInput) || 0;
-  const simulatedSubtotal = 1000;
-  const simulatedTaxAmount = (simulatedSubtotal * simulatedRate) / 100;
-  const simulatedGrandTotal = simulatedSubtotal + simulatedTaxAmount;
+  const isReverse = taxCalculationType === 'reverse';
+  const simulatedGross = 1000;
+  let simulatedSubtotal = 1000;
+  let simulatedTaxAmount = 0;
+  let simulatedGrandTotal = 1000;
+
+  if (isReverse) {
+    simulatedGrandTotal = simulatedGross;
+    if (totalTaxRate > 0) {
+      simulatedSubtotal = simulatedGross / (1 + totalTaxRate / 100);
+      simulatedTaxAmount = simulatedGross - simulatedSubtotal;
+    } else {
+      simulatedSubtotal = simulatedGross;
+      simulatedTaxAmount = 0;
+    }
+  } else {
+    simulatedSubtotal = 1000;
+    simulatedTaxAmount = (simulatedSubtotal * totalTaxRate) / 100;
+    simulatedGrandTotal = simulatedSubtotal + simulatedTaxAmount;
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 space-y-6 max-w-[1540px] mx-auto min-h-[calc(100vh-100px)]">
-      {/* Top Breadcrumb & Status Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1">
-        <div>
-          <h2 className="text-xl font-black text-stone-900 dark:text-stone-100 tracking-tight flex items-center gap-2.5">
-            <span>Store Settings & Configurations</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/30">
-              POS v2.4
-            </span>
-          </h2>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-            Manage cafe identity, tax rates, thermal printer roll formats, order audio chimes, and station node health.
-          </p>
-        </div>
-
-        {/* Live System Badges & Quick Launchers */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Station Online</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-bold">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-            <span>{licenseStatus?.daysRemaining ?? 85} Days Remaining</span>
-          </div>
-
-          <a
-            href="/pos?mode=quick"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-extrabold shadow-sm transition-all cursor-pointer"
-            title="Open Quick POS in new tab"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Quick POS</span>
-          </a>
-        </div>
-      </div>
-
       {/* Mobile Category Pill Selector (visible only on small screens < lg) */}
       <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
         {categories.map((cat) => {
           const isActive = activeTab === cat.id;
+          const theme = categoryThemes[cat.id];
           return (
             <button
               key={cat.id}
@@ -286,166 +398,66 @@ export const SettingsView: React.FC = () => {
               className={cn(
                 'px-3.5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 shrink-0 border select-none',
                 isActive
-                  ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-sm ring-1 ring-amber-400'
+                  ? cn(theme.mobileActive, 'font-extrabold')
                   : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
               )}
             >
-              <span>{cat.icon}</span>
+              <span className="shrink-0">{cat.icon}</span>
               <span>{cat.label}</span>
-              <span
-                className={cn(
-                  'text-[10px] px-1.5 py-0.2 rounded-full font-bold',
-                  isActive
-                    ? 'bg-stone-900 text-amber-400'
-                    : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
-                )}
-              >
-                {cat.badge}
-              </span>
             </button>
           );
         })}
       </div>
 
       {/* Main 2-Column Responsive Layout (Desktop & Tablet) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Category Navigation + Station & Hardware Status Widget */}
-        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col space-y-4 sticky top-4">
-          {/* Card 1: Category Menu */}
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3 shadow-sm space-y-1">
-            <div className="px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500 flex items-center justify-between">
-              <span>Settings Categories</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-stone-100 dark:bg-stone-800 text-stone-500">
-                5 Modules
-              </span>
-            </div>
-
-            {categories.map((cat) => {
-              const isActive = activeTab === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setActiveTab(cat.id)}
-                  className={cn(
-                    'w-full text-left p-3 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 group select-none border',
-                    isActive
-                      ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-950 dark:text-amber-200 border-amber-500/30 shadow-xs'
-                      : 'hover:bg-stone-100/80 dark:hover:bg-stone-800/60 text-stone-700 dark:text-stone-300 border-transparent'
-                  )}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Left Column: Category Navigation (Stretched to bottom) */}
+        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col sticky top-4 self-start h-[calc(100vh-100px)] min-h-[520px]">
+          {/* Category Menu Card */}
+          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3 shadow-sm h-full flex flex-col justify-between">
+            <div className="space-y-1.5">
+              {categories.map((cat) => {
+                const isActive = activeTab === cat.id;
+                const theme = categoryThemes[cat.id];
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveTab(cat.id)}
+                    className={cn(
+                      'w-full text-left p-3 rounded-2xl transition-all cursor-pointer flex items-center gap-3 select-none border group',
+                      isActive
+                        ? cn(theme.sidebarBg, theme.sidebarText, theme.sidebarBorder, 'font-extrabold shadow-xs')
+                        : 'hover:bg-stone-100/80 dark:hover:bg-stone-800/60 text-stone-700 dark:text-stone-300 border-transparent font-bold'
+                    )}
+                  >
                     <div
                       className={cn(
-                        'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105',
+                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105',
                         isActive
-                          ? 'bg-amber-500 text-stone-950 shadow-xs font-bold'
+                          ? theme.sidebarIconBg
                           : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
                       )}
                     >
                       {cat.icon}
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-extrabold truncate leading-snug">{cat.label}</div>
-                      <div className="text-[11px] text-stone-400 dark:text-stone-500 truncate leading-snug mt-0.5">
-                        {cat.subtitle}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <span
-                    className={cn(
-                      'text-[10px] font-bold px-2 py-0.5 rounded-lg shrink-0 transition-colors truncate max-w-[85px]',
-                      isActive
-                        ? 'bg-amber-500/25 text-amber-950 dark:text-amber-200 font-extrabold'
-                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
-                    )}
-                  >
-                    {cat.badge}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Card 2: Station Node & Health Widget (Eliminates empty space purposefully) */}
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-4 shadow-sm space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500 flex items-center gap-1.5">
-                <Laptop className="w-3.5 h-3.5 text-amber-500" />
-                <span>Station Health</span>
-              </span>
-              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>Ready</span>
-              </span>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between py-1 border-b border-stone-100 dark:border-stone-850">
-                <span className="text-stone-500 dark:text-stone-400">Database Engine</span>
-                <span className="font-mono font-bold text-stone-800 dark:text-stone-200 text-[11px]">
-                  Local SQLite
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between py-1 border-b border-stone-100 dark:border-stone-850">
-                <span className="text-stone-500 dark:text-stone-400">POS License</span>
-                <span className="font-bold text-amber-600 dark:text-amber-400 text-[11px]">
-                  {licenseStatus?.planCode || 'PRO Plan'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between py-1 border-b border-stone-100 dark:border-stone-850">
-                <span className="text-stone-500 dark:text-stone-400">Current Staff</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 text-[11px] truncate max-w-[120px]">
-                  {currentUser?.fullName || 'Manager'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between py-1">
-                <span className="text-stone-500 dark:text-stone-400">Default Thermal Roll</span>
-                <span className="font-mono font-bold text-stone-800 dark:text-stone-200 text-[11px]">
-                  {appData.settings?.printer_default_paper_width || '80mm'} Roll
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Terminal Launcher Buttons */}
-            <div className="pt-2 border-t border-stone-100 dark:border-stone-800 grid grid-cols-2 gap-2">
-              <a
-                href="/pos?mode=quick"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 border border-amber-200/80 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 flex flex-col items-center justify-center text-center transition-all cursor-pointer group"
-              >
-                <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold">Quick POS</span>
-              </a>
-
-              <a
-                href="/pos?mode=table"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-stone-850 dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-750 text-stone-700 dark:text-stone-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer group"
-              >
-                <Utensils className="w-4 h-4 text-stone-500 dark:text-stone-400 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-bold">Table POS</span>
-              </a>
+                    <span className="text-xs truncate">{cat.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* Right Column: Active Category Details Panel */}
-        <div className="lg:col-span-8 xl:col-span-9 min-w-0">
+        <div className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-6">
           {/* =========================================================================
               CATEGORY 1: STORE PROFILE & IDENTITY (COMPREHENSIVE REDESIGN)
               ========================================================================= */}
           {activeTab === 'profile' && (
             <div className="space-y-6 animate-in fade-in duration-150">
               {/* 1. Hero Identity Banner */}
-              <div className="bg-gradient-to-br from-stone-900 via-stone-850 to-stone-900 text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-stone-800 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-stone-900 via-stone-850 to-stone-900 text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-amber-500/40 shadow-amber-500/5 relative overflow-hidden">
                 {/* Decorative background circle */}
                 <div className="absolute -right-12 -top-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -556,7 +568,7 @@ export const SettingsView: React.FC = () => {
               {/* 2. Structured 6-Card Operations & Business Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {/* Card 1: Store Ownership */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
                     <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                       <User className="w-4 h-4" />
@@ -594,7 +606,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 {/* Card 2: Physical Location */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
                     <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
                       <MapPin className="w-4 h-4" />
@@ -632,7 +644,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 {/* Card 3: Tax & Legal Compliance */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
                     <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                       <ShieldCheck className="w-4 h-4" />
@@ -677,7 +689,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 {/* Card 4: Printed Receipt Customization */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
                     <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                       <Receipt className="w-4 h-4" />
@@ -708,7 +720,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 {/* Card 5: Active Terminal Modes */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
                     <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                       <Zap className="w-4 h-4" />
@@ -745,7 +757,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 {/* Card 6: Database & Synchronization */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 shadow-sm space-y-3">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
                   <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
                     <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
                       <Activity className="w-4 h-4" />
@@ -782,63 +794,6 @@ export const SettingsView: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {/* 3. Store Readiness & Operational Checklist Card */}
-              <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black text-stone-900 dark:text-stone-100">
-                        Store Operational Readiness
-                      </h4>
-                      <p className="text-xs text-stone-400">
-                        Core modules verification for smooth restaurant counter billing
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                    100% Ready
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                  <div className="p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/60 dark:border-stone-750 flex items-center gap-2.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <div>
-                      <span className="font-bold block text-stone-800 dark:text-stone-200">Store Profile</span>
-                      <span className="text-[10px] text-stone-400">Brand & Monogram Set</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/60 dark:border-stone-750 flex items-center gap-2.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <div>
-                      <span className="font-bold block text-stone-800 dark:text-stone-200">Tax & Billing</span>
-                      <span className="text-[10px] text-stone-400">{taxRateInput}% {taxNameInput} Configured</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/60 dark:border-stone-750 flex items-center gap-2.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <div>
-                      <span className="font-bold block text-stone-800 dark:text-stone-200">Printer Format</span>
-                      <span className="text-[10px] text-stone-400">80mm / 58mm POS Ready</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/60 dark:border-stone-750 flex items-center gap-2.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <div>
-                      <span className="font-bold block text-stone-800 dark:text-stone-200">Menu & Tables</span>
-                      <span className="text-[10px] text-stone-400">{appData.tables.length} Tables • {appData.menu.length} Dishes</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -846,20 +801,20 @@ export const SettingsView: React.FC = () => {
               CATEGORY 2: TAX & BILLING CONFIGURATIONS
               ========================================================================= */}
           {activeTab === 'tax' && (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-150">
+            <div className="bg-white dark:bg-stone-900 border border-emerald-500/40 dark:border-emerald-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-150">
               <div className="pb-4 border-b border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                    <Percent className="w-5 h-5 text-amber-500" />
-                    <span>Global Tax & Billing Configurations</span>
+                    <Percent className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Tax & Billing Configurations</span>
                   </h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                    Configure invoice tax titles and percentage rates applied automatically to all customer tickets and printed receipts.
+                    Configure custom taxes (CGST, SGST, VAT, Cess) and choose between standard addition or reverse tax calculation.
                   </p>
                 </div>
 
-                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50 self-start sm:self-auto">
-                  Live Rate: {taxRateInput}% {taxNameInput}
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50 self-start sm:self-auto">
+                  Live Rate: {totalTaxRate.toFixed(2)}% ({combinedTaxName})
                 </span>
               </div>
 
@@ -871,37 +826,210 @@ export const SettingsView: React.FC = () => {
               )}
 
               <form onSubmit={handleSaveTaxSettings} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Tax Title (Printed on Invoice)"
-                    placeholder="e.g. GST, VAT, Service Tax"
-                    value={taxNameInput}
-                    onChange={(e) => setTaxNameInput(e.target.value)}
-                  />
+                {/* 1. Custom Tax Types & Rates List */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+                    <div>
+                      <label className="text-xs font-bold text-stone-800 dark:text-stone-200 block">
+                        Custom Tax Types & Rates
+                      </label>
+                      <span className="text-[11px] text-stone-400">
+                        Add individual custom taxes like CGST, SGST, VAT, or Cess.
+                      </span>
+                    </div>
 
-                  <Input
-                    label="Global Tax Percentage (%)"
-                    type="number"
-                    step="0.01"
-                    placeholder="e.g. 5"
-                    value={taxRateInput}
-                    onChange={(e) => setTaxRateInput(e.target.value)}
-                  />
+                    {/* Quick Presets */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mr-1">
+                        Presets:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset('notax')}
+                        className="px-2 py-1 text-[11px] font-bold rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
+                      >
+                        No Tax
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset('gst5')}
+                        className="px-2 py-1 text-[11px] font-bold rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
+                      >
+                        GST 5%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset('gst12')}
+                        className="px-2 py-1 text-[11px] font-bold rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
+                      >
+                        GST 12%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset('gst18')}
+                        className="px-2 py-1 text-[11px] font-bold rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
+                      >
+                        GST 18%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset('vat5')}
+                        className="px-2 py-1 text-[11px] font-bold rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
+                      >
+                        VAT 5%
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tax Rows List */}
+                  <div className="space-y-2.5">
+                    {customTaxes.map((tax, index) => (
+                      <div
+                        key={tax.id || index}
+                        className="flex items-center gap-3 p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/70 dark:border-stone-750 group"
+                      >
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <Input
+                            label={index === 0 ? "Tax Title / Name" : undefined}
+                            placeholder="e.g. CGST, SGST, VAT"
+                            value={tax.name}
+                            onChange={(e) => handleUpdateTax(tax.id, 'name', e.target.value)}
+                          />
+                          <Input
+                            label={index === 0 ? "Tax Rate (%)" : undefined}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            placeholder="e.g. 2.5"
+                            value={tax.rate}
+                            onChange={(e) => handleUpdateTax(tax.id, 'rate', e.target.value)}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTax(tax.id)}
+                          className={cn(
+                            'p-2.5 rounded-xl border transition-all cursor-pointer shrink-0',
+                            index === 0 && 'mt-5 sm:mt-5',
+                            customTaxes.length > 1
+                              ? 'border-rose-200 text-rose-500 hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-950/40'
+                              : 'border-stone-200 text-stone-300 dark:border-stone-800 dark:text-stone-600 cursor-not-allowed'
+                          )}
+                          disabled={customTaxes.length <= 1}
+                          title="Delete Tax Type"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom Control Bar: Add Tax Type + Reverse Calculation Toggle */}
+                  <div className="p-4 rounded-2xl bg-stone-50/80 dark:bg-stone-850/60 border border-stone-200/70 dark:border-stone-750 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      {/* Left: Add Tax Type Action & Cumulative Rate */}
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleAddTax}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-800/60 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Add Tax Type</span>
+                        </button>
+
+                        <span className="text-xs font-mono font-bold text-stone-600 dark:text-stone-300 bg-white dark:bg-stone-800 px-3 py-1.5 rounded-xl border border-stone-200/70 dark:border-stone-700">
+                          Total Rate:{' '}
+                          <span className="text-amber-600 dark:text-amber-400 font-black">
+                            {totalTaxRate.toFixed(2)}%
+                          </span>
+                        </span>
+                      </div>
+
+                      {/* Right: Reverse Calculation Toggle Switch */}
+                      <div className="flex items-center gap-3 bg-white dark:bg-stone-800 p-2 sm:px-3.5 sm:py-2 rounded-xl border border-stone-200/70 dark:border-stone-750 justify-between sm:justify-end shadow-2xs">
+                        <div className="text-left sm:text-right">
+                          <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block leading-tight">
+                            Reverse Calculation
+                          </span>
+                          <span className="text-[10px] text-stone-500 dark:text-stone-400">
+                            {taxCalculationType === 'reverse'
+                              ? 'Menu prices include tax'
+                              : 'Add tax extra on top'}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={taxCalculationType === 'reverse'}
+                          onClick={() =>
+                            setTaxCalculationType((prev) => (prev === 'reverse' ? 'exclusive' : 'reverse'))
+                          }
+                          className={cn(
+                            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500',
+                            taxCalculationType === 'reverse' ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-600'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out',
+                              taxCalculationType === 'reverse' ? 'translate-x-5' : 'translate-x-0'
+                            )}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Easy-to-Understand Explanation for Cafe Owners */}
+                    <div className="pt-2.5 border-t border-stone-200/50 dark:border-stone-700/50 text-xs flex items-start gap-2 text-stone-600 dark:text-stone-300">
+                      <span className="text-base leading-none shrink-0 mt-0.5">💡</span>
+                      <div className="leading-relaxed">
+                        {taxCalculationType === 'reverse' ? (
+                          <span>
+                            <strong className="text-stone-900 dark:text-stone-100 font-bold">
+                              Menu Prices Already Include Tax (Tax Inclusive):
+                            </strong>{' '}
+                            Customers pay the exact price shown on your menu card. The system automatically back-calculates the base dish price and tax portion for your accounts & GST filing.{' '}
+                            <span className="text-stone-500 dark:text-stone-400 italic">
+                              (e.g., A ₹100 coffee on your menu = ₹95.24 item price + ₹4.76 GST → Customer pays exactly ₹100).
+                            </span>
+                          </span>
+                        ) : (
+                          <span>
+                            <strong className="text-stone-900 dark:text-stone-100 font-bold">
+                              Taxes Added Extra at Billing (Standard / Exclusive):
+                            </strong>{' '}
+                            Menu prices do not include taxes. The system calculates taxes and adds them on top of the bill at checkout.{' '}
+                            <span className="text-stone-500 dark:text-stone-400 italic">
+                              (e.g., A ₹100 coffee on your menu + 5% GST = ₹105 bill → Customer pays ₹105).
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Interactive Real-Time Tax Bill Simulation Card */}
-                <div className="p-5 rounded-2xl bg-stone-50/80 dark:bg-stone-850/60 border border-stone-200/70 dark:border-stone-750 space-y-3">
+                {/* 3. Interactive Real-Time Tax Bill Simulation Card */}
+                <div className="p-5 rounded-2xl bg-stone-50/80 dark:bg-stone-850/60 border border-emerald-500/25 dark:border-emerald-500/20 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-stone-200/60 dark:border-stone-750">
                     <span className="text-xs font-extrabold text-stone-800 dark:text-stone-200 uppercase tracking-wider flex items-center gap-2">
-                      <Coins className="w-4 h-4 text-amber-500" />
+                      <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <span>Live Bill Tax Simulation</span>
                     </span>
-                    <span className="text-[10px] text-stone-400">Updates live as you type above</span>
+                    <span className="text-[10px] text-stone-400">
+                      {isReverse ? 'Reverse Calculation (Tax Inclusive)' : 'Standard Calculation (Tax Added On Top)'}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-200/60 dark:border-stone-700">
-                      <span className="text-[11px] text-stone-400 block mb-0.5">Sample Subtotal</span>
+                      <span className="text-[11px] text-stone-400 block mb-0.5">
+                        {isReverse ? 'Net Base Subtotal' : 'Sample Subtotal'}
+                      </span>
                       <span className="font-mono font-bold text-stone-900 dark:text-stone-100 text-base">
                         ₹{simulatedSubtotal.toFixed(2)}
                       </span>
@@ -909,50 +1037,56 @@ export const SettingsView: React.FC = () => {
 
                     <div className="p-3 rounded-xl bg-white dark:bg-stone-800 border border-stone-200/60 dark:border-stone-700">
                       <span className="text-[11px] text-stone-400 block mb-0.5">
-                        {taxNameInput || 'Tax'} ({simulatedRate.toFixed(2)}%)
+                        {combinedTaxName || 'Tax'} ({totalTaxRate.toFixed(2)}%)
                       </span>
                       <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-base">
-                        + ₹{simulatedTaxAmount.toFixed(2)}
+                        {isReverse ? '' : '+ '}₹{simulatedTaxAmount.toFixed(2)}
+                        {isReverse && (
+                          <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block sm:inline">
+                            (Included)
+                          </span>
+                        )}
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
-                      <span className="text-[11px] text-amber-800 dark:text-amber-300 font-bold block mb-0.5">
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+                      <span className="text-[11px] text-emerald-800 dark:text-emerald-300 font-bold block mb-0.5">
                         Simulated Grand Total
                       </span>
-                      <span className="font-mono font-black text-amber-950 dark:text-amber-100 text-base">
+                      <span className="font-mono font-black text-emerald-950 dark:text-emerald-100 text-base">
                         ₹{simulatedGrandTotal.toFixed(2)}
                       </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Offline License Info */}
-                {licenseStatus && (
-                  <div className="p-4 rounded-2xl bg-stone-50/70 dark:bg-stone-850/60 border border-stone-200/60 dark:border-stone-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2.5">
-                      <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0" />
-                      <div>
-                        <div className="font-extrabold text-stone-900 dark:text-stone-100">
-                          Active License: {licenseStatus.planCode}
-                        </div>
-                        <div className="text-[11px] text-stone-400">
-                          Offline resilience enabled • All POS features unlocked
-                        </div>
-                      </div>
+                  {/* Individual custom tax breakdown if multiple taxes */}
+                  {customTaxes.length > 1 && totalTaxRate > 0 && (
+                    <div className="pt-2 border-t border-stone-200/50 dark:border-stone-700/50 flex flex-wrap gap-2 text-[11px]">
+                      {customTaxes
+                        .filter((t) => (parseFloat(t.rate) || 0) > 0 && t.name.trim() !== '')
+                        .map((t, idx) => {
+                          const rateVal = parseFloat(t.rate) || 0;
+                          const portion = (rateVal / totalTaxRate) * simulatedTaxAmount;
+                          return (
+                            <span
+                              key={t.id || idx}
+                              className="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200/70 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-medium"
+                            >
+                              <span className="font-bold">{t.name} ({rateVal}%):</span>{' '}
+                              <span className="font-mono">₹{portion.toFixed(2)}</span>
+                            </span>
+                          );
+                        })}
                     </div>
-                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800/60 self-start sm:self-auto">
-                      {licenseStatus.daysRemaining} Days Left
-                    </span>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="flex justify-end pt-2 border-t border-stone-100 dark:border-stone-800">
                   <Button
                     type="submit"
                     variant="primary"
                     size="touch"
-                    className="px-8 font-extrabold cursor-pointer shadow-md shadow-amber-500/20"
+                    className="px-8 font-extrabold cursor-pointer shadow-md shadow-emerald-500/20"
                     isLoading={isSavingTax}
                   >
                     Save Billing Settings
@@ -979,12 +1113,12 @@ export const SettingsView: React.FC = () => {
                 </div>
               )}
 
-              <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6">
+              <div className="bg-white dark:bg-stone-900 border border-purple-500/40 dark:border-purple-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6">
                 {/* Header with Master Switch */}
                 <div className="flex items-start justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                         <BellRing className="w-4.5 h-4.5" />
                       </div>
                       <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
@@ -1004,7 +1138,7 @@ export const SettingsView: React.FC = () => {
                       onChange={(e) => setOrderSoundEnabled(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-12 h-6.5 bg-stone-200 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[3px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-stone-600 peer-checked:bg-amber-500"></div>
+                    <div className="w-12 h-6.5 bg-stone-200 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[3px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-stone-600 peer-checked:bg-purple-500"></div>
                   </label>
                 </div>
 
@@ -1033,7 +1167,7 @@ export const SettingsView: React.FC = () => {
                               className={cn(
                                 'p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 group select-none relative',
                                 isSelected
-                                  ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm ring-1 ring-amber-500'
+                                  ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-sm ring-1 ring-purple-500'
                                   : 'border-stone-200 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-850/50 hover:border-stone-300 dark:hover:border-stone-700'
                               )}
                             >
@@ -1043,7 +1177,7 @@ export const SettingsView: React.FC = () => {
                                     className={cn(
                                       'w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-all',
                                       isSelected
-                                        ? 'border-amber-600 bg-amber-500 text-stone-950'
+                                        ? 'border-purple-600 bg-purple-500 text-white'
                                         : 'border-stone-400 dark:border-stone-600'
                                     )}
                                   >
@@ -1058,7 +1192,7 @@ export const SettingsView: React.FC = () => {
                                   className={cn(
                                     'text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0',
                                     isSelected
-                                      ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300'
+                                      ? 'bg-purple-500/20 text-purple-800 dark:text-purple-300'
                                       : 'bg-stone-200/70 dark:bg-stone-750 text-stone-600 dark:text-stone-400'
                                   )}
                                 >
@@ -1085,8 +1219,8 @@ export const SettingsView: React.FC = () => {
                                   className={cn(
                                     'px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer',
                                     isPlaying
-                                      ? 'bg-amber-500 text-stone-950 shadow-xs'
-                                      : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                                      ? 'bg-purple-500 text-white shadow-xs'
+                                      : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-purple-50 dark:hover:bg-purple-950/40'
                                   )}
                                 >
                                   {isPlaying ? (
@@ -1109,17 +1243,17 @@ export const SettingsView: React.FC = () => {
                     </div>
 
                     {/* Volume Slider */}
-                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/70 dark:bg-stone-850/60 border border-stone-200/60 dark:border-stone-750 space-y-2.5">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50/70 dark:bg-stone-850/60 border border-purple-500/20 dark:border-purple-500/20 space-y-2.5">
                       <div className="flex items-center justify-between text-xs font-bold text-stone-700 dark:text-stone-300">
                         <span className="flex items-center gap-2">
                           {orderSoundVolume === 0 ? (
                             <VolumeX className="w-4 h-4 text-rose-500" />
                           ) : (
-                            <Volume2 className="w-4 h-4 text-amber-500" />
+                            <Volume2 className="w-4 h-4 text-purple-500" />
                           )}
                           <span className="font-extrabold uppercase tracking-wider">Chime Volume Level</span>
                         </span>
-                        <span className="font-mono text-amber-600 dark:text-amber-400 font-black text-sm">
+                        <span className="font-mono text-purple-600 dark:text-purple-400 font-black text-sm">
                           {orderSoundVolume}%
                         </span>
                       </div>
@@ -1131,7 +1265,7 @@ export const SettingsView: React.FC = () => {
                         step="5"
                         value={orderSoundVolume}
                         onChange={(e) => setOrderSoundVolume(parseInt(e.target.value, 10))}
-                        className="w-full accent-amber-500 cursor-pointer h-2 bg-stone-200 dark:bg-stone-700 rounded-lg"
+                        className="w-full accent-purple-500 cursor-pointer h-2 bg-stone-200 dark:bg-stone-700 rounded-lg"
                       />
 
                       <div className="flex justify-between text-[10px] text-stone-400 font-medium">
@@ -1154,7 +1288,7 @@ export const SettingsView: React.FC = () => {
                     type="submit"
                     variant="primary"
                     size="touch"
-                    className="px-8 font-extrabold cursor-pointer shadow-md shadow-amber-500/20"
+                    className="px-8 font-extrabold cursor-pointer shadow-md shadow-purple-500/20"
                     isLoading={isSavingConfig}
                   >
                     Save Audio Settings
@@ -1176,11 +1310,11 @@ export const SettingsView: React.FC = () => {
                 </div>
               )}
 
-              <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6">
+              <div className="bg-white dark:bg-stone-900 border border-rose-500/40 dark:border-rose-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6">
                 <div className="flex items-start justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                         <Receipt className="w-4.5 h-4.5" />
                       </div>
                       <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100">
@@ -1200,7 +1334,7 @@ export const SettingsView: React.FC = () => {
                       onChange={(e) => setOrderPopupEnabled(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-12 h-6.5 bg-stone-200 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[3px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-stone-600 peer-checked:bg-emerald-500"></div>
+                    <div className="w-12 h-6.5 bg-stone-200 peer-focus:outline-none rounded-full peer dark:bg-stone-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[3px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-stone-600 peer-checked:bg-rose-500"></div>
                   </label>
                 </div>
 
@@ -1226,7 +1360,7 @@ export const SettingsView: React.FC = () => {
                             className={cn(
                               'p-3.5 rounded-2xl border text-center transition-all cursor-pointer select-none',
                               orderPopupDuration === d.sec
-                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-500 font-extrabold'
+                                ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 ring-1 ring-rose-500 font-extrabold'
                                 : 'border-stone-200 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-850/50 text-stone-600 dark:text-stone-400 hover:border-stone-300'
                             )}
                           >
@@ -1283,7 +1417,7 @@ export const SettingsView: React.FC = () => {
                     type="submit"
                     variant="primary"
                     size="touch"
-                    className="px-8 font-extrabold cursor-pointer shadow-md shadow-emerald-500/20"
+                    className="px-8 font-extrabold cursor-pointer shadow-md shadow-rose-500/20"
                     isLoading={isSavingConfig}
                   >
                     Save Popup Settings

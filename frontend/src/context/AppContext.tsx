@@ -445,8 +445,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Handle Staff PIN Login
   const handlePinLogin = async (pin: string) => {
-    const res = await authApi.login({ pin });
-    localStorage.removeItem('pos_jwt_token'); // Ensure legacy token is cleaned up
+    const res = await authApi.login({ pin: String(pin).trim() });
+    if (res.token) {
+      localStorage.setItem('pos_jwt_token', res.token);
+    }
     localStorage.setItem('pos_current_user', JSON.stringify(res.user));
     setCurrentUser(res.user);
     setStoreProfile(res.store);
@@ -461,8 +463,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Handle Owner Password Login
   const handlePasswordLogin = async (username: string, pass: string) => {
-    const res = await authApi.login({ username, password: pass });
-    localStorage.removeItem('pos_jwt_token'); // Ensure legacy token is cleaned up
+    const res = await authApi.login({ username: String(username).trim(), password: String(pass) });
+    if (res.token) {
+      localStorage.setItem('pos_jwt_token', res.token);
+    }
     localStorage.setItem('pos_current_user', JSON.stringify(res.user));
     setCurrentUser(res.user);
     setStoreProfile(res.store);

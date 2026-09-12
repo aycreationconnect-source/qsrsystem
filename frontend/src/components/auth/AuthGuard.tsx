@@ -21,6 +21,7 @@ export const AuthGuard: React.FC = () => {
         if (isMounted) {
           setCurrentUser(null);
           localStorage.removeItem('pos_current_user');
+          localStorage.removeItem('pos_jwt_token');
         }
       }
     };

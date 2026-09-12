@@ -44,9 +44,29 @@ export interface LicenseStatusResponse {
 
 export const licenseApi = {
   async getStatus(): Promise<LicenseStatusResponse> {
-    const res = await fetch(`${API_BASE_URL}/license/status`);
-    if (!res.ok) throw new Error('Failed to fetch license status');
-    return res.json();
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('pos_jwt_token') : null;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE_URL}/license/status`, { headers });
+      if (!res.ok) {
+        let msg = 'Failed to fetch license status';
+        try {
+          const err = await res.json();
+          if (err.message) msg = err.message;
+        } catch {
+          // ignore
+        }
+        throw new Error(msg);
+      }
+      return res.json();
+    } catch (err: any) {
+      if (err.message === 'Load failed' || err.name === 'TypeError') {
+        throw new Error('Could not connect to server. Please ensure backend is running.');
+      }
+      throw err;
+    }
   },
 
   async activateStore(payload: ActivatePayload) {
@@ -56,8 +76,14 @@ export const licenseApi = {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Activation failed');
+      let msg = 'Activation failed';
+      try {
+        const err = await res.json();
+        if (err.message) msg = err.message;
+      } catch {
+        // ignore
+      }
+      throw new Error(msg);
     }
     return res.json();
   },

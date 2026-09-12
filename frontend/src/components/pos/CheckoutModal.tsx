@@ -16,7 +16,12 @@ import {
   FileText,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { roundPOSAmount } from '../../lib/orderUtils';
+import {
+  roundPOSAmount,
+  getStoreGlobalTaxRate,
+  getItemTaxBadge,
+  formatTaxLabel,
+} from '../../lib/orderUtils';
 
 export const CheckoutModal: React.FC = () => {
   const { posMode, appData, storeProfile, currentUser } = useApp();
@@ -142,6 +147,7 @@ export const CheckoutModal: React.FC = () => {
   }
   const finalTotal = Math.max(0, baseTotal - discountAmount);
   const roundedTotal = roundPOSAmount(finalTotal);
+  const storeGlobalTaxRate = getStoreGlobalTaxRate(appData.settings);
 
   // Active payments for current session
   const currentPayments: OrderPayment[] =
@@ -520,7 +526,7 @@ export const CheckoutModal: React.FC = () => {
         </div>
 
         <div class="calc-row">
-          <span>Taxes & GST:</span>
+          <span>${formatTaxLabel(appData.settings, storeGlobalTaxRate, tax)}${appData.settings?.taxCalculationType === 'reverse' ? ' (Incl.)' : ''}:</span>
           <span class="bold">₹${tax.toFixed(2)}</span>
         </div>
 
@@ -664,22 +670,42 @@ export const CheckoutModal: React.FC = () => {
 
                     {/* Items under this KOT batch */}
                     <div className="p-2 divide-y divide-stone-100 dark:divide-stone-800/60">
-                      {group.items.map((it, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between text-xs py-1.5 px-1 hover:bg-stone-50/50 dark:hover:bg-stone-800/30 rounded-lg transition-colors"
-                        >
-                          <span className="text-stone-800 dark:text-stone-200 font-medium flex-1 truncate pr-2">
-                            {it.name}
-                          </span>
-                          <span className="text-stone-400 dark:text-stone-500 font-mono text-xs w-10 text-center">
-                            x{it.quantity}
-                          </span>
-                          <span className="text-stone-900 dark:text-stone-100 font-mono font-semibold w-18 text-right">
-                            ₹{(it.price * it.quantity).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                      {group.items.map((it, i) => {
+                        const taxBadge = getItemTaxBadge(it, appData.menu, storeGlobalTaxRate);
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between text-xs py-1.5 px-1 hover:bg-stone-50/50 dark:hover:bg-stone-800/30 rounded-lg transition-colors"
+                          >
+                            <div className="flex-1 min-w-0 pr-2">
+                              <span className="text-stone-800 dark:text-stone-200 font-medium truncate block">
+                                {it.name}
+                              </span>
+                              {taxBadge && (
+                                <span
+                                  className={cn(
+                                    'text-[9px] font-semibold px-1.5 py-0.2 rounded inline-block mt-0.5 leading-tight border',
+                                    taxBadge.variant === 'exempt' &&
+                                      'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
+                                    taxBadge.variant === 'applicable' &&
+                                      'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
+                                    taxBadge.variant === 'custom' &&
+                                      'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
+                                  )}
+                                >
+                                  {taxBadge.text}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-stone-400 dark:text-stone-500 font-mono text-xs w-10 text-center">
+                              x{it.quantity}
+                            </span>
+                            <span className="text-stone-900 dark:text-stone-100 font-mono font-semibold w-18 text-right">
+                              ₹{(it.price * it.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))
@@ -697,7 +723,14 @@ export const CheckoutModal: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between text-stone-500 dark:text-stone-400">
-                  <span>Tax</span>
+                  <span>
+                    {formatTaxLabel(appData.settings, storeGlobalTaxRate, tax)}
+                    {appData.settings?.taxCalculationType === 'reverse' && (
+                      <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        (Incl.)
+                      </span>
+                    )}
+                  </span>
                   <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
                     ₹{tax.toFixed(2)}
                   </span>
@@ -1324,7 +1357,7 @@ export const CheckoutModal: React.FC = () => {
             <span style={{ fontWeight: 'bold' }}>₹{subtotal.toFixed(2)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Taxes & GST:</span>
+            <span>{formatTaxLabel(appData.settings, storeGlobalTaxRate, tax)}{appData.settings?.taxCalculationType === 'reverse' ? ' (Incl.)' : ''}:</span>
             <span style={{ fontWeight: 'bold' }}>₹{tax.toFixed(2)}</span>
           </div>
           {discountAmount > 0 && (
