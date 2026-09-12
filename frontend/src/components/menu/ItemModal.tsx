@@ -82,6 +82,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         subcategory: newItem.subcategory || null,
         available: newItem.available !== false,
         status: newItem.status || 'Active',
+        useGlobalTax: newItem.useGlobalTax !== undefined ? Boolean(newItem.useGlobalTax) : true,
       };
 
       if (editingItemIndex !== null) {
@@ -118,12 +119,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         editingItemIndex !== null
           ? newItem.isAddon
             ? 'Edit Add-on'
-            : 'Edit Dish / Beverage'
+            : 'Update Item'
           : newItem.isAddon
           ? 'Create Add-on'
-          : 'Add New Dish / Beverage'
+          : 'Add Item'
       }
-      description="Set dish details, pricing, prep timing, and dietary tags."
+      description="Set item details, pricing, prep timing, and item type."
       maxWidth="lg"
       footer={
         <>
@@ -137,7 +138,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
             isLoading={isSaving}
             leftIcon={<CheckCircle2 className="w-4 h-4" />}
           >
-            {editingItemIndex !== null ? 'Update Dish' : 'Save Dish'}
+            {editingItemIndex !== null ? 'Update Item' : 'Add Item'}
           </Button>
         </>
       }
@@ -149,12 +150,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           </div>
         )}
 
-        {/* Dish Status Toggle (Single Active / Inactive) */}
+        {/* Item Status Toggle (Single Active / Inactive) */}
         {!newItem.isAddon && (
           <div className="px-3.5 py-2 rounded-xl bg-stone-50 dark:bg-stone-850 border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
-                Dish Status
+                Item Status
               </span>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
@@ -189,7 +190,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className={subcategoriesList.length > 0 ? "sm:col-span-5" : "sm:col-span-7"}>
             <Input
-              label="Dish / Beverage Name"
+              label="Item Name"
               required
               placeholder="e.g. Cappuccino, Butter Chicken, Truffle Fries"
               value={newItem.name || ''}
@@ -258,11 +259,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           )}
         </div>
 
-        {/* Dietary Classification */}
+        {/* Item Type (previously Dietary Preference) */}
         {!newItem.isAddon && (
           <div>
             <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
-              Dietary Preference
+              Item Type
             </label>
             <div className="grid grid-cols-4 gap-2">
               {dietTypes.map((dt) => {
@@ -347,7 +348,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         <div>
           <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5 text-stone-400" />
-            <span>Dish Photo (Optional)</span>
+            <span>Item Photo (Optional)</span>
           </label>
           <div className="flex items-center gap-3">
             {newItem.image && (

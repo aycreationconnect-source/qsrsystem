@@ -6,7 +6,130 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-12 — Enhancement: Fast Area Dropdown & Zero-Scroll Categories Popover with High-Speed Diet Toggles ([`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx), [`POSCategoryTabs.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCategoryTabs.tsx))
+### 1. 2026-09-12 — Feature: "Tax Not Applicable" Item Badge & Tax Rate Percentage Display in POS Billing ([`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx), [`CheckoutModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/CheckoutModal.tsx), [`orderUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/orderUtils.ts), [`thermalPrintUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/thermalPrintUtils.ts))
+- **Type**: POS Cart UX & Bill Transparency Enhancement
+- **Summary**:
+  - **"Tax Not Applicable" Item Badge**:
+    - Evaluates each cart/order item in real-time using `isItemTaxNotApplicable(item, menu, globalTaxRate)`.
+    - If a menu item has no tax applied (i.e. `Apply Global Tax` turned off and no manual taxes attached, or manual tax is 0%), the item row in `POSCartSidebar` (active ticket and saved orders) and `CheckoutModal` displays a distinct, professional **`Tax Not Applicable`** badge beside the unit price.
+  - **Applied Tax Rate Percentage in Summary Label**:
+    - Replaced generic or ambiguous tax summary titles (e.g. `Tax (CGST + SGST)`) with the explicit applied tax percentage:
+      - E.g. **`Tax (CGST + SGST - 15%)`** or **`Tax (CGST + SGST - 5%)`**.
+      - If Reverse Calculation is active: **`Tax (CGST + SGST - 15%) (Incl.)`**.
+    - Applied consistently across the POS cart sidebar, checkout settlement modal, and thermal printer receipts.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Per-Item Tax Overrides (Global Tax vs Manual Tax vs 0% Tax-Free) in POS Billing ([`ConfigItemModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/ConfigItemModal.tsx), [`POSContext.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/context/POSContext.tsx), [`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx), [`MenuView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/MenuView.tsx), [`ItemModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/ItemModal.tsx))
+- **Type**: Menu Item Tax Configuration & Real-Time POS Billing Engine
+- **Summary**:
+  - **Active Global Tax by Default**: All new and existing dishes have "Apply Global Tax" enabled by default, applying the restaurant-wide tax rate in billing.
+  - **Remove Global Tax (0% Tax-Free)**: When a cafe owner disables "Apply Global Tax" for a dish without adding manual taxes, the system treats it as completely tax-exempt. In cart, checkout, dine-in table orders, and printed receipts, **0% tax** is calculated and applied for that item.
+  - **Remove Global Tax & Add Manual Tax**: When "Apply Global Tax" is disabled and custom manual taxes are added (e.g. `VAT 12%`, `Cess 2%`), only those manual taxes are applied to that item at billing.
+  - **Modal State Synchronization**: Fixed `ConfigItemModal` state lifecycle with `useEffect` to reliably synchronize `useGlobalTax` and manual taxes whenever opening any dish. Left sidebar badge displays `Global`, `X Manual`, or `0% Tax`.
+  - **Robust Resolution Engine in POS**: Unified per-item tax rate resolution in `POSContext.tsx` (`getCartTotals`) and `POSTableSidebar.tsx` (`getTableOrderTotals`), inspecting authoritative menu item settings and removing any erroneous subtotal tax bleed.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Custom Taxes Builder & Reverse Tax Calculation Engine ([`SettingsView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/SettingsView.tsx), [`POSContext.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/context/POSContext.tsx), [`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx), [`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx), [`CheckoutModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/CheckoutModal.tsx), [`thermalPrintUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/thermalPrintUtils.ts))
+- **Type**: Tax & Billing Configuration & Calculation Engine
+- **Summary**:
+  - **Custom Taxes Builder**: Replaced the single global tax input form with an interactive custom taxes manager. Cafe owners can add and configure multiple custom tax types (such as `CGST`, `SGST`, `VAT`, `Cess`, `Service Tax`) with individual rates, custom titles, row deletion, and quick presets (`No Tax`, `GST 5%`, `GST 12%`, `GST 18%`, `VAT 5%`).
+  - **Reverse Calculation Toggle Placement & Intuitive Cafe Owner Guide**:
+    - Relocated the Reverse Calculation toggle to the bottom control card directly beside `+ Add Tax Type` and immediately above the **Live Bill Tax Simulation**, allowing cafe owners to immediately see the simulated bill adjust in real-time as they toggle.
+    - Added an easy-to-understand explanation specifically written for cafe owners with real numerical examples:
+      - *Menu Prices Already Include Tax (Inclusive)*: "Customers pay the exact price shown on your menu card. The system automatically back-calculates the base dish price and tax portion for accounts & GST filing (e.g. ₹100 coffee on menu = ₹95.24 item + ₹4.76 GST → Customer pays ₹100)."
+      - *Taxes Added Extra at Billing (Standard / Exclusive)*: "Menu prices do not include taxes. The system adds tax on top of the bill at checkout (e.g. ₹100 coffee on menu + 5% GST = ₹105 bill → Customer pays ₹105)."
+  - **Removed Active License Card**: Removed the "Active License" card from the Tax & Billing settings tab as requested.
+  - **Live Bill Tax Simulation**: Preserved the 3-box real-time simulation card (`Sample Subtotal`, `Tax Amount`, `Simulated Grand Total`), enhanced with dynamic reverse calculation and itemized breakdowns for multi-tier taxes (e.g. CGST + SGST).
+  - **End-to-End System Integration**: Integrated reverse calculation and custom taxes into `POSContext` cart totals, `POSTableSidebar` table order totals, `POSCartSidebar`, `CheckoutModal`, and thermal printer receipts.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Item Configuration Modal Left Sidebar Navigation ([`ConfigItemModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/ConfigItemModal.tsx))
+- **Type**: Menu Item Configuration UI/UX Redesign
+- **Summary**:
+  - **Replaced Horizontal Tabs with Left Category Navigation**: Replaced the top horizontal tab buttons (`[ Inventory (0) ] [ Add-ons (0) ] [ Taxes (0) ]`) with a vertical left sidebar styled like category selection.
+  - **Streamlined Category Labels (Descriptions Removed)**:
+    - Left sidebar categories exclusively display:
+      1. **Inventory** (with icon & active ingredient count)
+      2. **Add-ons** (renamed from Customer Add-ons, with icon & active linked count)
+      3. **Taxes** (with icon & active tax status badge)
+    - Removed sub-descriptions from the sidebar items to keep the navigation ultra-clean, compact, and scannable.
+  - **Dynamic Section Selection & Form Population**:
+    - Selecting an item from the left sidebar immediately populates its respective form configuration on the right side:
+      1. **Inventory**: Raw Ingredients (Stock Deduction) recipe management with ingredient name autocomplete, quantity per dish, unit selector, and dynamic inventory deduction.
+      2. **Add-ons (Separated Dual Lists)**:
+         - **Selected Add-ons (Left List)**: Displays all currently attached add-ons with active count pill, green check indicator, and 1-click removal button (hover reveals red `X`). Clicking any selected item detaches it and moves it back to the available list.
+         - **Available Add-ons (Right List)**: Displays all unselected add-ons in the restaurant with plus icon badges and interactive instant search filter. Clicking any available item instantly attaches it, moving it to the selected list on the left.
+         - Inline "Create New Add-on" modal form creates and automatically links new add-ons directly into the selected list.
+      3. **Taxes**: Global store tax toggle and custom manual tax rate definitions.
+  - **Item Metadata Badge**: Preserved the dish summary footer in the sidebar showing the item's category and base price.
+  - **Expanded Modal Sizing**: Expanded modal width to `max-w-4xl` with border-separated master-detail layout for desktop and tablet displays, with responsive horizontal scrolling on mobile.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Item Modal Terminology & Button Standardization ([`ItemModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/ItemModal.tsx))
+- **Type**: Menu Modal UI/UX Standardization
+- **Summary**:
+  - **Button Naming**: Updated submit buttons to **'Add Item'** (when creating) and **'Update Item'** (when editing), replacing legacy `"Save Dish"` and `"Update Dish"`.
+  - **Modal Title**: Changed modal title to **'Add Item'** (when creating) and **'Update Item'** (when editing).
+  - **Item Name Field**: Renamed `"DISH / BEVERAGE NAME"` to **"ITEM NAME"**.
+  - **Item Type Field**: Renamed `"DIETARY PREFERENCE"` to **"ITEM TYPE"**.
+  - **Status & Photo Labels**: Renamed `"DISH STATUS"` to **"ITEM STATUS"** and `"DISH PHOTO (OPTIONAL)"` to **"ITEM PHOTO (OPTIONAL)"**.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Menu Management Layout Optimization, Direct Subcategory Creation & Sidebar Cleanup ([`Sidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/common/Sidebar.tsx), [`MenuItemsGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/MenuItemsGrid.tsx), [`CategoryModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/menu/CategoryModal.tsx), [`category.controller.ts`](file:///c:/Learning/projects/qsrsystem/backend/src/category/category.controller.ts), [`category.service.ts`](file:///c:/Learning/projects/qsrsystem/backend/src/category/category.service.ts))
+- **Type**: Menu Management UI/UX Streamlining & Admin Sidebar Refinements
+- **Summary**:
+  - **Sidebar Cafe Click Removal (`Sidebar.tsx`)**: Removed the `onClick` event and `cursor-pointer` styling from the top-left cafe monogram logo and cafe name/code, preventing the store profile modal from opening unintentionally.
+  - **Menu Header & Search Unification (`MenuItemsGrid.tsx`)**:
+    - Moved the `Search by menu name...` input directly into the top category header line, positioned beside the category title and the `Add Item` button.
+    - Completely removed the secondary dietary filter chips row (`Diet: All, Veg, Non-Veg, Egg, Vegan`) under Item List to eliminate clutter.
+  - **Renamed Add Button (`MenuItemsGrid.tsx`)**: Renamed `"Add Dish / Beverage"` to `"Add Item"`.
+  - **Direct Subcategory Addition (`MenuItemsGrid.tsx`)**:
+    - Added a dedicated `+` icon button directly in the subcategories strip.
+    - Cashiers/managers can add a new subcategory with 1 tap via a focused modal without navigating into the Edit Category form.
+    - Automatically updates the database via dedicated `POST /category/:id/subcategory` endpoint and selects the newly created subcategory.
+  - **Iconic Dietary Symbols in Table (`MenuItemsGrid.tsx`)**: Replaced text badges (`Veg`, `Non-Veg`, `Egg`, `Vegan`) in the item table with clean, standard food classification symbols (pure icon without text) matching food packaging standards.
+  - **Category Modal Streamlining (`CategoryModal.tsx`)**: Removed the `Subcategories (Optional)` input and tag chips from the Category Add/Edit modal. Both Add and Edit Category forms now exclusively focus on Category Visibility, Category Name, and Description.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Notification Window Cleanup & Dashboard Quick Operations Streamlining ([`Header.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/common/Header.tsx), [`DashboardView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/dashboard/DashboardView.tsx))
+- **Type**: Notification Window Cleanup & Dashboard Streamlining
+- **Summary**:
+  - **Notification Window Cleanup (`Header.tsx`)**:
+    - Removed the "Today's Cleared Orders" accordion drawer from the top notification bell dropdown.
+    - When all notifications are caught up, the window cleanly displays "All today's orders and alerts have been read. No pending notifications." without cluttering the popup with old cleared orders.
+    - Removed obsolete `showCleared` state, toggles, and unused `Chevron` icons.
+  - **Dashboard Quick Operations Removal (`DashboardView.tsx`)**:
+    - Removed the redundant "Quick Operations" card from the dashboard bottom row since all links (Quick POS, Table POS, Menu, Inventory, Reports, Settings) are already permanently accessible via the left navigation sidebar.
+    - Expanded **Recent Completed Orders** to full width (`w-full`), giving each order line ample room for order number, items count, payment method tag, timestamps, and payment status badges.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Modernized Restaurant Dashboard & Operational Intelligence ([`DashboardView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/dashboard/DashboardView.tsx), [`PaymentBreakdownCard.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/dashboard/PaymentBreakdownCard.tsx), [`TopSellingCard.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/dashboard/TopSellingCard.tsx), [`InventoryAlertCard.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/dashboard/InventoryAlertCard.tsx), [`RecentActivity.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/dashboard/RecentActivity.tsx))
+- **Type**: Dashboard UI/UX Overhaul & Real-Time Operational Analytics
+- **Summary**:
+  - **Removed Redundant Header**: Stripped out the redundant "Store Performance & Overview" white container card from the top of the dashboard, reclaiming vertical screen estate and immediately highlighting the primary KPI cards.
+  - **Preserved Core Metrics**:
+    - **Orders Today**: Number of completed tickets with trend vs yesterday.
+    - **Today's Gross**: Total sales revenue with trend vs yesterday.
+    - **Avg Bill Value**: Added average order ticket size calculation (`Today's Gross / Orders Today`) to complete the 4-card KPI grid.
+    - **Occupied Tables**: Live floor occupancy with percentage capacity bar, occupied vs free counts, and live pulse dot.
+    - **Weekly Sales Velocity**: 7-day bar chart preserved with day-of-month dates, weekday headers, and 7-day total revenue badge.
+  - **New Recommended Operational Widgets**:
+    - **Payment Methods Today (`PaymentBreakdownCard.tsx`)**: Reconciles daily register collection with exact breakdown of Cash (in drawer), UPI/Online QR, and Card/Other payments. Features a multi-segment progress bar and register closing cash reconciliation tip.
+    - **Today's Best Sellers (`TopSellingCard.tsx`)**: Displays top 5 menu dishes ranked by order count and revenue, complete with Indian vegetarian/non-vegetarian/egg indicator symbols.
+    - **Kitchen Pantry Health (`InventoryAlertCard.tsx`)**: Scans inventory for items at or below safety threshold, displaying real-time stock levels, minimum alerts, and 1-click restock shortcut to `/inventory` (or healthy reassurance state if all items are well-stocked).
+    - **Recent Completed Orders (`RecentActivity.tsx`)**: Upgraded live feed displaying daily order sequence numbers (`#1`, `#2`, etc.), order completion times, items count, payment method tags, and bill amounts.
+    - **Quick Operations (`QuickActions.tsx`)**: Added 6 high-speed launch buttons with distinct color badges and subtitles for Takeaway POS (`/pos?mode=quick`), Dine-In Floor (`/pos?mode=table`), Food Menu (`/menu`), Stock Audit (`/inventory`), Sales Reports (`/reports`), and Store Settings (`/settings`).
+
+---
+
+
 - **Type**: Floor Section Filter & Category/Diet Navigation Speed Overhaul
 - **Summary**:
   - **Fast Area Selector Dropdown (`POSTableSidebar.tsx`)**:

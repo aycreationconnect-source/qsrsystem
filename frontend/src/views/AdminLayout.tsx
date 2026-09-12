@@ -38,7 +38,6 @@ export const AdminLayout: React.FC = () => {
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={handleToggleSidebar}
-          onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
         />
       </div>
 
@@ -53,10 +52,6 @@ export const AdminLayout: React.FC = () => {
       >
         <Sidebar
           isMobileDrawer={true}
-          onOpenStoreProfile={() => {
-            setIsMobileNavOpen(false);
-            setIsStoreProfileModalOpen(true);
-          }}
           onCloseMobileNav={() => setIsMobileNavOpen(false)}
         />
       </Drawer>

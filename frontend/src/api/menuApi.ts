@@ -8,6 +8,15 @@ export const menuApi = {
     apiFetch<Category>('/category', { method: 'POST', body: JSON.stringify(data) }),
   updateCategory: (id: number, data: Partial<Category>) =>
     apiFetch<Category>(`/category/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  addSubcategory: (categoryId: number, name: string) =>
+    apiFetch<Category>(`/category/${categoryId}/subcategory`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  removeSubcategory: (categoryId: number, name: string) =>
+    apiFetch<Category>(`/category/${categoryId}/subcategory/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    }),
   deleteCategory: (id: number) =>
     apiFetch<{ success: boolean }>(`/category/${id}`, { method: 'DELETE' }),
 

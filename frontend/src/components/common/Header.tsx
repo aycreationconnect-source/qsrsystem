@@ -11,13 +11,12 @@ import {
   CheckCheck,
   Check,
   Clock,
-  ChevronDown,
-  ChevronUp,
   ChevronRight,
   Sparkles,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { isToday, buildDailyOrderNumberMap } from '../../lib/orderUtils';
+import { PackageDetailsModal } from './PackageDetailsModal';
 
 export interface HeaderProps {
   onToggleMobileNav?: () => void;
@@ -52,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
   const location = useLocation();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [showCleared, setShowCleared] = useState(false);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
 
   // Read notification IDs persisted in localStorage so washed-out orders stay washed out across reloads
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
@@ -173,8 +172,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
 
   // Active (unread / not washed out) notifications
   const activeNotifications = allNotifications.filter((n) => !readNotificationIds.has(n.id));
-  // Washed out (already read) notifications
-  const clearedNotifications = allNotifications.filter((n) => readNotificationIds.has(n.id));
   const unreadCount = activeNotifications.length;
 
   const saveReadIds = (updatedSet: Set<string>) => {
@@ -271,13 +268,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
 
       {/* Right: License Status Pill, Notifications Bell & User Avatar */}
       <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-        {/* License Pill */}
+        {/* License Pill (Click to open Package Details Modal) */}
         {licenseStatus && (
-          <Tooltip content={`Node Licensed to ${storeProfile?.businessName}`} position="bottom">
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60">
+          <Tooltip content={`Licensed to ${storeProfile?.businessName || 'Store'} • Click to view Package Details`} position="bottom">
+            <button
+              type="button"
+              onClick={() => setIsPackageModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/60 transition-all cursor-pointer shadow-xs active:scale-95 group select-none"
+            >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>{licenseStatus.daysRemaining} Days Left</span>
-            </div>
+            </button>
           </Tooltip>
         )}
 
@@ -347,9 +348,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
                       All caught up!
                     </p>
                     <p className="text-[11px] text-stone-400 mt-0.5 max-w-[220px] mx-auto leading-normal">
-                      {clearedNotifications.length > 0
-                        ? "All today's orders and alerts have been marked as read and cleared."
-                        : 'No pending orders or system alerts today.'}
+                      All today's orders and alerts have been read. No pending notifications.
                     </p>
                   </div>
                 ) : (
@@ -450,54 +449,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
                     );
                   })
                 )}
-
-                {/* Cleared / Washed Out Orders Drawer */}
-                {clearedNotifications.length > 0 && (
-                  <div className="border-t border-stone-200/80 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/50">
-                    <button
-                      type="button"
-                      onClick={() => setShowCleared((prev) => !prev)}
-                      className="w-full py-2 px-3 text-[11px] font-bold text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200 flex items-center justify-between cursor-pointer transition-colors"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <CheckCheck className="w-3.5 h-3.5 text-stone-400" />
-                        <span>Today's Cleared Orders ({clearedNotifications.length})</span>
-                      </span>
-                      {showCleared ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-stone-400" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
-                      )}
-                    </button>
-
-                    {showCleared && (
-                      <div className="divide-y divide-stone-100 dark:divide-stone-800/60 max-h-48 overflow-y-auto">
-                        {clearedNotifications.map((n) => (
-                          <div
-                            key={n.id}
-                            className="p-2.5 px-3 flex items-center justify-between text-xs text-stone-400 dark:text-stone-500 hover:bg-stone-100/60 dark:hover:bg-stone-800/40"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Receipt className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                              <span className="font-semibold text-stone-700 dark:text-stone-300 truncate">
-                                {n.title}
-                              </span>
-                              {typeof n.amount === 'number' && (
-                                <span className="font-mono text-[11px] font-semibold text-stone-600 dark:text-stone-400">
-                                  ₹{n.amount.toFixed(2)}
-                                </span>
-                              )}
-                            </div>
-
-                            <span className="text-[10px] font-mono shrink-0 ml-2">
-                              {n.time || n.timeAgo}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -519,6 +470,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
           </div>
         </div>
       </div>
+
+      {/* Package & License Details Modal */}
+      <PackageDetailsModal
+        isOpen={isPackageModalOpen}
+        onClose={() => setIsPackageModalOpen(false)}
+      />
     </header>
   );
 };

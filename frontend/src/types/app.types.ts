@@ -137,6 +137,8 @@ export interface Table {
 export interface Settings {
   globalTaxName?: string;
   globalTaxRate?: string;
+  customTaxes?: string;
+  taxCalculationType?: 'exclusive' | 'reverse';
   [key: string]: any;
 }
 

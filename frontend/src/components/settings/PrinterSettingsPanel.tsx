@@ -269,17 +269,17 @@ export const PrinterSettingsPanel: React.FC = () => {
       )}
 
       {/* Global Default Printer Roll Setup Card */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs">
+      <div className="bg-white dark:bg-stone-900 border border-sky-500/40 dark:border-sky-500/30 rounded-2xl p-3 sm:p-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                 <Printer className="w-3.5 h-3.5" />
               </div>
               <h3 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 whitespace-nowrap">
                 Default Thermal Page & Paper Format
               </h3>
-              <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+              <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shrink-0">
                 DEFAULT: {defaultPaperWidth.toUpperCase()}
               </span>
             </div>
@@ -299,7 +299,7 @@ export const PrinterSettingsPanel: React.FC = () => {
               className={cn(
                 'text-xs font-bold transition-colors cursor-pointer px-1.5',
                 defaultPaperWidth === '58mm'
-                  ? 'text-amber-600 dark:text-amber-400 font-extrabold'
+                  ? 'text-sky-600 dark:text-sky-400 font-extrabold'
                   : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'
               )}
             >
@@ -318,7 +318,7 @@ export const PrinterSettingsPanel: React.FC = () => {
               }}
               className={cn(
                 'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                defaultPaperWidth === '80mm' ? 'bg-amber-500' : 'bg-stone-300 dark:bg-stone-600'
+                defaultPaperWidth === '80mm' ? 'bg-sky-500' : 'bg-stone-300 dark:bg-stone-600'
               )}
             >
               <span
@@ -338,7 +338,7 @@ export const PrinterSettingsPanel: React.FC = () => {
               className={cn(
                 'text-xs font-bold transition-colors cursor-pointer px-1.5',
                 defaultPaperWidth === '80mm'
-                  ? 'text-amber-600 dark:text-amber-400 font-extrabold'
+                  ? 'text-sky-600 dark:text-sky-400 font-extrabold'
                   : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'
               )}
             >
@@ -382,17 +382,17 @@ export const PrinterSettingsPanel: React.FC = () => {
               className={cn(
                 'flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-2 border select-none',
                 isActive
-                  ? 'bg-white dark:bg-stone-900 text-amber-950 dark:text-amber-200 border-stone-200/80 dark:border-stone-700 shadow-xs'
+                  ? 'bg-white dark:bg-stone-900 text-sky-950 dark:text-sky-200 border-sky-500/40 dark:border-sky-700 shadow-xs'
                   : 'text-stone-600 dark:text-stone-400 border-transparent hover:text-stone-900 dark:hover:text-stone-200'
               )}
             >
-              <span className={cn(isActive ? 'text-amber-500' : 'text-stone-400')}>{tab.icon}</span>
+              <span className={cn(isActive ? 'text-sky-500' : 'text-stone-400')}>{tab.icon}</span>
               <span>{tab.label}</span>
               <span
                 className={cn(
                   'text-[10px] px-1.5 py-0.2 rounded-full font-bold hidden sm:inline-block',
                   isActive
-                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
+                    ? 'bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300'
                     : 'bg-stone-200/60 dark:bg-stone-700/60 text-stone-500 dark:text-stone-400'
                 )}
               >
@@ -411,10 +411,10 @@ export const PrinterSettingsPanel: React.FC = () => {
         <div className="lg:col-span-7 space-y-6">
           {/* TAB 1: BILL PRINT CONFIGURATION */}
           {activeSubTab === 'bill' && (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+            <div className="bg-white dark:bg-stone-900 border border-sky-500/30 dark:border-sky-500/25 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
                     <Receipt className="w-4 h-4" />
                   </div>
                   <div>

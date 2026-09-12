@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, IndianRupee, Armchair, TrendingUp, TrendingDown } from 'lucide-react';
+import { ShoppingBag, IndianRupee, Armchair, TrendingUp, TrendingDown, Receipt } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface StatCardsProps {
@@ -9,6 +9,7 @@ interface StatCardsProps {
   revenueTrend: number;
   activeTablesCount: number;
   totalTables: number;
+  avgOrderValue?: number;
 }
 
 export const StatCards: React.FC<StatCardsProps> = ({
@@ -18,19 +19,25 @@ export const StatCards: React.FC<StatCardsProps> = ({
   revenueTrend,
   activeTablesCount,
   totalTables,
+  avgOrderValue = 0,
 }) => {
   const occupancyRate = totalTables > 0 ? Math.round((activeTablesCount / totalTables) * 100) : 0;
   const availableTables = Math.max(0, totalTables - activeTablesCount);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
       {/* 1. Total Orders */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm flex flex-col justify-between group relative">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-            Orders Today
-          </span>
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+              Orders Today
+            </span>
+            <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5">
+              Completed tickets
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
             <ShoppingBag className="w-5 h-5" />
           </div>
         </div>
@@ -61,12 +68,17 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* 2. Total Revenue */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm flex flex-col justify-between group relative">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-            Today's Gross
-          </span>
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+              Today's Gross
+            </span>
+            <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5">
+              Total sales revenue
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
             <IndianRupee className="w-5 h-5" />
           </div>
         </div>
@@ -96,22 +108,52 @@ export const StatCards: React.FC<StatCardsProps> = ({
         </div>
       </div>
 
-      {/* 3. Active Floor Tables */}
-      <div
-        role="button"
-        tabIndex={0}
-        className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative"
-      >
+      {/* 3. Average Bill Value */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 flex items-center gap-1.5">
-            <span>Occupied Tables</span>
-            {totalTables > 0 && (
-              <span className="text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded">
-                {occupancyRate}%
-              </span>
-            )}
-          </span>
-          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+              Avg Bill Value
+            </span>
+            <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5">
+              Average spend / order
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Receipt className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="text-3xl font-extrabold text-stone-900 dark:text-stone-100 font-mono">
+            ₹{avgOrderValue.toFixed(2)}
+          </div>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300">
+              Ticket Size
+            </span>
+            <span className="text-[11px] text-stone-400">per order</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Active Floor Tables */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+              <span>Occupied Tables</span>
+              {totalTables > 0 && (
+                <span className="text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded">
+                  {occupancyRate}%
+                </span>
+              )}
+            </span>
+            <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5">
+              Live floor occupancy
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center group-hover:scale-105 transition-transform">
             <Armchair className="w-5 h-5" />
           </div>
         </div>

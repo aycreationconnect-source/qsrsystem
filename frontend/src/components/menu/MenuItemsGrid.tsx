@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Button, Badge, Tooltip } from '../ui';
+import { Button, Tooltip, Modal } from '../ui';
+import { menuApi } from '../../api/menuApi';
 import {
   Plus,
   Settings2,
@@ -8,13 +9,10 @@ import {
   Trash2,
   UtensilsCrossed,
   Layers,
-  Filter,
   Search,
   X,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-type DietFilter = 'All' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan';
 
 interface MenuItemsGridProps {
   selectedCategory: string | null;
@@ -35,15 +33,19 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
   onEditItem,
   onDeleteItem,
 }) => {
-  const { appData } = useApp();
+  const { appData, refreshCategories } = useApp();
 
-  // Search and Dietary Filter states (Default selected: 'Veg')
+  // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDiet, setSelectedDiet] = useState<DietFilter>('Veg');
 
-  // Reset dietary filter to 'Veg' and clear search when category changes
+  // Add Subcategory Modal State
+  const [isAddSubcatModalOpen, setIsAddSubcatModalOpen] = useState(false);
+  const [newSubcatName, setNewSubcatName] = useState('');
+  const [isSavingSubcat, setIsSavingSubcat] = useState(false);
+  const [subcatError, setSubcatError] = useState<string | null>(null);
+
+  // Clear search when category changes
   useEffect(() => {
-    setSelectedDiet('Veg');
     setSearchQuery('');
   }, [selectedCategory]);
 
@@ -63,55 +65,17 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
       : allCategoryItems;
   }, [allCategoryItems, selectedCategory, selectedSubcategory]);
 
-  // Live item counts per dietary classification
-  const dietCounts = useMemo(() => {
-    const counts: Record<DietFilter, number> = {
-      All: subcategoryScopedItems.length,
-      Veg: 0,
-      'Non-Veg': 0,
-      Egg: 0,
-      Vegan: 0,
-    };
-
-    subcategoryScopedItems.forEach((m: any) => {
-      const type = m.type || 'Veg';
-      if (type === 'Non-Veg') counts['Non-Veg']++;
-      else if (type === 'Egg') counts['Egg']++;
-      else if (type === 'Vegan') counts['Vegan']++;
-      else counts['Veg']++;
-    });
-
-    return counts;
-  }, [subcategoryScopedItems]);
-
-  // Filter items by active dietary filter and search query
+  // Filter items by search query
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
     return subcategoryScopedItems.filter((item: any) => {
-      // Dietary filter
-      if (selectedDiet !== 'All') {
-        const itemType = item.type || 'Veg';
-        if (itemType !== selectedDiet) return false;
-      }
-
-      // Search by Menu Name (case-insensitive substring match)
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
         if (!item.name?.toLowerCase().includes(q)) return false;
       }
-
       return true;
     });
-  }, [subcategoryScopedItems, selectedCategory, selectedDiet, searchQuery]);
-
-  // Cross-diet search helper: checks if other dietary filters have matches when current diet yields none
-  const crossDietMatches = useMemo(() => {
-    if (!searchQuery.trim() || selectedDiet === 'All' || !selectedCategory) return [];
-    const q = searchQuery.trim().toLowerCase();
-    return subcategoryScopedItems.filter(
-      (m: any) => (m.type || 'Veg') !== selectedDiet && m.name?.toLowerCase().includes(q)
-    );
-  }, [subcategoryScopedItems, selectedCategory, selectedDiet, searchQuery]);
+  }, [subcategoryScopedItems, selectedCategory, searchQuery]);
 
   if (!selectedCategory) {
     return (
@@ -131,227 +95,192 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
   const currentCatObj = (appData.categories || []).find((c: any) => {
     const name = typeof c === 'string' ? c : c.name;
     return name === selectedCategory;
-  });
+  }) as any;
 
   const subcategories: string[] =
     currentCatObj && typeof currentCatObj !== 'string' && Array.isArray(currentCatObj.subcategories)
       ? currentCatObj.subcategories
       : [];
 
-  // Dietary chip configurations
-  const dietChips: {
-    id: DietFilter;
-    label: string;
-    icon?: React.ReactNode;
-    count: number;
-  }[] = [
-    {
-      id: 'All',
-      label: 'All',
-      count: dietCounts.All,
-    },
-    {
-      id: 'Veg',
-      label: 'Veg',
-      icon: <span className="badge-diet-veg scale-75 shrink-0" />,
-      count: dietCounts.Veg,
-    },
-    {
-      id: 'Non-Veg',
-      label: 'Non-Veg',
-      icon: <span className="badge-diet-nonveg scale-75 shrink-0" />,
-      count: dietCounts['Non-Veg'],
-    },
-    {
-      id: 'Egg',
-      label: 'Egg',
-      icon: <span className="text-xs leading-none shrink-0">🟡</span>,
-      count: dietCounts.Egg,
-    },
-    {
-      id: 'Vegan',
-      label: 'Vegan',
-      icon: <span className="text-xs leading-none shrink-0">🌱</span>,
-      count: dietCounts.Vegan,
-    },
-  ];
-
-  const getChipStyle = (id: DietFilter) => {
-    const isSelected = selectedDiet === id;
-    if (!isSelected) {
-      return 'bg-white dark:bg-stone-850 text-stone-600 dark:text-stone-400 border border-stone-200/90 dark:border-stone-800 hover:bg-stone-100/70 dark:hover:bg-stone-800';
+  const handleSaveSubcat = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = newSubcatName.trim();
+    if (!trimmed) {
+      setSubcatError('Please enter a subcategory name');
+      return;
     }
-    switch (id) {
-      case 'All':
-        return 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-sm ring-1 ring-stone-900/10 font-bold';
-      case 'Veg':
-        return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-2 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20 font-extrabold';
-      case 'Non-Veg':
-        return 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-2 border-rose-500 shadow-sm ring-2 ring-rose-500/20 font-extrabold';
-      case 'Egg':
-        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border-2 border-amber-500 shadow-sm ring-2 ring-amber-500/20 font-extrabold';
-      case 'Vegan':
-        return 'bg-green-50 dark:bg-green-950/60 text-green-800 dark:text-green-200 border-2 border-green-600 shadow-sm ring-2 ring-green-600/20 font-extrabold';
+
+    if (!currentCatObj?.id) {
+      setSubcatError('Category ID not found');
+      return;
+    }
+
+    if (subcategories.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      setSubcatError(`Subcategory "${trimmed}" already exists in this category`);
+      return;
+    }
+
+    try {
+      setIsSavingSubcat(true);
+      setSubcatError(null);
+      await menuApi.addSubcategory(currentCatObj.id, trimmed);
+      await refreshCategories();
+      setSelectedSubcategory?.(trimmed);
+      setNewSubcatName('');
+      setIsAddSubcatModalOpen(false);
+    } catch (err: any) {
+      setSubcatError(err.message || 'Failed to add subcategory');
+    } finally {
+      setIsSavingSubcat(false);
     }
   };
 
-  const getCountBadgeStyle = (id: DietFilter) => {
-    const isSelected = selectedDiet === id;
-    if (!isSelected) {
-      return 'bg-stone-100 dark:bg-stone-750 text-stone-500 dark:text-stone-400';
-    }
-    switch (id) {
-      case 'All':
-        return 'bg-stone-800 dark:bg-stone-200 text-stone-100 dark:text-stone-900';
-      case 'Veg':
-        return 'bg-emerald-200/90 dark:bg-emerald-900/90 text-emerald-900 dark:text-emerald-100';
-      case 'Non-Veg':
-        return 'bg-rose-200/90 dark:bg-rose-900/90 text-rose-900 dark:text-rose-100';
-      case 'Egg':
-        return 'bg-amber-200/90 dark:bg-amber-900/90 text-amber-900 dark:text-amber-100';
-      case 'Vegan':
-        return 'bg-green-200/90 dark:bg-green-900/90 text-green-900 dark:text-green-100';
+  const handleDeleteSubcat = async (subNameToDelete: string) => {
+    if (!currentCatObj?.id) return;
+    if (!window.confirm(`Are you sure you want to delete subcategory "${subNameToDelete}"?`)) return;
+    try {
+      await menuApi.removeSubcategory(currentCatObj.id, subNameToDelete);
+      await refreshCategories();
+      if (selectedSubcategory === subNameToDelete) {
+        setSelectedSubcategory?.(null);
+      }
+    } catch (err) {
+      console.error('Failed to remove subcategory', err);
     }
   };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-stone-50/40 dark:bg-stone-950/20">
-      {/* Top Header */}
-      <div className="p-4 sm:p-5 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
-        <div>
+      {/* Top Header Row: Category Name, Search by Menu Name & Add Item Button */}
+      <div className="p-4 sm:p-5 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        <div className="min-w-0">
           <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-            <span>{selectedCategory}</span>
-            <span className="text-xs font-semibold text-stone-400">
+            <span className="truncate">{selectedCategory}</span>
+            <span className="text-xs font-semibold text-stone-400 shrink-0">
               ({allCategoryItems.length} {allCategoryItems.length === 1 ? 'item' : 'items'})
             </span>
           </h3>
           {subcategories.length > 0 && (
-            <span className="text-[11px] text-stone-400 font-medium">
+            <span className="text-[11px] text-stone-400 font-medium block mt-0.5">
               {subcategories.length} subcategories configured
             </span>
           )}
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => onAddItem(selectedDiet !== 'All' ? selectedDiet : 'Veg')}
-          leftIcon={<Plus className="w-4 h-4" />}
-          className="font-bold cursor-pointer"
-        >
-          Add Dish / Beverage
-        </Button>
-      </div>
-
-      {/* Filter Controls: Dietary Chips & Search by Menu Name */}
-      <div className="px-4 sm:px-6 py-2.5 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        {/* Dietary Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-stone-400" />
-            <span>Diet:</span>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Search by Menu Name (Moved to header row) */}
+          <div className="relative flex-1 sm:w-64 md:w-72 shrink-0">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by menu name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-[36px] bg-stone-50 dark:bg-stone-800/80 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-xs sm:text-sm pl-9 pr-8 rounded-xl border border-stone-200 dark:border-stone-700 focus:border-amber-500 focus:bg-white dark:focus:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-0.5 rounded-full hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {dietChips.map((chip) => {
-            const isSelected = selectedDiet === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setSelectedDiet(isSelected && chip.id !== 'All' ? 'All' : chip.id)}
-                className={cn(
-                  'px-3 py-1.5 rounded-xl text-xs transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 select-none',
-                  getChipStyle(chip.id)
-                )}
-              >
-                {chip.icon}
-                <span>{chip.label}</span>
-                <span
-                  className={cn(
-                    'text-[10px] px-1.5 py-0.2 rounded-full font-bold',
-                    getCountBadgeStyle(chip.id)
-                  )}
-                >
-                  {chip.count}
-                </span>
-              </button>
-            );
-          })}
+          {/* Renamed to Add Item */}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => onAddItem('Veg')}
+            leftIcon={<Plus className="w-4 h-4" />}
+            className="font-bold cursor-pointer whitespace-nowrap shrink-0"
+          >
+            Add Item
+          </Button>
+        </div>
+      </div>
+
+      {/* Subcategories Filter Chips Bar with Direct '+' Button */}
+      <div className="px-4 sm:px-6 py-2 bg-stone-50/80 dark:bg-stone-900/60 border-b border-stone-200/60 dark:border-stone-800/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+        <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1 shrink-0">
+          <Layers className="w-3.5 h-3.5 text-amber-500" />
+          <span>Subcategories:</span>
         </div>
 
-        {/* Search by Menu Name */}
-        <div className="relative w-full sm:w-64 md:w-72 shrink-0">
-          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by menu name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-[36px] bg-stone-50 dark:bg-stone-800/80 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-xs sm:text-sm pl-9 pr-8 rounded-xl border border-stone-200 dark:border-stone-700 focus:border-amber-500 focus:bg-white dark:focus:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
-          />
-          {searchQuery && (
+        {subcategories.length > 0 ? (
+          <>
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-0.5 rounded-full hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors cursor-pointer"
-              title="Clear search"
+              onClick={() => setSelectedSubcategory?.(null)}
+              className={cn(
+                'px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer',
+                selectedSubcategory === null
+                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-sm'
+                  : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-750'
+              )}
             >
-              <X className="w-3.5 h-3.5" />
+              All Subcategories ({allCategoryItems.length})
             </button>
-          )}
-        </div>
+
+            {subcategories.map((sub) => {
+              const count = allCategoryItems.filter((m: any) => m.subcategory === sub).length;
+              const isSubSelected = selectedSubcategory === sub;
+              return (
+                <div key={sub} className="relative inline-flex items-center group">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubcategory?.(isSubSelected ? null : sub)}
+                    className={cn(
+                      'px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5',
+                      isSubSelected
+                        ? 'bg-amber-500 text-stone-950 shadow-sm font-extrabold ring-1 ring-amber-400'
+                        : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-750'
+                    )}
+                  >
+                    <span>{sub}</span>
+                    <span
+                      className={cn(
+                        'text-[10px]',
+                        isSubSelected ? 'text-stone-900 font-extrabold' : 'text-stone-400'
+                      )}
+                    >
+                      ({count})
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSubcat(sub);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-0.5 -ml-1 mr-1 rounded-full text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+                    title={`Delete subcategory "${sub}"`}
+                  >
+                    <X className="w-3 h-3 stroke-[2.5]" />
+                  </button>
+                </div>
+              );
+            })}
+          </>
+        ) : (
+          <span className="text-xs text-stone-400 italic mr-1">No subcategories</span>
+        )}
+
+        {/* Dedicated "+" Add Subcategory Button directly from Menugrid (Image 1) */}
+        <button
+          type="button"
+          onClick={() => setIsAddSubcatModalOpen(true)}
+          title={`Add subcategory directly into "${selectedCategory}"`}
+          className="w-7 h-7 rounded-xl flex items-center justify-center bg-white dark:bg-stone-800 hover:bg-amber-500 text-stone-600 dark:text-stone-300 hover:text-stone-950 border border-stone-200/80 dark:border-stone-700 hover:border-amber-500 shadow-xs transition-all cursor-pointer shrink-0 active:scale-95"
+          aria-label="Add Subcategory"
+        >
+          <Plus className="w-4 h-4 stroke-[2.5]" />
+        </button>
       </div>
-
-      {/* Subcategories Filter Chips Bar (if configured) */}
-      {subcategories.length > 0 && (
-        <div className="px-4 sm:px-6 py-2 bg-stone-50/80 dark:bg-stone-900/60 border-b border-stone-200/60 dark:border-stone-800/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1 shrink-0">
-            <Layers className="w-3.5 h-3.5 text-amber-500" />
-            <span>Subcategories:</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSelectedSubcategory?.(null)}
-            className={cn(
-              'px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer',
-              selectedSubcategory === null
-                ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 shadow-sm'
-                : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-750'
-            )}
-          >
-            All Subcategories ({allCategoryItems.length})
-          </button>
-
-          {subcategories.map((sub) => {
-            const count = allCategoryItems.filter((m: any) => m.subcategory === sub).length;
-            const isSubSelected = selectedSubcategory === sub;
-            return (
-              <button
-                key={sub}
-                type="button"
-                onClick={() => setSelectedSubcategory?.(isSubSelected ? null : sub)}
-                className={cn(
-                  'px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5',
-                  isSubSelected
-                    ? 'bg-amber-500 text-stone-950 shadow-sm font-extrabold ring-1 ring-amber-400'
-                    : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-750'
-                )}
-              >
-                <span>{sub}</span>
-                <span
-                  className={cn(
-                    'text-[10px]',
-                    isSubSelected ? 'text-stone-900 font-extrabold' : 'text-stone-400'
-                  )}
-                >
-                  ({count})
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* Items Table / Empty States Area */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -369,7 +298,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => onAddItem(selectedDiet !== 'All' ? selectedDiet : 'Veg')}
+                  onClick={() => onAddItem('Veg')}
                   leftIcon={<Plus className="w-3.5 h-3.5" />}
                   className="mt-3.5 font-bold cursor-pointer"
                 >
@@ -382,26 +311,10 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                 <span className="font-semibold text-stone-700 dark:text-stone-300 text-sm">
                   No dishes matching "{searchQuery}"
                 </span>
-                {crossDietMatches.length > 0 ? (
-                  <p className="text-stone-500 dark:text-stone-400 text-xs mt-1.5 max-w-sm">
-                    Found {crossDietMatches.length} matching {crossDietMatches.length === 1 ? 'dish' : 'dishes'} in other dietary filters.
-                  </p>
-                ) : (
-                  <p className="text-stone-400 text-xs mt-1">
-                    Try searching with a different keyword or clear the search filter.
-                  </p>
-                )}
+                <p className="text-stone-400 text-xs mt-1">
+                  Try searching with a different keyword or clear the search filter.
+                </p>
                 <div className="flex items-center gap-2 mt-4">
-                  {crossDietMatches.length > 0 && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => setSelectedDiet('All')}
-                      className="font-bold cursor-pointer"
-                    >
-                      View All Results ({crossDietMatches.length})
-                    </Button>
-                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -409,35 +322,6 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                     className="cursor-pointer"
                   >
                     Clear Search
-                  </Button>
-                </div>
-              </>
-            ) : selectedDiet !== 'All' ? (
-              <>
-                <Filter className="w-10 h-10 text-stone-300 dark:text-stone-600 mb-2.5 opacity-50" />
-                <span className="font-semibold text-stone-700 dark:text-stone-300 text-sm">
-                  No {selectedDiet} dishes found in "{selectedSubcategory || selectedCategory}".
-                </span>
-                <p className="text-stone-400 text-xs mt-1">
-                  Switch to "All" to view dishes from other dietary preferences or add a new {selectedDiet} dish.
-                </p>
-                <div className="flex items-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedDiet('All')}
-                    className="cursor-pointer"
-                  >
-                    Show All Items ({subcategoryScopedItems.length})
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => onAddItem(selectedDiet)}
-                    leftIcon={<Plus className="w-3.5 h-3.5" />}
-                    className="font-bold cursor-pointer"
-                  >
-                    Add {selectedDiet} Dish
                   </Button>
                 </div>
               </>
@@ -459,7 +343,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => onAddItem(selectedDiet !== 'All' ? selectedDiet : 'Veg')}
+                    onClick={() => onAddItem('Veg')}
                     leftIcon={<Plus className="w-3.5 h-3.5" />}
                     className="cursor-pointer"
                   >
@@ -475,7 +359,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
               <thead>
                 <tr className="border-b border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-850/60 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12">#</th>
-                  <th className="py-3 px-4">Item Name & Diet</th>
+                  <th className="py-3 px-4">Item Name</th>
                   <th className="py-3 px-4">Subcategory</th>
                   <th className="py-3 px-4">Price</th>
                   <th className="py-3 px-4">Status</th>
@@ -493,17 +377,35 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                         {i + 1}
                       </td>
 
+                      {/* Item Name & Dietary Icon Only (Image 2 - No text) */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
                           {item.type === 'Non-Veg' ? (
-                            <Badge variant="nonveg" size="sm">Non-Veg</Badge>
+                            <span
+                              title="Non-Vegetarian"
+                              className="badge-diet-nonveg shrink-0"
+                            />
                           ) : item.type === 'Egg' ? (
-                            <Badge variant="egg" size="sm">Egg</Badge>
+                            <span
+                              title="Contains Egg"
+                              className="inline-flex items-center justify-center w-3.5 h-3.5 border-[1.5px] border-amber-500 rounded-[3px] p-[1.5px] shrink-0"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            </span>
                           ) : item.type === 'Vegan' ? (
-                            <Badge variant="vegan" size="sm">Vegan</Badge>
+                            <span
+                              title="Vegan"
+                              className="inline-flex items-center justify-center w-3.5 h-3.5 border-[1.5px] border-emerald-600 rounded-[3px] shrink-0 text-[10px] leading-none"
+                            >
+                              🌱
+                            </span>
                           ) : (
-                            <Badge variant="veg" size="sm">Veg</Badge>
+                            <span
+                              title="Vegetarian"
+                              className="badge-diet-veg shrink-0"
+                            />
                           )}
+
                           <span className="font-bold text-stone-900 dark:text-stone-100">
                             {item.name}
                           </span>
@@ -579,6 +481,66 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
           </div>
         )}
       </div>
+
+      {/* Quick Add Subcategory Modal (Point 3) */}
+      <Modal
+        isOpen={isAddSubcatModalOpen}
+        onClose={() => {
+          setIsAddSubcatModalOpen(false);
+          setNewSubcatName('');
+          setSubcatError(null);
+        }}
+        title="Add Subcategory"
+        description={`Directly add a new subcategory under "${selectedCategory}".`}
+        maxWidth="sm"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsAddSubcatModalOpen(false);
+                setNewSubcatName('');
+                setSubcatError(null);
+              }}
+              disabled={isSavingSubcat}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveSubcat}
+              isLoading={isSavingSubcat}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Add Subcategory
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSaveSubcat} className="space-y-4">
+          {subcatError && (
+            <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 text-xs font-semibold border border-rose-200 dark:border-rose-900/50">
+              {subcatError}
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 block">
+              Subcategory Name
+            </label>
+            <input
+              type="text"
+              autoFocus
+              placeholder="e.g. Starters, Cold Brews, Combos"
+              value={newSubcatName}
+              onChange={(e) => setNewSubcatName(e.target.value)}
+              className="w-full h-10 px-3.5 rounded-xl bg-stone-50 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+            />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

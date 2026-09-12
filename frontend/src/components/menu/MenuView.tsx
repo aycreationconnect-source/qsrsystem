@@ -90,9 +90,11 @@ export const MenuView: React.FC = () => {
       item.taxes && item.taxes.length > 0
         ? item.taxes.map((t: any) => ({
             name: t.name || '',
-            rate: t.rate || '',
+            rate: t.rate !== undefined ? String(t.rate) : '',
           }))
-        : [{ name: '', rate: '' }]
+        : item.tax && item.tax !== 0
+        ? [{ name: item.taxName || 'Tax', rate: String(item.tax) }]
+        : []
     );
     setShowConfigModal(true);
   };
@@ -237,6 +239,7 @@ export const MenuView: React.FC = () => {
                   subcategory: selectedSubcategory || '',
                   sku: '',
                   prepTime: '',
+                  useGlobalTax: true,
                 });
                 setShowAddItemModal(true);
               }}

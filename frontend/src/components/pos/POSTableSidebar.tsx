@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getAreaColorTheme } from '../../utils/areaColors';
+import { getStoreGlobalTaxRate, getItemTaxRate } from '../../lib/orderUtils';
 
 type StatusFilterType = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'BILLED' | 'PARTIAL';
 type SortByType = 'default' | 'occupied' | 'name' | 'seats';
@@ -101,37 +102,58 @@ export const POSTableSidebar: React.FC = () => {
 
     let subtotal = 0;
     let tax = 0;
+    let total = 0;
     let itemCount = 0;
 
-    allItems.forEach((item: any) => {
-      if (!item) return;
-      // Strip currency symbols (e.g. ₹, $, commas, etc.)
-      const cleanPrice = String(item.price ?? '').replace(/[^0-9.]/g, '');
-      const price = parseFloat(cleanPrice) || 0;
-      const qty = typeof item.quantity === 'number' ? item.quantity : parseInt(String(item.quantity || 1), 10) || 1;
-      const itemSubtotal = price * qty;
-      subtotal += itemSubtotal;
-      itemCount += qty;
+    const globalTaxRate = getStoreGlobalTaxRate(appData.settings);
+    const isReverseCalc = appData.settings?.taxCalculationType === 'reverse';
 
-      let itemTaxRate = 0;
-      if (item.taxes && Array.isArray(item.taxes) && item.taxes.length > 0) {
-        itemTaxRate = item.taxes.reduce(
-          (sum: number, t: any) => sum + (parseFloat(String(t.rate ?? '').replace(/[^0-9.]/g, '')) || 0),
-          0
-        );
-      } else if (item.tax) {
-        itemTaxRate = parseFloat(String(item.tax).replace(/[^0-9.]/g, '')) || 0;
-      }
-      tax += itemSubtotal * (itemTaxRate / 100);
-    });
+    if (isReverseCalc) {
+      let grossTotal = 0;
+      let calculatedTax = 0;
 
-    let globalTaxRate = 0;
-    if (appData.settings && appData.settings.globalTaxRate) {
-      globalTaxRate = parseFloat(String(appData.settings.globalTaxRate).replace(/[^0-9.]/g, '')) || 0;
+      allItems.forEach((item: any) => {
+        if (!item) return;
+        const cleanPrice = String(item.price ?? '').replace(/[^0-9.]/g, '');
+        const price = parseFloat(cleanPrice) || 0;
+        const qty = typeof item.quantity === 'number' ? item.quantity : parseInt(String(item.quantity || 1), 10) || 1;
+        const itemGross = price * qty;
+        grossTotal += itemGross;
+        itemCount += qty;
+
+        const itemTaxRate = getItemTaxRate(item, appData.menu, globalTaxRate);
+        if (itemTaxRate > 0) {
+          const itemBase = itemGross / (1 + itemTaxRate / 100);
+          calculatedTax += itemGross - itemBase;
+        }
+      });
+
+      tax = parseFloat(calculatedTax.toFixed(2));
+      subtotal = parseFloat((grossTotal - tax).toFixed(2));
+      total = parseFloat(grossTotal.toFixed(2));
+    } else {
+      let calculatedTax = 0;
+
+      allItems.forEach((item: any) => {
+        if (!item) return;
+        // Strip currency symbols (e.g. ₹, $, commas, etc.)
+        const cleanPrice = String(item.price ?? '').replace(/[^0-9.]/g, '');
+        const price = parseFloat(cleanPrice) || 0;
+        const qty = typeof item.quantity === 'number' ? item.quantity : parseInt(String(item.quantity || 1), 10) || 1;
+        const itemSubtotal = price * qty;
+        subtotal += itemSubtotal;
+        itemCount += qty;
+
+        const itemTaxRate = getItemTaxRate(item, appData.menu, globalTaxRate);
+        if (itemTaxRate > 0) {
+          calculatedTax += itemSubtotal * (itemTaxRate / 100);
+        }
+      });
+
+      tax = parseFloat(calculatedTax.toFixed(2));
+      total = parseFloat((subtotal + tax).toFixed(2));
     }
-    tax += subtotal * (globalTaxRate / 100);
 
-    const total = subtotal + tax;
     const balanceDue = Math.max(0, parseFloat((total - paidAmount).toFixed(2)));
 
     return {

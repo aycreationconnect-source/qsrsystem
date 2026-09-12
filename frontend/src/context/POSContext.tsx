@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import type { CartItem, TableOrderState, OrderPayment } from '../types/app.types';
 import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
-import { roundPOSAmount } from '../lib/orderUtils';
+import { roundPOSAmount, getStoreGlobalTaxRate, getItemTaxRate } from '../lib/orderUtils';
 
 export type DietFilterType = 'ALL' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan';
 
@@ -340,36 +340,49 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     let subtotal = 0;
     let tax = 0;
-    let globalTaxRate = 0;
-    if (appData.settings && appData.settings.globalTaxRate) {
-      globalTaxRate = parseFloat(appData.settings.globalTaxRate) || 0;
-    }
+    let total = 0;
+    const globalTaxRate = getStoreGlobalTaxRate(appData.settings);
+    const isReverseCalc = appData.settings?.taxCalculationType === 'reverse';
 
-    combinedItems.forEach((item) => {
-      const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
-      const itemSubtotal = price * item.quantity;
-      subtotal += itemSubtotal;
+    if (isReverseCalc) {
+      // Reverse Calculation: menu prices already include tax.
+      // Total equals sum of gross item amounts, and base subtotal + tax are back-calculated.
+      let grossTotal = 0;
+      let calculatedTax = 0;
 
-      const isManualTax =
-        item.useGlobalTax === false ||
-        (item.taxes && item.taxes.length > 0) ||
-        (item.tax !== undefined && item.tax !== null && item.tax !== '');
+      combinedItems.forEach((item) => {
+        const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+        const itemGross = price * item.quantity;
+        grossTotal += itemGross;
 
-      if (isManualTax) {
-        let itemTaxRate = 0;
-        if (item.taxes && item.taxes.length > 0) {
-          itemTaxRate = item.taxes.reduce((sum: number, t: any) => sum + (parseFloat(t.rate) || 0), 0);
-        } else if (item.tax) {
-          itemTaxRate = parseFloat(String(item.tax)) || 0;
+        const itemTaxRate = getItemTaxRate(item, appData.menu, globalTaxRate);
+        if (itemTaxRate > 0) {
+          const itemBase = itemGross / (1 + itemTaxRate / 100);
+          calculatedTax += itemGross - itemBase;
         }
-        tax += itemSubtotal * (itemTaxRate / 100);
-      } else {
-        // Global tax applies to this item
-        tax += itemSubtotal * (globalTaxRate / 100);
-      }
-    });
+      });
 
-    const total = subtotal + tax;
+      tax = parseFloat(calculatedTax.toFixed(2));
+      subtotal = parseFloat((grossTotal - tax).toFixed(2));
+      total = parseFloat(grossTotal.toFixed(2));
+    } else {
+      // Standard Exclusive Calculation: taxes are added on top of item base subtotal.
+      let calculatedTax = 0;
+
+      combinedItems.forEach((item) => {
+        const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+        const itemSubtotal = price * item.quantity;
+        subtotal += itemSubtotal;
+
+        const itemTaxRate = getItemTaxRate(item, appData.menu, globalTaxRate);
+        if (itemTaxRate > 0) {
+          calculatedTax += itemSubtotal * (itemTaxRate / 100);
+        }
+      });
+
+      tax = parseFloat(calculatedTax.toFixed(2));
+      total = parseFloat((subtotal + tax).toFixed(2));
+    }
 
     let paidAmount = 0;
     if (posMode === 'table' && selectedTableId) {
@@ -380,7 +393,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const balanceDue = Math.max(0, parseFloat((total - paidAmount).toFixed(2)));
 
     return { subtotal, tax, total, paidAmount, balanceDue };
-  }, [cart, posMode, selectedTableId, tableOrders, tablePayments, appData.settings]);
+  }, [cart, posMode, selectedTableId, tableOrders, tablePayments, appData.settings, appData.menu]);
 
   const confirmPaymentAndOrder = useCallback(
     async (splitPayments?: OrderPayment[], description?: string) => {

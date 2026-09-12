@@ -1,4 +1,4 @@
-import { roundPOSAmount } from './orderUtils';
+import { roundPOSAmount, getStoreGlobalTaxRate, formatTaxLabel } from './orderUtils';
 
 function escapeXml(str: any): string {
   if (!str) return '';
@@ -97,6 +97,35 @@ export function printThermalReceipt({
         <span style="font-weight: bold;">₹${roundedTotal}</span>
       </div>
     `;
+  }
+
+  // Custom Taxes Breakdown for Receipt
+  let customTaxRowsHtml = '';
+  if (settings?.customTaxes && tax > 0) {
+    try {
+      const parsedTaxes = JSON.parse(settings.customTaxes);
+      if (Array.isArray(parsedTaxes) && parsedTaxes.length > 1) {
+        const totalTaxRate = parsedTaxes.reduce(
+          (sum: number, t: any) => sum + (parseFloat(String(t.rate ?? '0')) || 0),
+          0
+        );
+        if (totalTaxRate > 0) {
+          customTaxRowsHtml = parsedTaxes
+            .filter((t: any) => (parseFloat(String(t.rate ?? '0')) || 0) > 0 && t.name)
+            .map((t: any) => {
+              const r = parseFloat(String(t.rate));
+              const part = (r / totalTaxRate) * tax;
+              return `
+                <div class="calc-row" style="font-size: ${is58mm ? '8.5px' : '9.5px'}; color: #444; padding-left: 8px;">
+                  <span>• ${escapeXml(t.name)} (${r}%):</span>
+                  <span>₹${part.toFixed(2)}</span>
+                </div>
+              `;
+            })
+            .join('');
+        }
+      }
+    } catch {}
   }
 
   const is58mm = (settings?.printer_bill_paper_width === '58mm') || (settings?.paperWidth === '58mm');
@@ -246,14 +275,15 @@ export function printThermalReceipt({
       <div class="divider"></div>
 
       <div class="calc-row">
-        <span>Subtotal:</span>
+        <span>${settings?.taxCalculationType === 'reverse' ? 'Net Base Subtotal:' : 'Subtotal:'}</span>
         <span class="bold">₹${subtotal.toFixed(2)}</span>
       </div>
 
       <div class="calc-row">
-        <span>Taxes & GST:</span>
+        <span>${escapeXml(formatTaxLabel(settings, getStoreGlobalTaxRate(settings), tax))}${settings?.taxCalculationType === 'reverse' ? ' (Incl.)' : ''}:</span>
         <span class="bold">₹${tax.toFixed(2)}</span>
       </div>
+      ${customTaxRowsHtml}
 
       ${
         roundedTotal !== rawTotal

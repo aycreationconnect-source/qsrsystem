@@ -44,6 +44,17 @@ export class AuthService {
     const now = Math.floor(Date.now() / 1000);
     const exp = now + 12 * 60 * 60; // 12 hours
 
+    let allowedModules: string[] = [];
+    if (Array.isArray(license.allowedModules)) {
+      allowedModules = license.allowedModules;
+    } else if (typeof license.allowedModules === 'string') {
+      try {
+        allowedModules = JSON.parse(license.allowedModules);
+      } catch {
+        allowedModules = [];
+      }
+    }
+
     const payloadObj = {
       sub: user.id,
       username: user.username,
@@ -51,7 +62,7 @@ export class AuthService {
       role: user.role,
       cafeCode: store.cafeCode,
       businessName: store.businessName,
-      allowedModules: license.allowedModules,
+      allowedModules,
       iat: now,
       exp: exp,
     };
@@ -84,8 +95,11 @@ export class AuthService {
     const now = new Date();
     const expiresAt = new Date(license.expiresAt);
 
-    // 2. Anti-Clock-Tampering Guard
-    if (now < license.lastKnownClock) {
+    // 2. Anti-Clock-Tampering Guard (with 5-minute network sync grace period)
+    const clockDiffMs = license.lastKnownClock
+      ? new Date(license.lastKnownClock).getTime() - now.getTime()
+      : 0;
+    if (clockDiffMs > 5 * 60 * 1000) {
       throw new ForbiddenException({
         code: 'CLOCK_TAMPERING_DETECTED',
         message: 'System clock error detected! The system clock is behind the last known transaction time.',
@@ -111,18 +125,20 @@ export class AuthService {
       });
     }
 
-    // 4. Authenticate User
+    // 4. Authenticate User (safely coerce pin/username/password to strings)
     let user: any = null;
 
-    if (dto.pin) {
-      const pinHash = this.hashPin(dto.pin.trim());
+    if (dto.pin !== undefined && dto.pin !== null && String(dto.pin).trim() !== '') {
+      const pinStr = String(dto.pin).trim();
+      const pinHash = this.hashPin(pinStr);
       user = await this.prisma.localUser.findFirst({
         where: { pinCodeHash: pinHash, isActive: true },
       });
     } else if (dto.username && dto.password) {
-      const passHash = this.hashPassword(dto.password);
+      const usernameStr = String(dto.username).trim();
+      const passHash = this.hashPassword(String(dto.password));
       user = await this.prisma.localUser.findFirst({
-        where: { username: dto.username.trim(), passwordHash: passHash, isActive: true },
+        where: { username: usernameStr, passwordHash: passHash, isActive: true },
       });
     }
 
@@ -164,8 +180,9 @@ export class AuthService {
   async getProfile(token: string) {
     if (!token) throw new UnauthorizedException('No token provided.');
     try {
-      const parts = token.replace('Bearer ', '').split('.');
-      if (parts.length !== 3) throw new Error();
+      const cleanToken = token.replace(/^Bearer\s+/i, '').trim();
+      const parts = cleanToken.split('.');
+      if (parts.length !== 3) throw new Error('Invalid token structure');
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
       return payload;
     } catch {

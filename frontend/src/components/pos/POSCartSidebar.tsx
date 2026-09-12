@@ -2,7 +2,13 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { Button, Tooltip } from '../ui';
-import { roundPOSAmount } from '../../lib/orderUtils';
+import { cn } from '../../lib/utils';
+import {
+  roundPOSAmount,
+  getStoreGlobalTaxRate,
+  getItemTaxBadge,
+  formatTaxLabel,
+} from '../../lib/orderUtils';
 import {
   ShoppingBag,
   Trash2,
@@ -98,6 +104,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
 
   const { subtotal, tax, total } = getCartTotals();
   const roundedTotal = roundPOSAmount(total);
+  const storeGlobalTaxRate = getStoreGlobalTaxRate(appData.settings);
   const selectedTable = selectedTableId
     ? appData.tables.find((t: any) => t.id === selectedTableId)
     : null;
@@ -227,15 +234,33 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                 {(order.items || (Array.isArray(order) ? order : [])).map((item: any, i: number) => {
                   const unitPrice = parseFloat(String(item.price).replace('₹', '')) || 0;
                   const itemTotal = unitPrice * item.quantity;
+                  const taxBadge = getItemTaxBadge(item, appData.menu, storeGlobalTaxRate);
                   return (
                     <div key={i} className="flex items-center gap-2 py-1 px-1 text-xs">
                       <div className="flex-1 min-w-0 pr-1">
                         <span className="font-semibold text-stone-800 dark:text-stone-200 truncate block">
                           {item.name}
                         </span>
-                        <span className="text-[10px] font-mono text-stone-400">
-                          ₹{unitPrice.toFixed(2)} each
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span className="text-[10px] font-mono text-stone-400">
+                            ₹{unitPrice.toFixed(2)} each
+                          </span>
+                          {taxBadge && (
+                            <span
+                              className={cn(
+                                'text-[9px] font-semibold px-1.5 py-0.2 rounded leading-tight border',
+                                taxBadge.variant === 'exempt' &&
+                                  'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
+                                taxBadge.variant === 'applicable' &&
+                                  'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
+                                taxBadge.variant === 'custom' &&
+                                  'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
+                              )}
+                            >
+                              {taxBadge.text}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="w-24 sm:w-26 flex items-center justify-center shrink-0">
@@ -274,6 +299,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             {cart.map((item, i) => {
               const unitPrice = parseFloat(String(item.price).replace('₹', '')) || 0;
               const itemTotal = unitPrice * item.quantity;
+              const taxBadge = getItemTaxBadge(item, appData.menu, storeGlobalTaxRate);
 
               return (
                 <div
@@ -288,9 +314,26 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                     >
                       {item.name}
                     </h5>
-                    <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
-                      ₹{unitPrice.toFixed(2)} each
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                      <span className="text-[10px] font-mono text-stone-400 dark:text-stone-500">
+                        ₹{unitPrice.toFixed(2)} each
+                      </span>
+                      {taxBadge && (
+                        <span
+                          className={cn(
+                            'text-[9px] font-semibold px-1.5 py-0.2 rounded leading-tight border',
+                            taxBadge.variant === 'exempt' &&
+                              'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
+                            taxBadge.variant === 'applicable' &&
+                              'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
+                            taxBadge.variant === 'custom' &&
+                              'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
+                          )}
+                        >
+                          {taxBadge.text}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* 2. Quantity Column (Compact Stepper) */}
@@ -370,7 +413,12 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
 
           <div className="flex justify-between">
             <span>
-              Tax {appData.settings?.globalTaxName ? `(${appData.settings.globalTaxName})` : ''}
+              {formatTaxLabel(appData.settings, storeGlobalTaxRate, tax)}
+              {appData.settings?.taxCalculationType === 'reverse' && (
+                <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  (Incl.)
+                </span>
+              )}
             </span>
             <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
               ₹{tax.toFixed(2)}
