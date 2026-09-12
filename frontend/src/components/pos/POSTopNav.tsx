@@ -1,9 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { CafeBrandBadge, Button, Tooltip } from '../ui';
-import { LayoutDashboard, ShoppingBag, Utensils, Zap, History } from 'lucide-react';
+import { ShoppingBag, Utensils, Zap, History, Search, X } from 'lucide-react';
 
 export interface POSTopNavProps {
   onOpenMobileCart?: () => void;
@@ -11,7 +10,32 @@ export interface POSTopNavProps {
 
 export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
   const { posMode, appData, storeProfile } = useApp();
-  const { selectedTableId, cart, setShowOrderHistoryModal } = usePOS();
+  const {
+    selectedTableId,
+    cart,
+    setShowOrderHistoryModal,
+    posSearchQuery,
+    setPosSearchQuery,
+  } = usePOS();
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Global hotkey: '/' or 'Ctrl+K' focuses the search input
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA' &&
+        document.activeElement?.tagName !== 'SELECT'
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -55,7 +79,7 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
               </span>
             )}
           </div>
-          <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
+          <p className="hidden xl:block text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
             {posMode === 'table'
               ? 'Dine-in floor orders, table booking & live billing'
               : 'Fast counter sales, express checkout & takeaway billing'}
@@ -85,7 +109,46 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
         </div>
       </div>
 
-      {/* Right: Date, Mobile Cart Trigger & Back to Admin */}
+      {/* Center: Search Food & Beverage Input */}
+      <div className="flex-1 max-w-sm sm:max-w-md lg:max-w-lg mx-2 sm:mx-4 min-w-0">
+        <div className="relative w-full group">
+          <Search className="w-4 h-4 text-stone-400 group-focus-within:text-amber-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search food & beverages..."
+            value={posSearchQuery}
+            onChange={(e) => setPosSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setPosSearchQuery('');
+                searchInputRef.current?.blur();
+              }
+            }}
+            className="w-full bg-stone-100/90 dark:bg-stone-800/90 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 text-xs sm:text-sm pl-10 pr-9 py-2 rounded-xl border border-stone-200/80 dark:border-stone-700/80 focus:border-amber-500 dark:focus:border-amber-500 focus:bg-white dark:focus:bg-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all shadow-2xs"
+          />
+          {posSearchQuery ? (
+            <button
+              type="button"
+              onClick={() => {
+                setPosSearchQuery('');
+                searchInputRef.current?.focus();
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-700/60 transition-colors cursor-pointer"
+              title="Clear search (Esc)"
+              aria-label="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-stone-400 bg-stone-200/50 dark:bg-stone-700/50 rounded border border-stone-300 dark:border-stone-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none select-none">
+              /
+            </kbd>
+          )}
+        </div>
+      </div>
+
+      {/* Right: Mobile Cart Trigger & Order History */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Mobile Cart Trigger Button */}
         {onOpenMobileCart && (
@@ -117,20 +180,6 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({ onOpenMobileCart }) => {
             <span className="hidden sm:inline">Order History</span>
             <span className="sm:hidden">History</span>
           </Button>
-        </Tooltip>
-
-        <Tooltip content="Return to Management Dashboard" position="bottom">
-          <Link to="/dashboard">
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<LayoutDashboard className="w-4 h-4" />}
-              className="font-bold cursor-pointer"
-            >
-              <span className="hidden sm:inline">Admin Panel</span>
-              <span className="sm:hidden">Admin</span>
-            </Button>
-          </Link>
         </Tooltip>
       </div>
     </header>

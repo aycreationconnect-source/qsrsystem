@@ -6,7 +6,87 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-10 — Feature: Printer Settings with Bill Print, KOT Print, Item Print & Real-Time Live Thermal Preview
+### 1. 2026-09-11 — Feature: Settings Hub UI/UX Redesign & Click-Driven Responsive Sidebar Collapse
+- **Type**: Admin Settings Redesign & Global Sidebar Navigation
+- **Summary**:
+  - **Click-Driven Sidebar Collapse/Expand (`Sidebar.tsx` & `AdminLayout.tsx`)**:
+    - **Eliminated Auto-Collapse**: Completely removed desktop mouse hover expansion (`onMouseEnter`/`onMouseLeave`) and click-outside listeners that caused unexpected auto-collapsing.
+    - **Universal Arrow Toggle Across All Resolutions**: Removed `lg:hidden` constraint; the circular toggle button on the right sidebar border is now accessible on desktop (1080p/1440p/4K), laptops, and tablets.
+    - **Smooth Button & Icon Transition**: Added a 180° rotation animation to the chevron icon (`transition-transform duration-300 ease-in-out`, rotating from left ← when open to right → when collapsed), paired with smooth button hover scaling (`hover:scale-110 active:scale-95`).
+    - **Buttery-Smooth Layout Rail Sync**: Animated the parent layout container in `AdminLayout.tsx` between `w-[72px]` and `w-[260px]` with `transition-all duration-300 ease-in-out` and persistent `localStorage` memory (`pos_sidebar_collapsed`).
+  - **Settings Hub UI/UX Redesign (`SettingsView.tsx`)**:
+    - **Eliminated Dead / Empty Space**: Expanded the container from narrow `max-w-6xl` to a spacious `max-w-[1540px]` workspace, structuring information into high-utility, purposeful operational cards.
+    - **System & Station Health Widget**: Added a dedicated bottom card in the left rail displaying database node status (`Local SQLite`), active license plan (`Pro Plan • 85 Days Left`), logged-in cashier name, default thermal format, and 1-click Quick POS / Table POS launchers.
+    - **Hero Cafe Identity Banner**: Integrated a premium high-contrast cafe banner with store monogram, verified `🟢 Operational & POS Ready` badge, currency pill, and live operational stats (Tables, Dishes, Categories, Inventory Items).
+    - **6-Card Structured Store Operations Grid**: Organized cafe metadata into 6 distinct modules: Store Ownership, Store Location, Tax Compliance, Receipt Customization, Terminal Modes, and Offline Sync Connectivity.
+    - **Store Operational Readiness Checklist**: Added a 4-point verification card displaying 100% operational readiness across profile, tax, printer, and menu.
+    - **Live Bill Tax Simulator**: Added an interactive calculation preview card in the Tax & Billing tab that reacts live to input changes (calculating Subtotal, Tax Amount, and Grand Total in real time).
+    - **Live Onscreen Toast Simulator**: Added a 1-click simulation trigger in the Popup Alerts tab allowing users to test corner notification popups and durations instantly.
+
+---
+- **Type**: POS Cart UX & Visual Polish
+- **Summary**:
+  - **Indian Rupee (INR ₹) Icon (`POSCartSidebar.tsx`)**:
+    - Replaced the previous `Receipt` icon (which had an embedded dollar `$` sign) with the official `<IndianRupee className="w-4 h-4" />` icon in the Current Ticket header badge.
+  - **Viewport-Safe Clear All Tooltip (`Tooltip.tsx` & `POSCartSidebar.tsx`)**:
+    - Added `align="end"` to the `Clear All Items` and `Shift Table` tooltips (`position="bottom" align="end"`), aligning the popup flush with the right screen edge so tooltip text is never clipped or hidden beyond the screen boundary.
+  - **Hidden Number Input Spinners (`index.css` & `CartItemQtyInput`)**:
+    - Added `.no-spinner` CSS class and Tailwind utility classes (`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`) to remove the browser-default up/down arrow spinners from the custom quantity box.
+  - **Ultra-Compact Cart Item Cards**:
+    - Redesigned cart item cards into a high-density, 2-row layout with `p-2 rounded-xl` padding and `space-y-1.5` list spacing.
+    - Card height reduced from ~90px to ~50px, allowing **6 to 7 cart items to display comfortably on desktop screens without scrolling**.
+
+---
+
+### 2. 2026-09-11 — Feature: Ultra-Compact Item Tiles (Icon-Only Badges) & Current Ticket Custom Quantity Entry
+- **Type**: High-Density POS UX, Touchscreen Tap-to-Add & Direct Quantity Input
+- **Summary**:
+  - **Dietary Icons Only (`POSProductGrid.tsx`)**:
+    - Removed all "Veg", "Non-Veg", "Egg", "Vegan" text labels from Item Cards.
+    - Replaced with standard, compact FSSAI dietary symbols (green square/circle for Veg, red square/triangle for Non-Veg, amber egg dot, vegan green leaf).
+  - **High-Density Compact Grid Layout**:
+    - Increased grid column density to 5–7 columns on desktop (`grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1920px]:grid-cols-7`).
+    - Removed fixed minimum heights (`min-h-[160px]`); reduced padding to `p-2.5`; truncated descriptions to single line.
+    - More than doubles the number of menu items visible simultaneously on screen without requiring scrolling.
+  - **Fast Multi-Click Tap-to-Add**:
+    - Removed `+ Add` button and stepper controls from Item Cards in the product grid.
+    - The entire item card is now an instant tap target. Tapping once adds 1 item; tapping repeatedly adds and increments the quantity directly.
+    - Items currently in cart display a prominent `x{qty}` pill badge and an active amber border ring.
+  - **Custom Number Entry in Current Ticket (`POSCartSidebar.tsx`)**:
+    - Centralized quantity adjustments in the Current Ticket sidebar / drawer.
+    - Introduced `CartItemQtyInput`: an interactive, clearly bordered numeric input (`w-12 h-7`) between the `-` and `+` buttons.
+    - Tapping the quantity box automatically selects all text, allowing cashiers to type any custom quantity directly (e.g. 5, 10, 50) and press `Enter` to commit, while retaining `-` and `+` buttons for 1-click stepping.
+
+---
+
+### 2. 2026-09-11 — Feature: Header-Integrated Search Bar & Reclaimed Food Item Display Space (QSR POS Terminal)
+- **Type**: UI Space Optimization & Real-Time POS Search
+- **Summary**:
+  - **Search Moved to Header (`POSTopNav.tsx`)**:
+    - Relocated the menu search input directly into the top navigation bar of the QSR Terminal, taking advantage of open horizontal space between the cafe identity badge and action buttons.
+    - Features instant real-time filtering, dedicated clear (`X`) button, and keyboard shortcuts (`/` or `Ctrl+K` to focus, `Escape` to clear).
+  - **Reclaimed Vertical Height for Food Display (`POSProductGrid.tsx`)**:
+    - Eliminated the redundant secondary search bar and dietary filter container from `POSProductGrid`, saving over 60px of vertical space on desktop and over 100px on mobile/tablets.
+    - Food cards and category sections now start immediately beneath the category bar, maximizing visible screen real estate for dish cards, photos, prices, and fast order punch-in.
+  - **Unified Category & Dietary Filter Bar (`POSCategoryTabs.tsx`)**:
+    - Integrated dietary filter chips (`All Diets`, `🟢 Veg`, `🔴 Non-Veg`, `🟡 Egg`, `🌱 Vegan`) directly into the category bar alongside category tabs with an elegant vertical separator.
+    - Added `dietFilter` and `setDietFilter` to global `POSContext` for seamless synchronization across components.
+  - **Contextual Search Feedback**:
+    - When an active search query is entered, displays an unobtrusive results counter badge (`X items found`) with a quick 1-click `Clear Search` action.
+    - Enhanced empty search state with a dedicated `Clear Search Filter` button.
+
+---
+
+### 2. 2026-09-11 — Modification: Removed Admin Panel Button from QSR POS Terminal Top Navigation
+- **Type**: POS Terminal Navigation & UI Streamlining
+- **Summary**:
+  - Removed the **Admin Panel** button and its tooltip from `POSTopNav.tsx` in the POS Terminal header.
+  - Cleaned up unused imports (`Link` from `react-router-dom` and `LayoutDashboard` from `lucide-react`).
+  - Terminal cashier interface is now dedicated solely to order taking and management (Quick POS / Table POS), cart operations, and Order History / Bill Reprints without navigation distraction or unintended exit to management dashboard.
+
+---
+
+### 2. 2026-09-10 — Feature: Printer Settings with Bill Print, KOT Print, Item Print & Real-Time Live Thermal Preview
 - **Type**: New Category, Printing Hardware & Thermal Layout Configuration
 - **Summary**:
   - **Printer Settings Category (`SettingsView.tsx` & `PrinterSettingsPanel.tsx`)**:
