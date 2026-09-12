@@ -6,7 +6,55 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-12 — Enhancement: Floor & Tables Header Cleanup & "Extra Table" Card in Table List ([`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx))
+### 1. 2026-09-12 — Enhancement: Fast Area Dropdown & Zero-Scroll Categories Popover with High-Speed Diet Toggles ([`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx), [`POSCategoryTabs.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCategoryTabs.tsx))
+- **Type**: Floor Section Filter & Category/Diet Navigation Speed Overhaul
+- **Summary**:
+  - **Fast Area Selector Dropdown (`POSTableSidebar.tsx`)**:
+    - **Problem Addressed**: Horizontal scrolling in the narrow (~280px) table sidebar for Area/section filters would become tedious and time-wasting as more dining sections (Rooftop, AC Hall, Garden, Banquet, etc.) are added in the future.
+    - **Zero-Scroll Dropdown Selector**:
+      - Replaced the horizontal pill scroll strip with a dedicated, space-efficient Area Select button.
+      - Trigger displays: `<MapPin />` icon, active area label (or `All Areas`), active area color dot badge, and table count.
+      - Clicking opens an instant vertical dropdown with all areas, their color dots, table counts, and active checkmarks.
+      - Includes a 1-click `✕` clear button when a specific area is active to reset back to "All Areas" instantly.
+    - **Header Cleanup**: Removed redundant `3 Free • 1 Busy` text under the "Floor & Tables" title, as status counts are already clearly displayed in the occupancy filter bar below.
+  - **Zero-Scroll Category Navigation (`POSCategoryTabs.tsx`)**:
+    - **Problem Addressed**: Horizontal scrolling through 10-20 categories and 5 bulky diet filter buttons wasted significant time during fast cashier order entry.
+    - **"All Categories" Popover Picker Grid**:
+      - Added a prominent `[ 📑 Categories ({count}) ▾ ]` button at the start of the category bar.
+      - Clicking opens a 2-column visual popover grid showing **all categories with dish counts and icons**.
+      - Clicking any category jumps directly to it in 1 single tap without any horizontal scrolling.
+      - If categories exceed 6, an integrated quick search input allows instant typing to jump to any category.
+    - **Smooth Arrow Step Controls**: Added left (`‹`) and right (`›`) step buttons to visible category tabs that automatically appear when tabs overflow, providing 1-click stepping without trackpad drag-scrolling.
+  - **High-Speed Compact Dietary Filtering (`POSCategoryTabs.tsx`)**:
+    - Replaced the 5 bulky text buttons (which previously consumed ~350px of width) with a high-speed compact toggle group:
+      - **1-Click Veg Toggle (`[ 🟢 Veg ]`)**: Directly toggles Pure Veg dishes. Clicking again resets to All.
+      - **1-Click Non-Veg Toggle (`[ 🔴 Non-Veg ]`)**: Directly toggles Non-Veg dishes. Clicking again resets to All.
+      - **Diet Dropdown (`[ 🥗 Diets ▾ ]`)**: Compact menu allowing selection of Egg, Vegan, or All Diets with clear badges and labels.
+      - **Width Saved**: Reduced diet filter width from ~350px down to ~150px, immediately granting over 200px of width back to visible category tabs.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Decongested Item Cards & Streamlined Table Selection ([`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), [`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx))
+- **Type**: Table POS Mode Layout Balance & Usability Decongestion
+- **Summary**:
+  - **Item Cards Grid Decongestion (`POSProductGrid.tsx`)**:
+    - **Root Cause Identified**: In Table Mode, with both the left Table Sidebar (~336px) and right Cart Sidebar (~420px) open, the available center viewport is ~600px–750px. Standard screen breakpoint classes previously forced 4 or 5 columns (`lg:grid-cols-4 xl:grid-cols-5`), reducing card widths to an unusable ~110px–130px.
+    - **Mode-Aware Responsive Columns**: Implemented conditional mode-aware grid column classes:
+      - In **Table Mode**: Renders 2 columns on small screens, 3 spacious columns on standard laptops (`lg` & `xl`), 4 columns on large desktops (`2xl`), and 5 on ultra-wide screens (`1920px+`). Card widths increased from ~110px to ~210px (nearly double the breathing room).
+      - In **Quick Order Mode**: Retains dense high-throughput columns (up to 7 columns) since no left table sidebar is present.
+    - **Bottom Price Row Redesign**: When an item has `quantity > 1` in the cart, the calculated subtotal is now rendered in an amber pill badge (`bg-amber-500/15 text-amber-800 dark:text-amber-200 rounded-md border border-amber-500/30 px-1.5 py-0.5 font-mono font-black text-[11px]`). This eliminates confusion between unit price and running total without re-adding the text label "Total:".
+    - **Card Padding & Heights**: Refined card padding to `p-3 min-h-[110px]` with generous typography leading.
+  - **Table Selection Sidebar Decongestion (`POSTableSidebar.tsx`)**:
+    - **Sidebar Width Rebalance**: Slimmed sidebar width from bloated `w-72 sm:w-80 lg:w-84` (up to 336px) to a balanced `w-72 lg:w-76 xl:w-80` (~288px–304px), immediately returning 32px–48px of width back to the center item grid.
+    - **Streamlined Filter Rows**: Eliminated the confusing stacked double filter bars that previously rendered identical `[All (4)]` buttons directly above one another.
+      - **Area Row**: Labeled `All Areas ({count})` alongside color-dotted area pills.
+      - **Occupancy Filter**: Converted to a clean, distinct segmented bar: `[ All | Free (3) | Busy (1) | Partial | Billed ]` with colorful status dots and counts.
+    - **Table Card Alignment**: Refined card padding to `p-2.5 rounded-xl` with 36x36 monogram badges (`w-9 h-9 rounded-lg`), cleaner text truncation, and structured running bill metadata.
+    - **"Extra Table" Card**: Compacted to match the refined table card dimensions with a clean dashed border and 1-click `+ Add` button.
+
+---
+
+### 2. 2026-09-12 — Enhancement: Floor & Tables Header Cleanup & "Extra Table" Card in Table List ([`POSTableSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSidebar.tsx))
 - **Type**: Table POS Terminal Layout & Quick Table Creation UX
 - **Summary**:
   - **Header Cleanup**:

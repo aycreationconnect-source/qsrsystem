@@ -13,6 +13,9 @@ import {
   ArrowUpDown,
   CheckCircle2,
   FilterX,
+  ChevronDown,
+  MapPin,
+  Check,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getAreaColorTheme } from '../../utils/areaColors';
@@ -40,9 +43,18 @@ export const POSTableSidebar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortByType>('default');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showAreaMenu, setShowAreaMenu] = useState(false);
 
   const areas = appData.areas || [];
   const tables = appData.tables || [];
+
+  const activeArea = areas.find((a: any) => String(a.id) === String(selectedAreaId));
+  const activeAreaIndex = areas.findIndex((a: any) => String(a.id) === String(selectedAreaId));
+  const activeTheme = activeArea ? getAreaColorTheme(activeArea, activeAreaIndex) : null;
+  const activeTableCount =
+    selectedAreaId === 'ALL'
+      ? tables.length
+      : tables.filter((t: Table) => String(t.areaId) === String(selectedAreaId)).length;
 
   // Helper: Extract running order total and item count
   const getTableOrderSummary = (tableId: string | number) => {
@@ -251,7 +263,7 @@ export const POSTableSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-72 sm:w-80 lg:w-84 h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none">
+    <aside className="w-72 lg:w-76 xl:w-80 h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none">
       {/* 1. Top Header */}
       <div className="p-3.5 sm:p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
@@ -262,17 +274,6 @@ export const POSTableSidebar: React.FC = () => {
             <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-tight">
               Floor & Tables
             </h3>
-            <div className="flex items-center gap-1.5 text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-0.5">
-              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {stats.available} Free
-              </span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                {stats.occupied} Busy
-              </span>
-            </div>
           </div>
         </div>
 
@@ -358,88 +359,185 @@ export const POSTableSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Area Filter Tabs */}
+      {/* 3. Fast Area Selector Dropdown (Zero Horizontal Scrolling) */}
       {areas.length > 0 && (
-        <div className="px-3 py-2 border-b border-stone-100 dark:border-stone-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-          <button
-            type="button"
-            onClick={() => setSelectedAreaId('ALL')}
-            className={cn(
-              'px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer',
-              selectedAreaId === 'ALL'
-                ? 'bg-amber-500 text-stone-950 shadow-sm'
-                : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200/80 dark:hover:bg-stone-750'
-            )}
-          >
-            All ({tables.length})
-          </button>
-
-          {areas.map((area: any, idx: number) => {
-            const count = tables.filter((t: Table) => t.areaId === area.id).length;
-            const isSelected = String(selectedAreaId) === String(area.id);
-            const theme = getAreaColorTheme(area, idx);
-            return (
-              <button
-                key={area.id}
-                type="button"
-                onClick={() => setSelectedAreaId(area.id)}
-                className={cn(
-                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5',
-                  isSelected
-                    ? theme.filterActive
-                    : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200/80 dark:hover:bg-stone-750'
+        <div className="px-3 py-2 border-b border-stone-100 dark:border-stone-800/80 shrink-0">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAreaMenu((prev) => !prev)}
+              className={cn(
+                'w-full flex items-center justify-between px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none',
+                selectedAreaId !== 'ALL'
+                  ? 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-300/90 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 shadow-2xs'
+                  : 'bg-stone-100/80 dark:bg-stone-800/80 border-stone-200/80 dark:border-stone-750 text-stone-800 dark:text-stone-200 hover:bg-stone-200/70 dark:hover:bg-stone-750'
+              )}
+            >
+              <div className="flex items-center gap-2 min-w-0 truncate">
+                <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="text-[11px] font-medium text-stone-400 dark:text-stone-500 shrink-0">
+                  Area:
+                </span>
+                {selectedAreaId === 'ALL' ? (
+                  <span className="truncate">All Areas</span>
+                ) : (
+                  <span className="flex items-center gap-1.5 truncate">
+                    <span className={cn('w-2 h-2 rounded-full shrink-0 shadow-xs', activeTheme?.dot)} />
+                    <span className="truncate">{activeArea?.name}</span>
+                  </span>
                 )}
-              >
-                <span className={cn('w-2 h-2 rounded-full shrink-0 shadow-xs', theme.dot)} />
-                <span>{area.name}</span>
-                <span className="text-[10px] opacity-80">({count})</span>
-              </button>
-            );
-          })}
+                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-stone-200/90 dark:bg-stone-700 text-stone-700 dark:text-stone-300 font-mono shrink-0 ml-0.5">
+                  {activeTableCount}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                {selectedAreaId !== 'ALL' && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedAreaId('ALL');
+                    }}
+                    className="p-0.5 rounded-full hover:bg-amber-200 dark:hover:bg-amber-800/60 text-amber-700 dark:text-amber-300 cursor-pointer"
+                    title="Reset to All Areas"
+                  >
+                    <X className="w-3 h-3" />
+                  </span>
+                )}
+                <ChevronDown
+                  className={cn(
+                    'w-3.5 h-3.5 text-stone-400 transition-transform duration-150',
+                    showAreaMenu && 'rotate-180'
+                  )}
+                />
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showAreaMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setShowAreaMenu(false)}
+                />
+                <div
+                  className="absolute left-0 right-0 top-full mt-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl z-40 p-1.5 space-y-1 animate-in fade-in duration-100 max-h-64 overflow-y-auto"
+                >
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider px-2.5 py-1 flex items-center justify-between">
+                    <span>Select Dining Area</span>
+                    <span className="font-mono text-[10px]">{areas.length} Areas</span>
+                  </div>
+
+                  {/* All Areas Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAreaId('ALL');
+                      setShowAreaMenu(false);
+                    }}
+                    className={cn(
+                      'w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer transition-all',
+                      selectedAreaId === 'ALL'
+                        ? 'bg-amber-500 text-stone-950 font-bold shadow-xs'
+                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-stone-400 shrink-0" />
+                      <span>All Areas</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[11px] opacity-80">
+                        {tables.length} tables
+                      </span>
+                      {selectedAreaId === 'ALL' && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                  </button>
+
+                  {/* Individual Area Options */}
+                  {areas.map((area: any, idx: number) => {
+                    const count = tables.filter((t: Table) => t.areaId === area.id).length;
+                    const isSelected = String(selectedAreaId) === String(area.id);
+                    const theme = getAreaColorTheme(area, idx);
+
+                    return (
+                      <button
+                        key={area.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAreaId(area.id);
+                          setShowAreaMenu(false);
+                        }}
+                        className={cn(
+                          'w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer transition-all',
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950 font-bold shadow-xs'
+                            : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <span className={cn('w-2 h-2 rounded-full shrink-0', theme.dot)} />
+                          <span className="truncate">{area.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="font-mono text-[11px] opacity-80">
+                            {count} tables
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {/* 4. Occupancy Status Quick Filter Chips */}
-      <div className="px-3 py-1.5 bg-stone-50/50 dark:bg-stone-950/30 border-b border-stone-100 dark:border-stone-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 text-[11px]">
+      {/* 4. Occupancy Status Quick Filter Bar (Distinct segmented chips) */}
+      <div className="px-3 py-1.5 bg-stone-50/70 dark:bg-stone-950/40 border-b border-stone-100 dark:border-stone-800/80 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 text-[11px]">
         <button
           type="button"
           onClick={() => setStatusFilter('ALL')}
           className={cn(
-            'px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap',
+            'px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap',
             statusFilter === 'ALL'
-              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-              : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-xs'
+              : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-200/60 dark:hover:bg-stone-800'
           )}
         >
-          All ({stats.total})
+          All
         </button>
 
         <button
           type="button"
           onClick={() => setStatusFilter('AVAILABLE')}
           className={cn(
-            'px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1',
+            'px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5',
             statusFilter === 'AVAILABLE'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-emerald-600 text-white shadow-xs'
               : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
           )}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          Available ({stats.available})
+          <span>Free ({stats.available})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setStatusFilter('OCCUPIED')}
           className={cn(
-            'px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1',
+            'px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5',
             statusFilter === 'OCCUPIED'
-              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              ? 'bg-amber-500 text-stone-950 shadow-xs'
               : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'
           )}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          Occupied ({stats.occupied})
+          <span>Busy ({stats.occupied})</span>
         </button>
 
         {stats.partial > 0 && (
@@ -447,14 +545,14 @@ export const POSTableSidebar: React.FC = () => {
             type="button"
             onClick={() => setStatusFilter('PARTIAL')}
             className={cn(
-              'px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1',
+              'px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5',
               statusFilter === 'PARTIAL'
-                ? 'bg-violet-600 text-white shadow-sm'
+                ? 'bg-violet-600 text-white shadow-xs'
                 : 'text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40'
             )}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-            Partial ({stats.partial})
+            <span>Partial ({stats.partial})</span>
           </button>
         )}
 
@@ -463,14 +561,14 @@ export const POSTableSidebar: React.FC = () => {
             type="button"
             onClick={() => setStatusFilter('BILLED')}
             className={cn(
-              'px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1',
+              'px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5',
               statusFilter === 'BILLED'
-                ? 'bg-sky-600 text-white shadow-sm'
+                ? 'bg-sky-600 text-white shadow-xs'
                 : 'text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40'
             )}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-            Billed ({stats.billed})
+            <span>Billed ({stats.billed})</span>
           </button>
         )}
       </div>
@@ -530,25 +628,25 @@ export const POSTableSidebar: React.FC = () => {
                   setCart(orderData?.activeCart || []);
                 }}
                 className={cn(
-                  'p-3 rounded-2xl border transition-all duration-150 flex items-center justify-between cursor-pointer select-none relative group',
+                  'p-2.5 rounded-xl border transition-all duration-150 flex items-center justify-between cursor-pointer select-none relative group',
                   isSelected
-                    ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/60 dark:bg-amber-950/25 shadow-sm'
+                    ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/60 dark:bg-amber-950/25 shadow-xs'
                     : isPartial
                       ? 'bg-violet-50/40 dark:bg-violet-950/20 border-violet-200/90 dark:border-violet-800/60 hover:border-violet-400'
                       : isDining
                         ? 'bg-amber-50/30 dark:bg-amber-950/15 border-amber-200/90 dark:border-amber-800/60 hover:border-amber-400 hover:bg-amber-50/50'
                         : isPrinted
                           ? 'bg-sky-50/30 dark:bg-sky-950/15 border-sky-200/90 dark:border-sky-800/60 hover:border-sky-400'
-                          : 'bg-white dark:bg-stone-850 border-stone-200/80 dark:border-stone-750 hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-xs'
+                          : 'bg-white dark:bg-stone-850 border-stone-200/80 dark:border-stone-750 hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-2xs'
                 )}
               >
                 {/* Left: Monogram Badge & Table Details */}
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 tracking-tight transition-all',
+                      'w-9 h-9 rounded-lg flex items-center justify-center font-extrabold text-xs shrink-0 tracking-tight transition-all',
                       isSelected
-                        ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-sm shadow-amber-500/20'
+                        ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-xs'
                         : isPartial
                           ? 'bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-300 border border-violet-300/60 dark:border-violet-800/60'
                           : isDining
@@ -562,7 +660,7 @@ export const POSTableSidebar: React.FC = () => {
                   </div>
 
                   <div className="min-w-0 flex flex-col">
-                    <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-tight truncate">
+                    <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-snug truncate">
                       {t.name}
                     </h4>
 
@@ -574,7 +672,7 @@ export const POSTableSidebar: React.FC = () => {
                       {selectedAreaId === 'ALL' && areaObj && (
                         <>
                           <span>•</span>
-                          <span className="truncate max-w-[80px]">{areaObj.name}</span>
+                          <span className="truncate max-w-[75px]">{areaObj.name}</span>
                         </>
                       )}
                     </div>
@@ -584,7 +682,7 @@ export const POSTableSidebar: React.FC = () => {
                 {/* Right: Running Bill Amount, Timer & Status Badge */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {isAvailable ? (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/40">
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
                       Available
                     </span>
                   ) : (
@@ -648,7 +746,7 @@ export const POSTableSidebar: React.FC = () => {
 
                         <span
                           className={cn(
-                            'text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider',
+                            'text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider',
                             isPartial
                               ? 'bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300 border border-violet-300/40'
                               : isPrinted
@@ -670,15 +768,15 @@ export const POSTableSidebar: React.FC = () => {
         {/* Extra Table Option in the last row */}
         <div
           onClick={() => setShowAddTableModal(true)}
-          className="p-3 rounded-2xl border-2 border-dashed border-stone-200 dark:border-stone-750 hover:border-amber-500/80 dark:hover:border-amber-500/80 bg-stone-50/50 dark:bg-stone-850/40 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all duration-150 flex items-center justify-between cursor-pointer select-none group"
+          className="p-2.5 rounded-xl border-2 border-dashed border-stone-200 dark:border-stone-750 hover:border-amber-500/80 dark:hover:border-amber-500/80 bg-stone-50/50 dark:bg-stone-850/40 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all duration-150 flex items-center justify-between cursor-pointer select-none group"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-stone-950 flex items-center justify-center font-extrabold text-sm shrink-0 border border-dashed border-amber-500/30 group-hover:border-amber-500 transition-all">
-              <Plus className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-stone-950 flex items-center justify-center font-extrabold text-sm shrink-0 border border-dashed border-amber-500/30 group-hover:border-amber-500 transition-all">
+              <Plus className="w-4 h-4" />
             </div>
 
             <div className="min-w-0 flex flex-col">
-              <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 leading-tight transition-colors">
+              <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 leading-snug transition-colors">
                 Extra Table
               </h4>
               <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5 truncate">
@@ -688,7 +786,7 @@ export const POSTableSidebar: React.FC = () => {
           </div>
 
           <div className="shrink-0">
-            <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-950/60 group-hover:bg-amber-500 group-hover:text-stone-950 px-2.5 py-1 rounded-full border border-amber-300/60 dark:border-amber-800/40 transition-all flex items-center gap-1">
+            <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-950/60 group-hover:bg-amber-500 group-hover:text-stone-950 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-300/60 dark:border-amber-800/40 transition-all flex items-center gap-1">
               <Plus className="w-3 h-3" />
               <span>Add</span>
             </span>

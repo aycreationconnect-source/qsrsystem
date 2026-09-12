@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { MenuItem } from '../../types/app.types';
@@ -6,7 +7,10 @@ import { X, Utensils } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const POSProductGrid: React.FC = () => {
-  const { appData } = useApp();
+  const { appData, posMode: contextPosMode } = useApp();
+  const [searchParams] = useSearchParams();
+  const posMode = searchParams.get('mode') || contextPosMode || 'quick';
+
   const {
     posCategory,
     posSearchQuery,
@@ -161,8 +165,15 @@ export const POSProductGrid: React.FC = () => {
                 </div>
               )}
 
-              {/* Ultra-Compact Responsive Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1920px]:grid-cols-7 gap-2 sm:gap-2.5">
+              {/* Mode-Aware Responsive Cards Grid */}
+              <div
+                className={cn(
+                  'grid gap-2 sm:gap-2.5',
+                  posMode === 'table'
+                    ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 min-[1920px]:grid-cols-5'
+                    : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1920px]:grid-cols-7'
+                )}
+              >
                 {itemsInCat.map((item: MenuItem, i: number) => {
                   const qty = cart
                     .filter((c) => c.id === item.id)
@@ -173,7 +184,7 @@ export const POSProductGrid: React.FC = () => {
                       key={item.id || i}
                       onClick={() => handleAddToCart(item)}
                       className={cn(
-                        'relative bg-white dark:bg-stone-900 border rounded-xl p-2.5 flex flex-col justify-between transition-all duration-150 select-none cursor-pointer',
+                        'relative bg-white dark:bg-stone-900 border rounded-xl p-3 flex flex-col justify-between transition-all duration-150 select-none cursor-pointer min-h-[110px]',
                         'border-stone-200/80 dark:border-stone-800 hover:shadow-md hover:border-amber-500/60 active:scale-[0.98]',
                         qty > 0
                           ? 'ring-2 ring-amber-500 border-amber-500 bg-amber-50/25 dark:bg-amber-950/20'
@@ -219,7 +230,7 @@ export const POSProductGrid: React.FC = () => {
 
                         {/* In-Cart Quantity Indicator */}
                         {qty > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.2 rounded-md text-[11px] font-black bg-amber-500 text-stone-950 font-mono shadow-2xs">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-500 text-stone-950 font-mono shadow-2xs">
                             x{qty}
                           </span>
                         )}
@@ -227,7 +238,7 @@ export const POSProductGrid: React.FC = () => {
 
                       {/* Item Details */}
                       <div className="flex-1 min-w-0 mb-2">
-                        <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 line-clamp-2 leading-tight">
+                        <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 line-clamp-2 leading-snug">
                           {item.name}
                         </h4>
                         {item.description && (
@@ -238,14 +249,14 @@ export const POSProductGrid: React.FC = () => {
                       </div>
 
                       {/* Bottom Price & Subtotal Row */}
-                      <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-stone-100 dark:border-stone-800 shrink-0">
-                        <span className="text-xs sm:text-sm font-extrabold font-mono text-amber-600 dark:text-amber-400">
+                      <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-stone-100 dark:border-stone-800 shrink-0">
+                        <span className="text-xs sm:text-sm font-extrabold font-mono text-stone-900 dark:text-stone-100">
                           ₹{parseFloat(item.price.toString().replace('₹', '')).toFixed(2)}
                         </span>
                         {qty > 1 && (
                           <span
-                            title={`Total: ₹${(parseFloat(item.price.toString().replace('₹', '')) * qty).toFixed(2)}`}
-                            className="text-[11px] sm:text-xs font-black text-amber-700 dark:text-amber-400 font-mono"
+                            title={`Subtotal: ₹${(parseFloat(item.price.toString().replace('₹', '')) * qty).toFixed(2)}`}
+                            className="inline-flex items-center text-[10px] sm:text-[11px] font-black font-mono text-amber-800 dark:text-amber-200 bg-amber-500/15 dark:bg-amber-500/25 px-1.5 py-0.5 rounded-md border border-amber-500/30 shrink-0"
                           >
                             ₹{(parseFloat(item.price.toString().replace('₹', '')) * qty).toFixed(2)}
                           </span>
