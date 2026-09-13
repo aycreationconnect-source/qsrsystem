@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { menuApi } from '../../api/menuApi';
 import { Modal, Input, Button } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Tag, FileText, CheckCircle2 } from 'lucide-react';
 
 interface CategoryModalProps {
@@ -53,14 +54,18 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
             await refreshMenu();
           }
         }
+        toast.success(`Category "${catObj.name}" updated!`);
       } else {
         await menuApi.createCategory(catObj);
         await refreshCategories();
+        toast.success(`Category "${catObj.name}" created!`);
       }
 
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save category');
+      const msg = err.message || 'Failed to save category';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

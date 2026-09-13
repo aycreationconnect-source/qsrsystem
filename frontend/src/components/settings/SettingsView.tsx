@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { settingsApi } from '../../api/settingsApi';
 import { StoreProfileModal } from './StoreProfileModal';
 import { PrinterSettingsPanel } from './PrinterSettingsPanel';
 import { Button, Input } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { cafeAudio, CAFE_SOUND_OPTIONS } from '../../lib/sound';
 import {
   Percent,
   ShieldCheck,
   Edit2,
-  CheckCircle2,
   Volume2,
   VolumeX,
   BellRing,
@@ -40,12 +40,18 @@ export const SettingsView: React.FC = () => {
   // Settings Category Navigation
   const [activeTab, setActiveTab] = useState<SettingsCategory>('profile');
 
+  // Reference to right content panel for scroll reset on category tab change
+  const contentPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentPanelRef.current) {
+      contentPanelRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
+
   // Saving states
   const [isSavingTax, setIsSavingTax] = useState(false);
-  const [taxSuccess, setTaxSuccess] = useState(false);
-
   const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const [configSuccess, setConfigSuccess] = useState(false);
 
   // Tax Calculation Method: 'exclusive' (Manual / Standard) vs 'reverse' (Reverse Calculation / Inclusive)
   const [taxCalculationType, setTaxCalculationType] = useState<'exclusive' | 'reverse'>(() => {
@@ -102,25 +108,30 @@ export const SettingsView: React.FC = () => {
       setCustomTaxes([
         { id: `tax-notax-${Date.now()}`, name: 'No Tax', rate: '0' },
       ]);
+      toast.info('Applied preset: No Tax (0%)');
     } else if (preset === 'gst5') {
       setCustomTaxes([
         { id: `tax-cgst-${Date.now()}`, name: 'CGST', rate: '2.5' },
         { id: `tax-sgst-${Date.now() + 1}`, name: 'SGST', rate: '2.5' },
       ]);
+      toast.info('Applied preset: GST 5% (CGST 2.5% + SGST 2.5%)');
     } else if (preset === 'gst12') {
       setCustomTaxes([
         { id: `tax-cgst-${Date.now()}`, name: 'CGST', rate: '6' },
         { id: `tax-sgst-${Date.now() + 1}`, name: 'SGST', rate: '6' },
       ]);
+      toast.info('Applied preset: GST 12% (CGST 6% + SGST 6%)');
     } else if (preset === 'gst18') {
       setCustomTaxes([
         { id: `tax-cgst-${Date.now()}`, name: 'CGST', rate: '9' },
         { id: `tax-sgst-${Date.now() + 1}`, name: 'SGST', rate: '9' },
       ]);
+      toast.info('Applied preset: GST 18% (CGST 9% + SGST 9%)');
     } else if (preset === 'vat5') {
       setCustomTaxes([
         { id: `tax-vat-${Date.now()}`, name: 'VAT', rate: '5' },
       ]);
+      toast.info('Applied preset: VAT 5%');
     }
   };
 
@@ -208,12 +219,11 @@ export const SettingsView: React.FC = () => {
         },
       }));
 
-      setTaxSuccess(true);
-      setTimeout(() => setTaxSuccess(false), 2500);
+      toast.success('Billing and tax configurations saved successfully! Active on all POS tickets.');
       await refreshSettings();
     } catch (err) {
       console.error(err);
-      alert('Failed to save billing settings.');
+      toast.error('Failed to save billing settings.');
     } finally {
       setIsSavingTax(false);
     }
@@ -241,12 +251,15 @@ export const SettingsView: React.FC = () => {
         },
       }));
 
-      setConfigSuccess(true);
-      setTimeout(() => setConfigSuccess(false), 2500);
+      if (activeTab === 'audio') {
+        toast.success('Audio chime configuration saved successfully! Active in real time across the station.');
+      } else {
+        toast.success('Popup notification configuration saved successfully! Active on all terminals.');
+      }
       await refreshSettings();
     } catch (err) {
       console.error(err);
-      alert('Failed to save owner configurations.');
+      toast.error('Failed to save configuration settings.');
     } finally {
       setIsSavingConfig(false);
     }
@@ -384,9 +397,9 @@ export const SettingsView: React.FC = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-7 space-y-6 max-w-[1540px] mx-auto min-h-[calc(100vh-100px)]">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-[1540px] mx-auto w-full lg:h-full lg:flex lg:flex-col lg:overflow-hidden min-h-0">
       {/* Mobile Category Pill Selector (visible only on small screens < lg) */}
-      <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 shrink-0">
         {categories.map((cat) => {
           const isActive = activeTab === cat.id;
           const theme = categoryThemes[cat.id];
@@ -410,11 +423,11 @@ export const SettingsView: React.FC = () => {
       </div>
 
       {/* Main 2-Column Responsive Layout (Desktop & Tablet) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Left Column: Category Navigation (Stretched to bottom) */}
-        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col sticky top-4 self-start h-[calc(100vh-100px)] min-h-[520px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:flex-1 lg:min-h-0">
+        {/* Left Column: Fixed Category Navigation (Stationary on screen, does not scroll) */}
+        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col lg:h-full shrink-0">
           {/* Category Menu Card */}
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3 shadow-sm h-full flex flex-col justify-between">
+          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3 shadow-sm h-full flex flex-col justify-between overflow-y-auto">
             <div className="space-y-1.5">
               {categories.map((cat) => {
                 const isActive = activeTab === cat.id;
@@ -449,8 +462,11 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Active Category Details Panel */}
-        <div className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-6">
+        {/* Right Column: Scrollable Category Details Panel */}
+        <div
+          ref={contentPanelRef}
+          className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-3 pb-8"
+        >
           {/* =========================================================================
               CATEGORY 1: STORE PROFILE & IDENTITY (COMPREHENSIVE REDESIGN)
               ========================================================================= */}
@@ -818,13 +834,6 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
 
-              {taxSuccess && (
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 animate-in zoom-in-95">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Billing and tax configurations saved successfully! Active on all POS tickets.</span>
-                </div>
-              )}
-
               <form onSubmit={handleSaveTaxSettings} className="space-y-6">
                 {/* 1. Custom Tax Types & Rates List */}
                 <div className="space-y-3">
@@ -1106,13 +1115,6 @@ export const SettingsView: React.FC = () => {
               ========================================================================= */}
           {activeTab === 'audio' && (
             <form onSubmit={handleSaveOwnerConfig} className="space-y-6 animate-in fade-in duration-150">
-              {configSuccess && (
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 animate-in zoom-in-95">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Audio chime configuration saved successfully! Active in real time across the station.</span>
-                </div>
-              )}
-
               <div className="bg-white dark:bg-stone-900 border border-purple-500/40 dark:border-purple-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6">
                 {/* Header with Master Switch */}
                 <div className="flex items-start justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-4">
@@ -1303,13 +1305,6 @@ export const SettingsView: React.FC = () => {
               ========================================================================= */}
           {activeTab === 'popup' && (
             <form onSubmit={handleSaveOwnerConfig} className="space-y-6 animate-in fade-in duration-150">
-              {configSuccess && (
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 animate-in zoom-in-95">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Popup notification configuration saved successfully! Active on all terminals.</span>
-                </div>
-              )}
-
               <div className="bg-white dark:bg-stone-900 border border-rose-500/40 dark:border-rose-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6">
                 <div className="flex items-start justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-4">
                   <div className="space-y-1">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { settingsApi } from '../../api/settingsApi';
 import { Button, Input } from '../ui';
+import { toast } from '../../context/ToastContext';
 import {
   printTestThermalBill,
   printTestKOT,
@@ -12,7 +13,6 @@ import {
   Receipt,
   UtensilsCrossed,
   Tag,
-  CheckCircle2,
   Sparkles,
   QrCode,
 } from 'lucide-react';
@@ -28,7 +28,6 @@ export const PrinterSettingsPanel: React.FC = () => {
 
   // Saving states
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // -------------------------------------------------------------
   // Default Printer / Page Settings
@@ -196,12 +195,11 @@ export const PrinterSettingsPanel: React.FC = () => {
       };
 
       await settingsApi.saveSettings(payload);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
+      toast.success('Printer configuration & default paper format saved successfully!');
       await refreshSettings();
     } catch (err) {
       console.error(err);
-      alert('Failed to save printer settings.');
+      toast.error('Failed to save printer settings.');
     } finally {
       setIsSaving(false);
     }
@@ -211,6 +209,7 @@ export const PrinterSettingsPanel: React.FC = () => {
   // Test Print Triggers
   // -------------------------------------------------------------
   const handleTestPrint = () => {
+    toast.info('Test receipt sent to printer simulator.');
     if (activeSubTab === 'bill') {
       printTestThermalBill({
         config: {
@@ -260,14 +259,6 @@ export const PrinterSettingsPanel: React.FC = () => {
   // -------------------------------------------------------------
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Save Success Alert Banner */}
-      {saveSuccess && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in zoom-in-95">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>Printer configuration & default paper format saved successfully!</span>
-        </div>
-      )}
-
       {/* Global Default Printer Roll Setup Card */}
       <div className="bg-white dark:bg-stone-900 border border-sky-500/40 dark:border-sky-500/30 rounded-2xl p-3 sm:p-4 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

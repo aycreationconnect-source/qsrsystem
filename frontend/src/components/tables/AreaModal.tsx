@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { tableApi } from '../../api/tableApi';
 import { useApp } from '../../context/AppContext';
 import { Modal, Button, Input, ConfirmModal } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Layers, FileText, CheckCircle2, Trash2, Palette, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { AREA_COLOR_THEMES, getAreaColorTheme } from '../../utils/areaColors';
@@ -49,9 +50,12 @@ export const AreaModal: React.FC<AreaModalProps> = ({
       await tableApi.deleteArea(editingAreaId);
       await refreshAreas();
       setShowConfirmDelete(false);
+      toast.success('Dining section deleted successfully');
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete section');
+      const msg = err.message || 'Failed to delete section';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
     }
@@ -77,14 +81,18 @@ export const AreaModal: React.FC<AreaModalProps> = ({
 
       if (editingAreaId) {
         await tableApi.updateArea(editingAreaId, payload);
+        toast.success(`Dining section "${payload.name}" updated!`);
       } else {
         await tableApi.createArea(payload);
+        toast.success(`Dining section "${payload.name}" created!`);
       }
 
       await refreshAreas();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save section');
+      const msg = err.message || 'Failed to save section';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

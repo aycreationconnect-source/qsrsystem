@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { menuApi } from '../../api/menuApi';
 import { Modal, Input, Button } from '../ui';
+import { toast } from '../../context/ToastContext';
 import {
   UtensilsCrossed,
   IndianRupee,
@@ -91,14 +92,18 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           await menuApi.updateMenuItem(existingItem.id, finalItem);
           await refreshMenu();
         }
+        toast.success(`Updated "${finalItem.name}" successfully!`);
       } else {
         await menuApi.createMenuItem(finalItem);
         await refreshMenu();
+        toast.success(`Added "${finalItem.name}" to menu!`);
       }
 
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save item');
+      const msg = err.message || 'Failed to save item';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

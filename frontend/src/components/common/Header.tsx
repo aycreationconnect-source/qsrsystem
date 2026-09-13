@@ -240,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <header className="h-16 px-4 sm:px-6 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4 shrink-0 z-10">
+    <header className="h-16 px-4 sm:px-6 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4 shrink-0 relative z-30">
       {/* Left: Mobile Nav Toggle & Current Section Title + Description */}
       <div className="flex items-center gap-3 min-w-0">
         {onToggleMobileNav && (

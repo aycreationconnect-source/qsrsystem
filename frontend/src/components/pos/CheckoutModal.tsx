@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { OrderPayment } from '../../types/app.types';
 import { Modal, Button } from '../ui';
+import { toast } from '../../context/ToastContext';
 import {
   CreditCard,
   Banknote,
@@ -256,7 +257,7 @@ export const CheckoutModal: React.FC = () => {
     if (amt <= 0) return;
 
     if (amt > currentRemaining + 0.05) {
-      alert(`Installment amount (₹${amt.toFixed(2)}) cannot exceed remaining balance (₹${currentRemaining.toFixed(2)})`);
+      toast.warning(`Installment amount (₹${amt.toFixed(2)}) cannot exceed remaining balance (₹${currentRemaining.toFixed(2)})`);
       return;
     }
 

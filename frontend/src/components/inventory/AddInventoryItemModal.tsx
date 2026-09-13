@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { inventoryApi } from '../../api/inventoryApi';
 import { Modal, Button, Input } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Boxes, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { InventoryCategory } from '../../types/app.types';
 
@@ -65,9 +66,12 @@ export const AddInventoryItemModal: React.FC<AddInventoryItemModalProps> = ({
       });
 
       await refreshInventory();
+      toast.success(`Inventory item "${name.trim()}" added!`);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to add item to inventory.');
+      const msg = err.message || 'Failed to add item to inventory.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

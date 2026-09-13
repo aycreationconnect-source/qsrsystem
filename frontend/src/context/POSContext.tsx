@@ -3,6 +3,7 @@ import type { CartItem, TableOrderState, OrderPayment } from '../types/app.types
 import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
 import { roundPOSAmount, getStoreGlobalTaxRate, getItemTaxRate } from '../lib/orderUtils';
+import { toast } from './ToastContext';
 
 export type DietFilterType = 'ALL' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan';
 
@@ -228,7 +229,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       if (posMode === 'table' && !selectedTableId) {
-        alert('Please select a table from the left sidebar to add items.');
+        toast.warning('Please select a table from the left sidebar to add items.');
         return;
       }
 
@@ -512,7 +513,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }, 3000);
       } catch (e) {
         console.error(e);
-        alert('Error placing order.');
+        toast.error('Error placing order. Please try again.');
       }
     },
     [

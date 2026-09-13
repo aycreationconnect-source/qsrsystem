@@ -10,6 +10,7 @@ import { AddonModal } from './AddonModal';
 import { menuApi } from '../../api/menuApi';
 import type { Addon } from '../../types/app.types';
 import { ConfirmModal } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Utensils, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -134,10 +135,13 @@ export const MenuView: React.FC = () => {
         await menuApi.deleteMenuItem(itemToDelete.id);
       }
       await refreshMenu();
+      toast.success(`"${itemToDelete.name}" deleted from menu.`);
       setItemToDelete(null);
     } catch (e: any) {
       console.error(e);
-      setDeleteErrorMessage(e?.message || 'Failed to delete dish from server.');
+      const msg = e?.message || 'Failed to delete dish from server.';
+      setDeleteErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
     }
@@ -150,10 +154,13 @@ export const MenuView: React.FC = () => {
       setDeleteErrorMessage(null);
       await menuApi.deleteAddon(addonToDelete.id);
       await refreshAddons();
+      toast.success(`Add-on "${addonToDelete.name}" deleted.`);
       setAddonToDelete(null);
     } catch (e: any) {
       console.error(e);
-      setDeleteErrorMessage(e?.message || 'Failed to delete modifier addon.');
+      const msg = e?.message || 'Failed to delete modifier addon.';
+      setDeleteErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
     }

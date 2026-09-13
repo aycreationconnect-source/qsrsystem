@@ -31,7 +31,7 @@ export const AdminLayout: React.FC = () => {
       {/* Sidebar Rail (Permanent on Tablet & Desktop >= 768px: transitions width smoothly between 72px and 260px) */}
       <div
         className={cn(
-          "hidden md:block shrink-0 h-full relative z-30 transition-all duration-300 ease-in-out",
+          "hidden md:block shrink-0 h-full relative z-40 transition-all duration-300 ease-in-out",
           isSidebarCollapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
@@ -63,7 +63,7 @@ export const AdminLayout: React.FC = () => {
           onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
         />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto min-h-0 flex flex-col relative z-0">
           <Outlet />
         </main>
       </div>

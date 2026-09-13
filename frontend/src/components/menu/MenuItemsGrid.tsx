@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Button, Tooltip, Modal } from '../ui';
+import { Button, Tooltip, Modal, ConfirmModal } from '../ui';
 import { menuApi } from '../../api/menuApi';
+import { toast } from '../../context/ToastContext';
 import {
   Plus,
   Settings2,
@@ -43,6 +44,10 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
   const [newSubcatName, setNewSubcatName] = useState('');
   const [isSavingSubcat, setIsSavingSubcat] = useState(false);
   const [subcatError, setSubcatError] = useState<string | null>(null);
+
+  // Delete Subcategory Modal State
+  const [subcatToDelete, setSubcatToDelete] = useState<string | null>(null);
+  const [isDeletingSubcat, setIsDeletingSubcat] = useState(false);
 
   // Clear search when category changes
   useEffect(() => {
@@ -128,24 +133,32 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
       setSelectedSubcategory?.(trimmed);
       setNewSubcatName('');
       setIsAddSubcatModalOpen(false);
+      toast.success(`Subcategory "${trimmed}" added!`);
     } catch (err: any) {
-      setSubcatError(err.message || 'Failed to add subcategory');
+      const msg = err.message || 'Failed to add subcategory';
+      setSubcatError(msg);
+      toast.error(msg);
     } finally {
       setIsSavingSubcat(false);
     }
   };
 
-  const handleDeleteSubcat = async (subNameToDelete: string) => {
-    if (!currentCatObj?.id) return;
-    if (!window.confirm(`Are you sure you want to delete subcategory "${subNameToDelete}"?`)) return;
+  const confirmDeleteSubcat = async () => {
+    if (!currentCatObj?.id || !subcatToDelete) return;
     try {
-      await menuApi.removeSubcategory(currentCatObj.id, subNameToDelete);
+      setIsDeletingSubcat(true);
+      await menuApi.removeSubcategory(currentCatObj.id, subcatToDelete);
       await refreshCategories();
-      if (selectedSubcategory === subNameToDelete) {
+      if (selectedSubcategory === subcatToDelete) {
         setSelectedSubcategory?.(null);
       }
-    } catch (err) {
+      toast.success(`Subcategory "${subcatToDelete}" removed.`);
+      setSubcatToDelete(null);
+    } catch (err: any) {
       console.error('Failed to remove subcategory', err);
+      toast.error(err?.message || 'Failed to remove subcategory');
+    } finally {
+      setIsDeletingSubcat(false);
     }
   };
 
@@ -255,7 +268,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteSubcat(sub);
+                      setSubcatToDelete(sub);
                     }}
                     className="opacity-0 group-hover:opacity-100 p-0.5 -ml-1 mr-1 rounded-full text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
                     title={`Delete subcategory "${sub}"`}
@@ -541,6 +554,19 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
           </div>
         </form>
       </Modal>
+
+      {/* Delete Subcategory Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(subcatToDelete)}
+        onClose={() => setSubcatToDelete(null)}
+        onConfirm={confirmDeleteSubcat}
+        title="Delete Subcategory"
+        message={`Are you sure you want to delete subcategory "${subcatToDelete}" from ${selectedCategory}?`}
+        confirmText="Delete Subcategory"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeletingSubcat}
+      />
     </div>
   );
 };

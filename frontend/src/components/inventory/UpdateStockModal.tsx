@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { inventoryApi } from '../../api/inventoryApi';
 import { Modal, Button, Input } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Boxes, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface UpdateStockModalProps {
@@ -68,9 +69,11 @@ export const UpdateStockModal: React.FC<UpdateStockModalProps> = ({
         setAppData(newAppData);
       }
 
+      toast.success(`Stock for "${currentItem.item}" updated (${stockVal} ${currentItem.unit})!`);
       onClose();
     } catch (e) {
       console.error('Failed to update inventory:', e);
+      toast.error('Failed to update inventory stock.');
     } finally {
       setIsSaving(false);
     }

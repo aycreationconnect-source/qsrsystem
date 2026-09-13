@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { menuApi } from '../../api/menuApi';
 import { Modal, Button } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { cn } from '../../lib/utils';
 import {
   Boxes,
@@ -110,9 +111,11 @@ export const ConfigItemModal: React.FC<ConfigItemModalProps> = ({
       }
 
       setAppData(newAppData);
+      toast.success(`Configuration for "${currentItem.name}" saved successfully!`);
       onClose();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to update config:', e);
+      toast.error(e?.message || 'Failed to save configuration.');
     } finally {
       setIsSaving(false);
     }
@@ -171,6 +174,7 @@ export const ConfigItemModal: React.FC<ConfigItemModalProps> = ({
       if (created && created.id) {
         const updatedIds = [...currentAddonIds, created.id.toString()];
         setNewItem({ ...newItem, addonIds: updatedIds.join(',') });
+        toast.success(`Add-on "${created.name}" created and attached!`);
       }
 
       // Reset form
@@ -179,7 +183,9 @@ export const ConfigItemModal: React.FC<ConfigItemModalProps> = ({
       setNewAddonDesc('');
       setShowAddAddonForm(false);
     } catch (err: any) {
-      setAddonError(err.message || 'Failed to create add-on');
+      const msg = err.message || 'Failed to create add-on';
+      setAddonError(msg);
+      toast.error(msg);
     } finally {
       setIsCreatingAddon(false);
     }

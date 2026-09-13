@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Button, Input } from '../ui';
-import { Store, Upload, Image, Phone, MapPin, Building, FileText, CheckCircle2 } from 'lucide-react';
+import { Store, Upload, Image, Phone, MapPin, Building, FileText } from 'lucide-react';
 import { settingsApi } from '../../api/settingsApi';
+import { toast } from '../../context/ToastContext';
 
 export interface StoreProfileModalProps {
   isOpen: boolean;
@@ -29,7 +30,6 @@ export const StoreProfileModal: React.FC<StoreProfileModalProps> = ({
   );
   const [logoUrl, setLogoUrl] = useState(storeProfile?.logoUrl || '');
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,14 +70,13 @@ export const StoreProfileModal: React.FC<StoreProfileModalProps> = ({
 
       if (res?.store) {
         onProfileUpdated(res.store);
-        setSuccess(true);
-        setTimeout(() => {
-          setSuccess(false);
-          onClose();
-        }, 800);
+        toast.success('Store profile updated successfully!');
+        onClose();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to update store profile');
+      const msg = err.response?.data?.message || err.message || 'Failed to update store profile';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -95,13 +94,6 @@ export const StoreProfileModal: React.FC<StoreProfileModalProps> = ({
         {error && (
           <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold">
             {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Store profile updated successfully!
           </div>
         )}
 

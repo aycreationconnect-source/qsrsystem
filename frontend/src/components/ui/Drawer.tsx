@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../lib/utils';
 import { X } from 'lucide-react';
 
@@ -49,8 +50,8 @@ export const Drawer: React.FC<DrawerProps> = ({
     bottom: 'inset-x-0 bottom-0 max-h-[85vh] w-full rounded-t-3xl border-t',
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex overflow-hidden animate-in fade-in duration-200">
+  const drawerContent = (
+    <div className="fixed inset-0 z-[100] flex overflow-hidden animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-stone-950/60 backdrop-blur-sm transition-opacity"
@@ -95,4 +96,6 @@ export const Drawer: React.FC<DrawerProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(drawerContent, document.body);
 };
