@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { inventoryApi } from '../../api/inventoryApi';
-import { Modal, Button, Input } from '../ui';
+import { Modal, Button, Input, Select, type SelectOption } from '../ui';
 import { toast } from '../../context/ToastContext';
 import { Boxes, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { InventoryCategory } from '../../types/app.types';
@@ -12,6 +12,17 @@ interface AddInventoryItemModalProps {
   categories: InventoryCategory[];
   defaultCategory?: string | null;
 }
+
+const UNIT_OPTIONS: SelectOption[] = [
+  { value: 'pcs', label: 'Pieces (pcs)', badge: 'Count' },
+  { value: 'kg', label: 'Kilograms (kg)', badge: 'Weight' },
+  { value: 'g', label: 'Grams (g)', badge: 'Weight' },
+  { value: 'L', label: 'Liters (L)', badge: 'Volume' },
+  { value: 'ml', label: 'Milliliters (ml)', badge: 'Volume' },
+  { value: 'slice', label: 'Slices (slice)', badge: 'Portion' },
+  { value: 'portion', label: 'Portions (portion)', badge: 'Portion' },
+  { value: 'box', label: 'Boxes (box)', badge: 'Package' },
+];
 
 export const AddInventoryItemModal: React.FC<AddInventoryItemModalProps> = ({
   show,
@@ -42,6 +53,12 @@ export const AddInventoryItemModal: React.FC<AddInventoryItemModalProps> = ({
 
   if (!show) return null;
 
+  const categoryOptions: SelectOption[] = categories.map((c) => ({
+    value: c.name,
+    label: c.name,
+    badge: c.status === 'Inactive' ? 'Inactive' : undefined,
+  }));
+
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name.trim()) {
@@ -62,7 +79,7 @@ export const AddInventoryItemModal: React.FC<AddInventoryItemModalProps> = ({
         unit: unit || 'pcs',
         stock: stockNum,
         threshold: threshNum,
-        status: stockNum <= threshNum ? (stockNum <= 0 ? 'Out of Stock' : 'Low Stock') : 'Good',
+        status: stockNum <= threshNum ? (stockNum <= 0 ? 'Out of Stock' : 'Low Stock') : 'Good Stock',
       });
 
       await refreshInventory();
@@ -118,44 +135,25 @@ export const AddInventoryItemModal: React.FC<AddInventoryItemModalProps> = ({
           required
         />
 
-        {/* Category & Unit */}
+        {/* Category & Unit with Rich Custom Dropdown */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
-              Category
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer"
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Category"
+            options={categoryOptions}
+            value={category}
+            onChange={(val) => setCategory(String(val))}
+            searchable={false}
+            triggerClassName="min-h-[42px] h-[42px]"
+          />
 
-          <div>
-            <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
-              Unit of Measure
-            </label>
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-sm font-medium text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 cursor-pointer"
-            >
-              <option value="pcs">pcs</option>
-              <option value="kg">kg</option>
-              <option value="g">g</option>
-              <option value="L">L</option>
-              <option value="ml">ml</option>
-              <option value="slice">slice</option>
-              <option value="portion">portion</option>
-              <option value="box">box</option>
-            </select>
-          </div>
+          <Select
+            label="Unit of Measure"
+            options={UNIT_OPTIONS}
+            value={unit}
+            onChange={(val) => setUnit(String(val))}
+            searchable={false}
+            triggerClassName="min-h-[42px] h-[42px]"
+          />
         </div>
 
         {/* Initial Stock & Threshold */}

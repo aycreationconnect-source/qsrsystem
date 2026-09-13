@@ -124,21 +124,66 @@ export class InventoryService {
       id: c.id,
       name: c.name,
       description: c.description,
+      status: (c as any).status || 'Active',
       itemCount: c.items.length,
       lowStockCount: c.items.filter((i) => i.stock <= i.threshold).length,
     }));
   }
 
-  async createCategory(data: { name: string; description?: string }) {
+  async createCategory(data: { name: string; description?: string; status?: string }) {
     const trimmed = data.name.trim();
     const existing = await this.prisma.inventoryCategory.findUnique({ where: { name: trimmed } });
-    if (existing) return existing;
+    if (existing) {
+      if (data.status && (existing as any).status !== data.status) {
+        return this.prisma.inventoryCategory.update({
+          where: { id: existing.id },
+          data: {
+            status: data.status,
+            description: data.description !== undefined ? data.description : existing.description,
+          },
+        });
+      }
+      return existing;
+    }
     return this.prisma.inventoryCategory.create({
       data: {
         name: trimmed,
         description: data.description || null,
+        status: data.status || 'Active',
       },
     });
+  }
+
+  async updateCategory(id: number, data: { name?: string; description?: string; status?: string }) {
+    const existing = await this.prisma.inventoryCategory.findUnique({ where: { id } });
+    if (!existing) {
+      throw new Error(`Inventory category with ID ${id} not found.`);
+    }
+
+    const updateData: any = {};
+    if (data.name !== undefined && data.name.trim()) {
+      updateData.name = data.name.trim();
+    }
+    if (data.description !== undefined) {
+      updateData.description = data.description?.trim() || null;
+    }
+    if (data.status !== undefined) {
+      updateData.status = data.status;
+    }
+
+    const updated = await this.prisma.inventoryCategory.update({
+      where: { id },
+      data: updateData,
+    });
+
+    if (data.name && data.name.trim() !== existing.name) {
+      await this.prisma.inventoryItem.updateMany({
+        where: { categoryId: id },
+        data: { categoryName: data.name.trim() },
+      });
+    }
+
+    return updated;
   }
 
   async deleteCategory(id: number) {

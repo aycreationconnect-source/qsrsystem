@@ -8,6 +8,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: React.ReactNode;
   description?: React.ReactNode;
+  headerAction?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
@@ -22,6 +23,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   description,
+  headerAction,
   children,
   footer,
   maxWidth = 'md',
@@ -83,10 +85,10 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="sm:hidden w-12 h-1.5 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mt-3 mb-1" />
 
         {/* Modal Header */}
-        {(title || description) && (
+        {(title || description || headerAction) && (
           <div
             className={cn(
-              'flex items-center justify-between px-6 border-b border-stone-100 dark:border-stone-800/80',
+              'flex items-center justify-between px-6 border-b border-stone-100 dark:border-stone-800/80 shrink-0',
               description ? 'pt-4 sm:pt-5 pb-3' : 'py-3 sm:py-3.5',
               headerClassName
             )}
@@ -102,22 +104,25 @@ export const Modal: React.FC<ModalProps> = ({
               )}
             </div>
 
-            <button
-              onClick={onClose}
-              className="p-1.5 -mr-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-3">
+              {headerAction}
+              <button
+                onClick={onClose}
+                className="p-1.5 -mr-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Modal Body */}
-        <div className={cn('flex-1 overflow-y-auto px-6 py-4', bodyClassName)}>{children}</div>
+        <div className={cn('flex-1 min-h-0 overflow-y-auto px-6 py-4', bodyClassName)}>{children}</div>
 
         {/* Modal Footer */}
         {footer && (
-          <div className="px-6 py-4 bg-stone-50 dark:bg-stone-900/50 border-t border-stone-100 dark:border-stone-800/80 flex items-center justify-end gap-2.5">
+          <div className="px-6 py-4 bg-stone-50 dark:bg-stone-900/50 border-t border-stone-100 dark:border-stone-800/80 flex items-center justify-end gap-2.5 shrink-0">
             {footer}
           </div>
         )}

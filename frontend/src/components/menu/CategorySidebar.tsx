@@ -32,14 +32,14 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
   return (
     <div className="w-full md:w-72 lg:w-80 h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none">
       {/* Top Header */}
-      <div className="p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
-        <div>
-          <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-            <FolderTree className="w-4 h-4 text-amber-500" />
-            <span>Categories</span>
+      <div className="px-4 py-3 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <FolderTree className="w-4 h-4 text-amber-500 shrink-0" />
+          <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100">
+            Categories
           </h3>
-          <span className="text-[11px] text-stone-400 font-medium">
-            {categories.length} Sections
+          <span className="text-xs text-stone-400 font-medium shrink-0">
+            ({categories.length} Sections)
           </span>
         </div>
 

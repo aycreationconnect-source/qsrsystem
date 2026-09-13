@@ -1,32 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { inventoryApi } from '../../api/inventoryApi';
 import { Modal, Button, Input } from '../ui';
-import { FolderPlus, CheckCircle2 } from 'lucide-react';
+import { toast } from '../../context/ToastContext';
+import { FolderPlus, Edit2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { cn } from '../../lib/utils';
 import type { InventoryCategory } from '../../types/app.types';
 
 interface AddCategoryModalProps {
   show: boolean;
   onClose: () => void;
-  onCategoryCreated: (category: InventoryCategory) => void;
+  categoryToEdit?: InventoryCategory | null;
+  onCategorySaved: (category: InventoryCategory) => void;
 }
 
 export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   show,
   onClose,
-  onCategoryCreated,
+  categoryToEdit,
+  onCategorySaved,
 }) => {
+  const isEditMode = Boolean(categoryToEdit);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (show) {
-      setName('');
-      setDescription('');
+      if (categoryToEdit) {
+        setName(categoryToEdit.name || '');
+        setDescription(categoryToEdit.description || '');
+        setStatus(categoryToEdit.status === 'Inactive' ? 'Inactive' : 'Active');
+      } else {
+        setName('');
+        setDescription('');
+        setStatus('Active');
+      }
       setError(null);
     }
-  }, [show]);
+  }, [show, categoryToEdit]);
 
   if (!show) return null;
 
@@ -40,15 +53,30 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     try {
       setIsSaving(true);
       setError(null);
-      const created = await inventoryApi.createCategory({
-        name: name.trim(),
-        description: description.trim() || undefined,
-      });
+      let saved: InventoryCategory;
 
-      onCategoryCreated(created);
+      if (categoryToEdit && categoryToEdit.id) {
+        saved = await inventoryApi.updateCategory(categoryToEdit.id, {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          status,
+        });
+        toast.success(`Category "${name.trim()}" updated successfully!`);
+      } else {
+        saved = await inventoryApi.createCategory({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          status,
+        });
+        toast.success(`Category "${name.trim()}" created successfully!`);
+      }
+
+      onCategorySaved(saved);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to create inventory category.');
+      const msg = err.message || 'Failed to save inventory category.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -58,8 +86,12 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     <Modal
       isOpen={show}
       onClose={onClose}
-      title="Add Inventory Category"
-      description="Create a category to group raw ingredients and track stock efficiently."
+      title={isEditMode ? `Edit Category: ${categoryToEdit?.name}` : 'Add Inventory Category'}
+      description={
+        isEditMode
+          ? 'Update category name, description, or mark this category as Inactive.'
+          : 'Create a category to group raw ingredients and track stock efficiently.'
+      }
       maxWidth="sm"
       footer={
         <>
@@ -73,7 +105,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             isLoading={isSaving}
             leftIcon={<CheckCircle2 className="w-4 h-4" />}
           >
-            Create Category
+            {isEditMode ? 'Save Changes' : 'Create Category'}
           </Button>
         </>
       }
@@ -85,15 +117,56 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           </div>
         )}
 
+        {/* Category Name */}
         <Input
           label="Category Name *"
           placeholder="e.g. Dairy, Spices, Bakery, Syrups"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          leftIcon={<FolderPlus className="w-4 h-4" />}
+          leftIcon={isEditMode ? <Edit2 className="w-4 h-4" /> : <FolderPlus className="w-4 h-4" />}
           required
         />
 
+        {/* Category Status Toggle (Active vs Inactive) */}
+        <div>
+          <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
+            Category Status
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setStatus('Active')}
+              className={cn(
+                'px-3 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+                status === 'Active'
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 ring-2 ring-emerald-500/20 shadow-sm'
+                  : 'bg-white dark:bg-stone-850 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+              )}
+            >
+              <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Active</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setStatus('Inactive')}
+              className={cn(
+                'px-3 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer',
+                status === 'Inactive'
+                  ? 'bg-amber-50 border-amber-500 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 ring-2 ring-amber-500/20 shadow-sm'
+                  : 'bg-white dark:bg-stone-850 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
+              )}
+            >
+              <EyeOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Inactive (Hidden)</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-1">
+            Inactive categories will be marked as inactive and can be toggled back at any time.
+          </p>
+        </div>
+
+        {/* Description */}
         <div>
           <label className="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider select-none mb-1.5 block">
             Description (Optional)

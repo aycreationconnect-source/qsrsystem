@@ -60,6 +60,7 @@ export interface InventoryCategory {
   id: number;
   name: string;
   description?: string | null;
+  status?: 'Active' | 'Inactive' | string;
   itemCount?: number;
   lowStockCount?: number;
 }

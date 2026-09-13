@@ -39,6 +39,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               'w-full bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 text-sm transition-all duration-150',
               'focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
               'disabled:bg-stone-100 dark:disabled:bg-stone-800/50 disabled:cursor-not-allowed disabled:opacity-60',
+              '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
               error &&

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../lib/utils';
 import { ChevronDown, Check, X, Search } from 'lucide-react';
 
@@ -45,20 +46,92 @@ export const Select: React.FC<SelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [openUpward, setOpenUpward] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Close on outside click
+  // Calculate precise fixed position for portal rendering
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    const shouldOpenUp =
+      dropdownDirection === 'up'
+        ? true
+        : dropdownDirection === 'down'
+        ? false
+        : spaceBelow < 220 && spaceAbove > spaceBelow;
+
+    const margin = 6;
+    const availableHeight = shouldOpenUp ? spaceAbove - margin * 2 : spaceBelow - margin * 2;
+    const maxHeight = Math.min(260, Math.max(120, availableHeight));
+
+    if (shouldOpenUp) {
+      setMenuPosition({
+        bottom: viewportHeight - rect.top + margin,
+        left: rect.left,
+        width: rect.width,
+        maxHeight,
+      });
+    } else {
+      setMenuPosition({
+        top: rect.bottom + margin,
+        left: rect.left,
+        width: rect.width,
+        maxHeight,
+      });
+    }
+  }, [dropdownDirection]);
+
+  // Keep position updated on scroll and resize
   useEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+    };
+  }, [isOpen, updatePosition]);
+
+  // Close on outside click (checking both container and portaled menu)
+  useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   // Close on escape key
   useEffect(() => {
@@ -73,27 +146,6 @@ export const Select: React.FC<SelectProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Compute dropdown direction
-  useEffect(() => {
-    if (isOpen) {
-      if (dropdownDirection === 'up') {
-        setOpenUpward(true);
-      } else if (dropdownDirection === 'down') {
-        setOpenUpward(false);
-      } else {
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect();
-          const spaceBelow = window.innerHeight - rect.bottom;
-          if (spaceBelow < 240 && rect.top > 240) {
-            setOpenUpward(true);
-          } else {
-            setOpenUpward(false);
-          }
-        }
-      }
-    }
-  }, [isOpen, dropdownDirection]);
-
   // Auto focus search input when opened
   useEffect(() => {
     if (isOpen && searchable && searchInputRef.current) {
@@ -103,9 +155,6 @@ export const Select: React.FC<SelectProps> = ({
       setSearchTerm('');
     }
   }, [isOpen, searchable]);
-
-  const effectiveOpenUpward =
-    dropdownDirection === 'up' ? true : dropdownDirection === 'down' ? false : openUpward;
 
   const filteredOptions = options.filter((opt) =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -215,73 +264,86 @@ export const Select: React.FC<SelectProps> = ({
         />
       </div>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div
-          className={cn(
-            'absolute left-0 right-0 z-50 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150',
-            effectiveOpenUpward ? 'bottom-full mb-2' : 'top-full mt-2',
-            menuClassName
-          )}
-        >
-          {searchable && (
-            <div className="p-2.5 border-b border-stone-100 dark:border-stone-800 flex items-center gap-2">
-              <Search className="w-4 h-4 text-stone-400 shrink-0" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search..."
-                className="w-full text-xs bg-transparent text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none"
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="text-stone-400 hover:text-stone-600">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          )}
+      {/* Dropdown Menu Portaled to document.body at z-[120] to prevent any clipping from modal body or footer */}
+      {isOpen &&
+        menuPosition &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: 'fixed',
+              top: menuPosition.top !== undefined ? `${menuPosition.top}px` : undefined,
+              bottom: menuPosition.bottom !== undefined ? `${menuPosition.bottom}px` : undefined,
+              left: `${menuPosition.left}px`,
+              width: `${menuPosition.width}px`,
+              maxHeight: `${menuPosition.maxHeight}px`,
+              zIndex: 99999,
+            }}
+            className={cn(
+              'bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-2xl overflow-hidden',
+              'animate-in fade-in zoom-in-95 duration-150 flex flex-col select-none',
+              menuClassName
+            )}
+          >
+            {searchable && (
+              <div className="p-2.5 border-b border-stone-100 dark:border-stone-800 flex items-center gap-2 shrink-0">
+                <Search className="w-4 h-4 text-stone-400 shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full text-xs bg-transparent text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none"
+                />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm('')} className="text-stone-400 hover:text-stone-600 cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
 
-          <div className="max-h-60 overflow-y-auto p-1.5 space-y-0.5">
-            {filteredOptions.length === 0 ? (
-              <div className="p-3 text-center text-xs text-stone-400 font-medium">No options found</div>
-            ) : (
-              filteredOptions.map((opt) => {
-                const selected = isSelected(opt.value);
-                return (
-                  <div
-                    key={opt.value}
-                    onClick={() => handleSelect(opt.value)}
-                    className={cn(
-                      'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all',
-                      selected
-                        ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 font-bold border border-amber-500/20'
-                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-                      <div className="min-w-0">
-                        <span className="block truncate">{opt.label}</span>
-                        {opt.description && (
-                          <span className="text-[10px] text-stone-400 font-normal block">{opt.description}</span>
+            <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+              {filteredOptions.length === 0 ? (
+                <div className="p-3 text-center text-xs text-stone-400 font-medium">No options found</div>
+              ) : (
+                filteredOptions.map((opt) => {
+                  const selected = isSelected(opt.value);
+                  return (
+                    <div
+                      key={opt.value}
+                      onClick={() => handleSelect(opt.value)}
+                      className={cn(
+                        'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all',
+                        selected
+                          ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 font-bold border border-amber-500/20'
+                          : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+                        <div className="min-w-0">
+                          <span className="block truncate">{opt.label}</span>
+                          {opt.description && (
+                            <span className="text-[10px] text-stone-400 font-normal block">{opt.description}</span>
+                          )}
+                        </div>
+                        {opt.badge && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-medium shrink-0">
+                            {opt.badge}
+                          </span>
                         )}
                       </div>
-                      {opt.badge && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 font-medium shrink-0">
-                          {opt.badge}
-                        </span>
-                      )}
+                      {selected && <Check className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 ml-2" />}
                     </div>
-                    {selected && <Check className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 ml-2" />}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+                  );
+                })
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {error && <p className="text-xs text-rose-500 font-medium">{error}</p>}
     </div>

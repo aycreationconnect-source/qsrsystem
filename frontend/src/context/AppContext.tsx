@@ -246,21 +246,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
-  // Lightweight periodic synchronization ONLY for relatable live data (Category visibility, Menu availability, and live Orders)
+  // Gentle 15-second background sync ONLY for live changing endpoints (Orders and Inventory deductions)
   const syncRelatableData = useCallback(async () => {
     try {
-      const [catsRes, menusRes, ordersRes] = await Promise.allSettled([
-        menuApi.getCategories(),
-        menuApi.getMenuItems(),
+      const [ordersRes, invRes] = await Promise.allSettled([
         orderApi.getOrders(),
+        inventoryApi.getInventory(),
       ]);
 
-      const cats =
-        catsRes.status === 'fulfilled' && Array.isArray(catsRes.value) ? catsRes.value : null;
-      const menus =
-        menusRes.status === 'fulfilled' && Array.isArray(menusRes.value) ? menusRes.value : null;
       const orders =
         ordersRes.status === 'fulfilled' && Array.isArray(ordersRes.value) ? ordersRes.value : null;
+      const inventory =
+        invRes.status === 'fulfilled' && Array.isArray(invRes.value) ? invRes.value : null;
 
       if (orders !== null && Array.isArray(orders)) {
         if (isOrdersInitializedRef.current) {
@@ -279,27 +276,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setAppData((prev) => ({
         ...prev,
-        ...(cats !== null ? { categories: sanitizeCategories(cats) } : {}),
-        ...(orders !== null ? { orders: orders } : {}),
-        ...(menus !== null
-          ? {
-              menu: menus
-                .filter((m: any) => !m.isAddon)
-                .map((m: any) => ({
-                  ...m,
-                  image: m.imageUrl,
-                  status: m.status || (m.isAvailable === false ? 'Inactive' : 'Active'),
-                  available: m.status ? m.status === 'Active' : m.isAvailable !== false,
-                  category: m.category?.name || 'Uncategorized',
-                  subcategory: m.subcategory || null,
-                  price: `₹${
-                    typeof m.price === 'number'
-                      ? m.price.toFixed(2)
-                      : parseFloat(m.price || 0).toFixed(2)
-                  }`,
-                })),
-            }
-          : {}),
+        ...(orders !== null ? { orders } : {}),
+        ...(inventory !== null ? { inventory } : {}),
       }));
     } catch (e) {
       console.warn('Relatable live sync skipped:', e);

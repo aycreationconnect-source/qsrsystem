@@ -1,4 +1,4 @@
-import type { Order } from '../types/app.types';
+import type { Order, InventoryItem } from '../types/app.types';
 
 /**
  * Checks if a given date string or Date object falls on today in local calendar time.
@@ -351,5 +351,86 @@ export function formatTaxLabel(
   }
 
   return hasTaxAmount ? 'Taxes' : 'No Tax (0%)';
+}
+
+export interface LowStockMaterial {
+  name: string;
+  stock: number;
+  unit: string;
+  threshold: number;
+  requiredQty?: number;
+}
+
+/**
+ * Returns any raw materials attached to a menu item that are currently low in stock or depleted.
+ */
+export function getMenuItemLowStockMaterials(
+  item: any,
+  inventory: InventoryItem[] = []
+): LowStockMaterial[] {
+  if (!item) return [];
+
+  const ingredients: any[] = Array.isArray(item.ingredients)
+    ? item.ingredients
+    : Array.isArray(item.rawIngredients)
+    ? item.rawIngredients
+    : [];
+
+  if (ingredients.length === 0 || !Array.isArray(inventory) || inventory.length === 0) {
+    return [];
+  }
+
+  const lowMaterials: LowStockMaterial[] = [];
+  const seen = new Set<string>();
+
+  for (const ing of ingredients) {
+    const ingName = (ing.name || ing.item || '').trim();
+    if (!ingName) continue;
+
+    const lowerName = ingName.toLowerCase();
+    if (seen.has(lowerName)) continue;
+    seen.add(lowerName);
+
+    const matchingInv = inventory.find((inv) => {
+      const invName = (inv.item || inv.name || '').trim().toLowerCase();
+      if (invName && invName === lowerName) return true;
+      if (inv.id && ing.inventoryId && inv.id === ing.inventoryId) return true;
+      return false;
+    });
+
+    if (matchingInv) {
+      const stock =
+        typeof matchingInv.stock === 'number'
+          ? matchingInv.stock
+          : parseFloat(String(matchingInv.stock || 0));
+      const threshold =
+        typeof matchingInv.threshold === 'number'
+          ? matchingInv.threshold
+          : parseFloat(String(matchingInv.threshold || 0));
+      const requiredQty =
+        typeof ing.quantity === 'number'
+          ? ing.quantity
+          : parseFloat(String(ing.quantity || 0));
+
+      const isLow =
+        stock <= threshold ||
+        stock <= 0 ||
+        (requiredQty > 0 && stock < requiredQty) ||
+        matchingInv.status === 'Low Stock' ||
+        matchingInv.status === 'Out of Stock';
+
+      if (isLow) {
+        lowMaterials.push({
+          name: matchingInv.item || matchingInv.name || ingName,
+          stock: isNaN(stock) ? 0 : stock,
+          unit: matchingInv.unit || ing.unit || 'pcs',
+          threshold: isNaN(threshold) ? 0 : threshold,
+          requiredQty: isNaN(requiredQty) ? undefined : requiredQty,
+        });
+      }
+    }
+  }
+
+  return lowMaterials;
 }
 

@@ -26,6 +26,10 @@ interface POSContextType {
   setDiscountType: (type: 'percent' | 'fixed') => void;
   discountValue: string;
   setDiscountValue: (val: string) => void;
+  extraChargeType: 'percent' | 'fixed';
+  setExtraChargeType: (type: 'percent' | 'fixed') => void;
+  extraChargeValue: string;
+  setExtraChargeValue: (val: string) => void;
   orderSuccess: boolean;
   setOrderSuccess: (val: boolean) => void;
 
@@ -79,6 +83,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [paymentType, setPaymentType] = useState('Cash');
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('fixed');
   const [discountValue, setDiscountValue] = useState('');
+  const [extraChargeType, setExtraChargeType] = useState<'percent' | 'fixed'>('fixed');
+  const [extraChargeValue, setExtraChargeValue] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const [tableOrders, setTableOrders] = useState<Record<string, TableOrderState>>(() => {
@@ -409,13 +415,22 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       const { subtotal, tax, total: baseTotal } = getCartTotals();
       const dVal = parseFloat(discountValue) || 0;
-      let finalTotal = baseTotal;
+      let discountAmount = 0;
       if (discountType === 'percent') {
-        finalTotal = baseTotal - (baseTotal * dVal) / 100;
+        discountAmount = (baseTotal * dVal) / 100;
       } else {
-        finalTotal = baseTotal - dVal;
+        discountAmount = dVal;
       }
-      if (finalTotal < 0) finalTotal = 0;
+
+      const eVal = parseFloat(extraChargeValue) || 0;
+      let extraChargeAmount = 0;
+      if (extraChargeType === 'percent') {
+        extraChargeAmount = (baseTotal * eVal) / 100;
+      } else {
+        extraChargeAmount = eVal;
+      }
+
+      let finalTotal = Math.max(0, baseTotal - discountAmount + extraChargeAmount);
       const roundedTotal = roundPOSAmount(finalTotal);
 
       // Determine payments to send
@@ -506,6 +521,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setSelectedTableId(null);
         }
         setDiscountValue('');
+        setExtraChargeValue('');
         setShowCheckoutModal(false);
         setOrderSuccess(true);
         setTimeout(() => {
@@ -525,6 +541,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       getCartTotals,
       discountValue,
       discountType,
+      extraChargeValue,
+      extraChargeType,
       paymentType,
       refreshOrders,
       refreshTables,
@@ -553,6 +571,10 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setDiscountType,
         discountValue,
         setDiscountValue,
+        extraChargeType,
+        setExtraChargeType,
+        extraChargeValue,
+        setExtraChargeValue,
         orderSuccess,
         setOrderSuccess,
         tableOrders,
