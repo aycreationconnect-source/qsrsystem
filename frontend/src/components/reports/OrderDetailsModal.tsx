@@ -3,8 +3,9 @@ import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
 import { Modal } from '../ui/Modal';
 import { roundPOSAmount } from '../../lib/orderUtils';
+import { cn } from '../../lib/utils';
 import { printThermalReceipt } from '../../lib/thermalPrintUtils';
-import { Printer, CheckCircle2, Clock, CreditCard, Utensils, Hash, Calendar, FileText } from 'lucide-react';
+import { Printer, CheckCircle2, Clock, CreditCard, Utensils, Hash, Calendar, FileText, XCircle } from 'lucide-react';
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -43,7 +44,8 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   });
 
   const dailyNum = order.dailySeq || order.dailyOrderNumber || order.id;
-  const isPartiallyPaid = order.status === 'Partially Paid' || (order.balanceAmount || 0) > 0;
+  const isCancelled = order.status === 'Cancelled';
+  const isPartiallyPaid = !isCancelled && (order.status === 'Partially Paid' || (order.balanceAmount || 0) > 0);
 
   const handlePrintReceipt = () => {
     printThermalReceipt({
@@ -108,16 +110,23 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                isPartiallyPaid
-                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                  : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {order.status || 'Completed'}
-            </span>
+            {isCancelled ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                <XCircle className="w-3.5 h-3.5" />
+                Cancelled
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                  isPartiallyPaid
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                    : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {order.status || 'Completed'}
+              </span>
+            )}
 
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
               <CreditCard className="w-3.5 h-3.5 text-stone-400" />
@@ -128,11 +137,28 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
         {/* Order Description / Note if present */}
         {order.description && (
-          <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl flex items-start gap-2.5">
-            <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div
+            className={cn(
+              'p-3.5 border rounded-2xl flex items-start gap-2.5',
+              isCancelled
+                ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200/80 dark:border-rose-800/40'
+                : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-800/40'
+            )}
+          >
+            <FileText
+              className={cn(
+                'w-4 h-4 shrink-0 mt-0.5',
+                isCancelled ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
+              )}
+            />
             <div className="text-xs">
-              <span className="font-bold text-amber-900 dark:text-amber-200 block mb-0.5">
-                Order Note / Description:
+              <span
+                className={cn(
+                  'font-bold block mb-0.5',
+                  isCancelled ? 'text-rose-900 dark:text-rose-200' : 'text-amber-900 dark:text-amber-200'
+                )}
+              >
+                {isCancelled ? 'Cancellation Details:' : 'Order Note / Description:'}
               </span>
               <p className="text-stone-700 dark:text-stone-300 font-medium">
                 {order.description}

@@ -54,7 +54,9 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
       let otherTotal = 0;
       let netTotal = 0;
 
-      dayOrders.forEach((o) => {
+      const activeDayOrders = dayOrders.filter((o) => o.status !== 'Cancelled');
+
+      activeDayOrders.forEach((o) => {
         const orderSub = o.subtotal || 0;
         const orderTax = o.tax || 0;
         const orderTot = roundPOSAmount(o.total || 0);
@@ -82,7 +84,7 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
         }
       });
 
-      const orderCount = dayOrders.length;
+      const orderCount = activeDayOrders.length;
       const aov = orderCount > 0 ? netTotal / orderCount : 0;
       const d = new Date(`${dayKey}T00:00:00`);
       const displayDate = d.toLocaleDateString('en-US', {

@@ -1,4 +1,4 @@
-import type { Order, InventoryItem } from '../types/app.types';
+import type { Order, InventoryItem, OrderPayment } from '../types/app.types';
 
 /**
  * Checks if a given date string or Date object falls on today in local calendar time.
@@ -432,5 +432,52 @@ export function getMenuItemLowStockMaterials(
   }
 
   return lowMaterials;
+}
+
+/**
+ * Merges a payment into an existing list of payments by paymentMethod.
+ * If the paymentMethod already exists, it sums the amounts together rather
+ * than creating a duplicate entry. Otherwise, it appends the new payment.
+ */
+export function mergeOrAddPayment(
+  existingPayments: OrderPayment[] = [],
+  newPayment: OrderPayment
+): OrderPayment[] {
+  const normMethod = (newPayment.paymentMethod || 'Cash').trim().toLowerCase();
+  const existingIndex = existingPayments.findIndex(
+    (p) => (p.paymentMethod || '').trim().toLowerCase() === normMethod
+  );
+
+  const newAmt = parseFloat(String(newPayment.amount).replace(/[^0-9.]/g, '')) || 0;
+
+  if (existingIndex !== -1) {
+    return existingPayments.map((p, idx) => {
+      if (idx !== existingIndex) return p;
+      const prevAmt = parseFloat(String(p.amount).replace(/[^0-9.]/g, '')) || 0;
+      const totalAmt = parseFloat((prevAmt + newAmt).toFixed(2));
+      let mergedRef = p.reference;
+      if (newPayment.reference && newPayment.reference.trim()) {
+        const trimmedNewRef = newPayment.reference.trim();
+        mergedRef = mergedRef && mergedRef.trim()
+          ? (mergedRef.includes(trimmedNewRef) ? mergedRef : `${mergedRef}, ${trimmedNewRef}`)
+          : trimmedNewRef;
+      }
+      return {
+        ...p,
+        amount: totalAmt,
+        reference: mergedRef || undefined,
+        date: newPayment.date || new Date().toISOString(),
+      };
+    });
+  }
+
+  return [
+    ...existingPayments,
+    {
+      ...newPayment,
+      amount: newAmt,
+      date: newPayment.date || new Date().toISOString(),
+    },
+  ];
 }
 

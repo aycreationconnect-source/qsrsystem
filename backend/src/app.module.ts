@@ -10,6 +10,7 @@ import { AreaModule } from './area/area.module';
 import { TableModule } from './table/table.module';
 import { AddonModule } from './addon/addon.module';
 import { SettingModule } from './setting/setting.module';
+import { CustomerModule } from './customer/customer.module';
 import { LicenseModule } from './license/license.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaService } from './prisma/prisma.service';
@@ -27,6 +28,7 @@ import { PrismaService } from './prisma/prisma.service';
     TableModule,
     AddonModule,
     SettingModule,
+    CustomerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

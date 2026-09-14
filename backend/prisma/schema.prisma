@@ -207,3 +207,15 @@ model LocalUser {
   updatedAt    DateTime @updatedAt
 }
 
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([phone])
+}
+
+
