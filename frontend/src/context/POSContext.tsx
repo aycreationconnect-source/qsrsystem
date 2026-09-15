@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import type { CartItem, TableOrderState, OrderPayment } from '../types/app.types';
 import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
-import { roundPOSAmount, getStoreGlobalTaxRate, getItemTaxRate } from '../lib/orderUtils';
+import { roundPOSAmount, getStoreGlobalTaxRate, getItemTaxRate, mergeOrAddPayment } from '../lib/orderUtils';
+import { toast } from './ToastContext';
 
 export type DietFilterType = 'ALL' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan';
 
@@ -25,6 +26,10 @@ interface POSContextType {
   setDiscountType: (type: 'percent' | 'fixed') => void;
   discountValue: string;
   setDiscountValue: (val: string) => void;
+  extraChargeType: 'percent' | 'fixed';
+  setExtraChargeType: (type: 'percent' | 'fixed') => void;
+  extraChargeValue: string;
+  setExtraChargeValue: (val: string) => void;
   orderSuccess: boolean;
   setOrderSuccess: (val: boolean) => void;
 
@@ -58,6 +63,11 @@ interface POSContextType {
   updateCartQtyExact: (itemOrName: any, qty: number) => void;
   cancelCartItem: (itemName: string) => void;
   saveTableOrder: () => void;
+  cancelKOTItem: (tableId: string | number, orderIdx: number, itemIdx: number) => void;
+  cancelKOTBatch: (tableId: string | number, batchIdx: number) => void;
+  updateKOTBatch: (tableId: string | number, batchIdx: number, updatedItems: CartItem[], kitchenNote?: string) => void;
+  shiftKOTBatch: (sourceTableId: string | number, batchIdx: number, targetTableId: string | number) => void;
+  cancelTableOrder: (tableId: string | number, reason: string) => Promise<void>;
   addTablePayment: (tableId: string, payment: OrderPayment) => void;
   removeTablePayment: (tableId: string, index: number) => void;
   getCartTotals: () => { subtotal: number; tax: number; total: number; paidAmount: number; balanceDue: number };
@@ -65,6 +75,19 @@ interface POSContextType {
 }
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
+
+export const getCartItemKey = (item: any): string => {
+  if (!item) return '';
+  if (item.cartKey) return item.cartKey;
+  const addonPart =
+    item.selectedAddons && item.selectedAddons.length > 0
+      ? item.selectedAddons
+          .map((a: any) => `${a.id || a.name}:${a.quantity || 1}`)
+          .sort()
+          .join('|')
+      : 'no-addons';
+  return `${item.id || item.name}__${addonPart}`;
+};
 
 export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { posMode, appData, refreshOrders, refreshTables, refreshInventory } = useApp();
@@ -78,6 +101,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [paymentType, setPaymentType] = useState('Cash');
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('fixed');
   const [discountValue, setDiscountValue] = useState('');
+  const [extraChargeType, setExtraChargeType] = useState<'percent' | 'fixed'>('fixed');
+  const [extraChargeValue, setExtraChargeValue] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const [tableOrders, setTableOrders] = useState<Record<string, TableOrderState>>(() => {
@@ -228,7 +253,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       if (posMode === 'table' && !selectedTableId) {
-        alert('Please select a table from the left sidebar to add items.');
+        toast.warning('Please select a table from the left sidebar to add items.');
         return;
       }
 
@@ -240,11 +265,15 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setCart((prev) => {
         let newCart: CartItem[];
-        const existing = prev.find((i) => i.name === item.name);
-        if (existing) {
-          newCart = prev.map((i) => (i.name === item.name ? { ...i, quantity: i.quantity + 1 } : i));
+        const key = item.cartKey || getCartItemKey(item);
+        const itemWithKey = { ...item, cartKey: key };
+        const existingIndex = prev.findIndex((i) => (i.cartKey || getCartItemKey(i)) === key);
+        if (existingIndex > -1) {
+          newCart = prev.map((i, idx) =>
+            idx === existingIndex ? { ...i, quantity: i.quantity + 1 } : i
+          );
         } else {
-          newCart = [...prev, { ...item, quantity: 1 }];
+          newCart = [...prev, { ...itemWithKey, quantity: 1 }];
         }
         if (posMode === 'table' && selectedTableId) updateTableActiveCart(selectedTableId, newCart);
         return newCart;
@@ -257,14 +286,22 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     (itemOrName: any, delta: number) => {
       setCart((prev) => {
         let newCart: CartItem[];
-        const itemName = typeof itemOrName === 'string' ? itemOrName : itemOrName.name;
-        const existing = prev.find((i) => i.name === itemName);
-        if (existing) {
+        const key =
+          typeof itemOrName === 'string'
+            ? itemOrName
+            : itemOrName.cartKey || getCartItemKey(itemOrName);
+        const existingIndex = prev.findIndex(
+          (i) => (i.cartKey || getCartItemKey(i)) === key || i.name === key
+        );
+        if (existingIndex > -1) {
           newCart = prev
-            .map((i) => (i.name === itemName ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i))
+            .map((i, idx) =>
+              idx === existingIndex ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i
+            )
             .filter((i) => i.quantity > 0);
         } else if (delta > 0 && typeof itemOrName !== 'string') {
-          newCart = [...prev, { ...itemOrName, quantity: delta }];
+          const itemKey = itemOrName.cartKey || getCartItemKey(itemOrName);
+          newCart = [...prev, { ...itemOrName, cartKey: itemKey, quantity: delta }];
         } else {
           newCart = prev;
         }
@@ -279,14 +316,20 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     (itemOrName: any, qty: number) => {
       setCart((prev) => {
         let newCart: CartItem[];
-        const itemName = typeof itemOrName === 'string' ? itemOrName : itemOrName.name;
-        const existing = prev.find((i) => i.name === itemName);
-        if (existing) {
+        const key =
+          typeof itemOrName === 'string'
+            ? itemOrName
+            : itemOrName.cartKey || getCartItemKey(itemOrName);
+        const existingIndex = prev.findIndex(
+          (i) => (i.cartKey || getCartItemKey(i)) === key || i.name === key
+        );
+        if (existingIndex > -1) {
           newCart = prev
-            .map((i) => (i.name === itemName ? { ...i, quantity: Math.max(0, qty) } : i))
+            .map((i, idx) => (idx === existingIndex ? { ...i, quantity: Math.max(0, qty) } : i))
             .filter((i) => i.quantity > 0);
         } else if (qty > 0 && typeof itemOrName !== 'string') {
-          newCart = [...prev, { ...itemOrName, quantity: qty }];
+          const itemKey = itemOrName.cartKey || getCartItemKey(itemOrName);
+          newCart = [...prev, { ...itemOrName, cartKey: itemKey, quantity: qty }];
         } else {
           newCart = prev;
         }
@@ -300,12 +343,425 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const cancelCartItem = useCallback(
     (itemName: string) => {
       setCart((prev) => {
-        const newCart = prev.filter((i) => i.name !== itemName);
+        const newCart = prev.filter(
+          (i) =>
+            (i.cartKey || getCartItemKey(i)) !== itemName &&
+            i.name !== itemName
+        );
         if (posMode === 'table' && selectedTableId) updateTableActiveCart(selectedTableId, newCart);
         return newCart;
       });
     },
     [posMode, selectedTableId, updateTableActiveCart]
+  );
+
+  const cancelKOTItem = useCallback(
+    (tableId: string | number, orderIdx: number, itemIdx: number) => {
+      const key = String(tableId);
+      setTableOrders((prev) => {
+        const existing = prev[key] || prev[tableId];
+        if (!existing || !existing.savedOrders || !existing.savedOrders[orderIdx]) {
+          return prev;
+        }
+
+        const savedOrders = [...existing.savedOrders];
+        const targetOrder = { ...savedOrders[orderIdx] };
+        const rawItems = targetOrder.items || (Array.isArray(targetOrder) ? targetOrder : []);
+        const updatedItems = rawItems.filter((_: any, idx: number) => idx !== itemIdx);
+
+        if (updatedItems.length === 0) {
+          savedOrders.splice(orderIdx, 1);
+        } else {
+          savedOrders[orderIdx] = { ...targetOrder, items: updatedItems };
+        }
+
+        // Check if there are any remaining items in savedOrders or activeCart
+        const hasRemainingItems =
+          savedOrders.length > 0 || (existing.activeCart && existing.activeCart.length > 0);
+
+        if (!hasRemainingItems) {
+          // Free table completely
+          const nextState = { ...prev };
+          delete nextState[key];
+          delete nextState[tableId];
+
+          setTablePayments((tp) => {
+            const ntp = { ...tp };
+            delete ntp[key];
+            delete ntp[tableId];
+            return ntp;
+          });
+          setTableStartTimes((tst) => {
+            const ntst = { ...tst };
+            delete ntst[key];
+            delete ntst[tableId];
+            return ntst;
+          });
+          setTablePrinted((tp) => {
+            const ntp = { ...tp };
+            delete ntp[key];
+            delete ntp[tableId];
+            return ntp;
+          });
+
+          toast.info('All KOT items removed. Table is now available.');
+          return nextState;
+        }
+
+        toast.info('Item removed from KOT.');
+        return {
+          ...prev,
+          [key]: {
+            ...existing,
+            savedOrders,
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const cancelKOTBatch = useCallback(
+    (tableId: string | number, batchIdx: number) => {
+      const key = String(tableId);
+      setTableOrders((prev) => {
+        const existing = prev[key] || prev[tableId];
+        if (!existing || !existing.savedOrders || !existing.savedOrders[batchIdx]) {
+          return prev;
+        }
+
+        const savedOrders = existing.savedOrders.filter((_, idx) => idx !== batchIdx);
+        const hasRemainingItems =
+          savedOrders.length > 0 || (existing.activeCart && existing.activeCart.length > 0);
+
+        if (!hasRemainingItems) {
+          const nextState = { ...prev };
+          delete nextState[key];
+          delete nextState[tableId];
+
+          setTablePayments((tp) => {
+            const ntp = { ...tp };
+            delete ntp[key];
+            delete ntp[tableId];
+            return ntp;
+          });
+          setTableStartTimes((tst) => {
+            const ntst = { ...tst };
+            delete ntst[key];
+            delete ntst[tableId];
+            return ntst;
+          });
+          setTablePrinted((tp) => {
+            const ntp = { ...tp };
+            delete ntp[key];
+            delete ntp[tableId];
+            return ntp;
+          });
+
+          toast.info(`KOT Batch #${batchIdx + 1} cancelled. Table is now available.`);
+          return nextState;
+        }
+
+        toast.info(`KOT Batch #${batchIdx + 1} cancelled.`);
+        return {
+          ...prev,
+          [key]: {
+            ...existing,
+            savedOrders,
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const updateKOTBatch = useCallback(
+    (tableId: string | number, batchIdx: number, updatedItems: CartItem[], kitchenNote?: string) => {
+      const key = String(tableId);
+      setTableOrders((prev) => {
+        const existing = prev[key] || prev[tableId];
+        if (!existing || !existing.savedOrders || !existing.savedOrders[batchIdx]) {
+          return prev;
+        }
+
+        const savedOrders = [...existing.savedOrders];
+        const validItems = updatedItems.filter((i) => i.quantity > 0);
+
+        if (validItems.length === 0) {
+          savedOrders.splice(batchIdx, 1);
+        } else {
+          savedOrders[batchIdx] = {
+            ...savedOrders[batchIdx],
+            items: validItems,
+            note: kitchenNote?.trim() || savedOrders[batchIdx].note,
+            updatedAt: Date.now(),
+          };
+        }
+
+        const hasRemainingItems =
+          savedOrders.length > 0 || (existing.activeCart && existing.activeCart.length > 0);
+
+        if (!hasRemainingItems) {
+          const nextState = { ...prev };
+          delete nextState[key];
+          delete nextState[tableId];
+
+          setTablePayments((tp) => {
+            const ntp = { ...tp };
+            delete ntp[key];
+            delete ntp[tableId];
+            return ntp;
+          });
+          setTableStartTimes((tst) => {
+            const ntst = { ...tst };
+            delete ntst[key];
+            delete ntst[tableId];
+            return ntst;
+          });
+          setTablePrinted((tp) => {
+            const ntp = { ...tp };
+            delete ntp[key];
+            delete ntp[tableId];
+            return ntp;
+          });
+
+          toast.info('All items removed from KOT. Table is now available.');
+          return nextState;
+        }
+
+        toast.success(`KOT Batch #${batchIdx + 1} updated and sent to kitchen!`);
+        return {
+          ...prev,
+          [key]: {
+            ...existing,
+            savedOrders,
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const shiftKOTBatch = useCallback(
+    (sourceTableId: string | number, batchIdx: number, targetTableId: string | number) => {
+      const srcKey = String(sourceTableId);
+      const tgtKey = String(targetTableId);
+      if (srcKey === tgtKey) return;
+
+      let sourceEmptyAfterShift = false;
+
+      setTableOrders((prev) => {
+        const srcOrder = prev[srcKey] || prev[sourceTableId];
+        if (!srcOrder || !srcOrder.savedOrders || !srcOrder.savedOrders[batchIdx]) {
+          return prev;
+        }
+
+        const batchToMove = srcOrder.savedOrders[batchIdx];
+        const newSrcSavedOrders = srcOrder.savedOrders.filter((_, idx) => idx !== batchIdx);
+
+        // Target table order
+        const tgtOrder = prev[tgtKey] || prev[targetTableId] || { savedOrders: [], activeCart: [] };
+        const newTgtSavedOrders = [...tgtOrder.savedOrders, batchToMove];
+
+        const nextState = { ...prev };
+        nextState[tgtKey] = {
+          ...tgtOrder,
+          savedOrders: newTgtSavedOrders,
+        };
+
+        // Ensure target table has start time
+        setTableStartTimes((tst) => {
+          if (!tst[tgtKey] && !tst[targetTableId]) {
+            return { ...tst, [tgtKey]: Date.now() };
+          }
+          return tst;
+        });
+
+        // Check if source table is empty
+        const srcHasRemaining =
+          newSrcSavedOrders.length > 0 || (srcOrder.activeCart && srcOrder.activeCart.length > 0);
+
+        if (!srcHasRemaining) {
+          sourceEmptyAfterShift = true;
+          delete nextState[srcKey];
+          delete nextState[sourceTableId];
+
+          setTablePayments((tp) => {
+            const n = { ...tp };
+            delete n[srcKey];
+            delete n[sourceTableId];
+            return n;
+          });
+          setTableStartTimes((tst) => {
+            const n = { ...tst };
+            delete n[srcKey];
+            delete n[sourceTableId];
+            return n;
+          });
+          setTablePrinted((tp) => {
+            const n = { ...tp };
+            delete n[srcKey];
+            delete n[sourceTableId];
+            return n;
+          });
+        } else {
+          nextState[srcKey] = {
+            ...srcOrder,
+            savedOrders: newSrcSavedOrders,
+          };
+        }
+
+        return nextState;
+      });
+
+      const srcTable = appData.tables.find((t: any) => String(t.id) === srcKey);
+      const tgtTable = appData.tables.find((t: any) => String(t.id) === tgtKey);
+      toast.success(
+        `KOT Batch #${batchIdx + 1} shifted from ${srcTable?.name || `Table ${srcKey}`} to ${tgtTable?.name || `Table ${tgtKey}`}!`
+      );
+
+      // If source table is now empty, switch view to target table
+      if (sourceEmptyAfterShift || selectedTableId === srcKey) {
+        setSelectedTableId(tgtKey);
+      }
+    },
+    [appData.tables, selectedTableId]
+  );
+
+  const cancelTableOrder = useCallback(
+    async (tableId: string | number, reason: string) => {
+      const key = String(tableId);
+      const orderData = tableOrders[key] || tableOrders[tableId];
+      const tableObj = appData.tables.find((t: any) => String(t.id) === key);
+      const tableName = tableObj ? tableObj.name : `Table ${key}`;
+
+      let combinedItems: CartItem[] = [];
+      if (orderData) {
+        if (orderData.savedOrders) {
+          orderData.savedOrders.forEach((o: any) => {
+            const items = o.items || (Array.isArray(o) ? o : []);
+            combinedItems = [...combinedItems, ...items];
+          });
+        }
+        if (orderData.activeCart) {
+          combinedItems = [...combinedItems, ...orderData.activeCart];
+        }
+      }
+
+      // If there are items, compute totals and record a Cancelled order in DB
+      if (combinedItems.length > 0) {
+        let subtotal = 0;
+        let tax = 0;
+        let total = 0;
+        const globalTaxRate = getStoreGlobalTaxRate(appData.settings);
+        const isReverseCalc = appData.settings?.taxCalculationType === 'reverse';
+
+        if (isReverseCalc) {
+          let grossTotal = 0;
+          let calculatedTax = 0;
+          combinedItems.forEach((item) => {
+            const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+            const itemGross = price * item.quantity;
+            grossTotal += itemGross;
+            const itemTaxRate = getItemTaxRate(item, appData.menu, globalTaxRate);
+            if (itemTaxRate > 0) {
+              const itemBase = itemGross / (1 + itemTaxRate / 100);
+              calculatedTax += itemGross - itemBase;
+            }
+          });
+          tax = parseFloat(calculatedTax.toFixed(2));
+          subtotal = parseFloat((grossTotal - tax).toFixed(2));
+          total = parseFloat(grossTotal.toFixed(2));
+        } else {
+          let calculatedTax = 0;
+          combinedItems.forEach((item) => {
+            const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+            const itemSubtotal = price * item.quantity;
+            subtotal += itemSubtotal;
+            const itemTaxRate = getItemTaxRate(item, appData.menu, globalTaxRate);
+            if (itemTaxRate > 0) {
+              calculatedTax += itemSubtotal * (itemTaxRate / 100);
+            }
+          });
+          tax = parseFloat(calculatedTax.toFixed(2));
+          total = parseFloat((subtotal + tax).toFixed(2));
+        }
+
+        const orderDetails = {
+          items: combinedItems.map((c) => ({
+            menuItemId: c.id,
+            quantity: c.quantity,
+            price: parseFloat(c.price.toString().replace(/[^0-9.]/g, '')) || 0,
+          })),
+          subtotal,
+          tax,
+          total: roundPOSAmount(total),
+          paymentMethod: 'Cancelled',
+          payments: [],
+          status: 'Cancelled',
+          description: `Cancelled Table Order: ${tableName}${reason ? ` | Reason: ${reason}` : ''}`,
+        };
+
+        try {
+          const placedOrder = await orderApi.placeOrder(orderDetails);
+          if (placedOrder && placedOrder.id) {
+            window.dispatchEvent(
+              new CustomEvent('velora-order-completed', { detail: placedOrder })
+            );
+          }
+          await Promise.allSettled([
+            refreshOrders(),
+            refreshTables(),
+            refreshInventory(),
+          ]);
+        } catch (err) {
+          console.error('Error logging cancelled order to backend:', err);
+        }
+      }
+
+      // Clear table states
+      setTableOrders((t) => {
+        const next = { ...t };
+        delete next[key];
+        delete next[tableId];
+        return next;
+      });
+      setTablePayments((t) => {
+        const next = { ...t };
+        delete next[key];
+        delete next[tableId];
+        return next;
+      });
+      setTableStartTimes((t) => {
+        const next = { ...t };
+        delete next[key];
+        delete next[tableId];
+        return next;
+      });
+      setTablePrinted((t) => {
+        const next = { ...t };
+        delete next[key];
+        delete next[tableId];
+        return next;
+      });
+
+      if (selectedTableId === String(tableId) || selectedTableId === tableId) {
+        setCart([]);
+        setSelectedTableId(null);
+      }
+
+      toast.success(`Order for ${tableName} cancelled successfully.`);
+    },
+    [
+      tableOrders,
+      appData.tables,
+      appData.settings,
+      appData.menu,
+      selectedTableId,
+      refreshOrders,
+      refreshTables,
+      refreshInventory,
+    ]
   );
 
   const addTablePayment = useCallback((tableId: string, payment: OrderPayment) => {
@@ -314,7 +770,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const existing = prev[key] || [];
       return {
         ...prev,
-        [key]: [...existing, { ...payment, date: payment.date || new Date().toISOString() }],
+        [key]: mergeOrAddPayment(existing, payment),
       };
     });
   }, []);
@@ -408,13 +864,22 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       const { subtotal, tax, total: baseTotal } = getCartTotals();
       const dVal = parseFloat(discountValue) || 0;
-      let finalTotal = baseTotal;
+      let discountAmount = 0;
       if (discountType === 'percent') {
-        finalTotal = baseTotal - (baseTotal * dVal) / 100;
+        discountAmount = (baseTotal * dVal) / 100;
       } else {
-        finalTotal = baseTotal - dVal;
+        discountAmount = dVal;
       }
-      if (finalTotal < 0) finalTotal = 0;
+
+      const eVal = parseFloat(extraChargeValue) || 0;
+      let extraChargeAmount = 0;
+      if (extraChargeType === 'percent') {
+        extraChargeAmount = (baseTotal * eVal) / 100;
+      } else {
+        extraChargeAmount = eVal;
+      }
+
+      let finalTotal = Math.max(0, baseTotal - discountAmount + extraChargeAmount);
       const roundedTotal = roundPOSAmount(finalTotal);
 
       // Determine payments to send
@@ -505,6 +970,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setSelectedTableId(null);
         }
         setDiscountValue('');
+        setExtraChargeValue('');
         setShowCheckoutModal(false);
         setOrderSuccess(true);
         setTimeout(() => {
@@ -512,7 +978,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }, 3000);
       } catch (e) {
         console.error(e);
-        alert('Error placing order.');
+        toast.error('Error placing order. Please try again.');
       }
     },
     [
@@ -524,6 +990,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       getCartTotals,
       discountValue,
       discountType,
+      extraChargeValue,
+      extraChargeType,
       paymentType,
       refreshOrders,
       refreshTables,
@@ -552,6 +1020,10 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setDiscountType,
         discountValue,
         setDiscountValue,
+        extraChargeType,
+        setExtraChargeType,
+        extraChargeValue,
+        setExtraChargeValue,
         orderSuccess,
         setOrderSuccess,
         tableOrders,
@@ -578,6 +1050,11 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateCartQtyExact,
         cancelCartItem,
         saveTableOrder,
+        cancelKOTItem,
+        cancelKOTBatch,
+        updateKOTBatch,
+        shiftKOTBatch,
+        cancelTableOrder,
         tablePayments,
         setTablePayments,
         addTablePayment,

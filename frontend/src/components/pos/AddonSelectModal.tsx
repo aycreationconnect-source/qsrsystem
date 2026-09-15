@@ -30,23 +30,29 @@ export const AddonSelectModal: React.FC = () => {
 
   const handleConfirm = () => {
     let totalAddonPrice = 0;
-    const addonNames: string[] = [];
+    const selectedAddonObjs: { id: string | number; name: string; price: number; quantity: number }[] = [];
+
     selectedAddonIds.forEach((id) => {
       const addon = appData.addons.find((a: any) => a.id.toString() === id.trim());
       if (addon) {
-        totalAddonPrice += parseFloat(addon.price.toString().replace('₹', ''));
-        addonNames.push(addon.name);
+        const p = parseFloat(addon.price.toString().replace('₹', '')) || 0;
+        totalAddonPrice += p;
+        selectedAddonObjs.push({
+          id: addon.id,
+          name: addon.name,
+          price: p,
+          quantity: 1,
+        });
       }
     });
 
-    const originalPrice = parseFloat(addonSelectionItem.price.toString().replace('₹', ''));
+    const originalPrice = parseFloat(addonSelectionItem.price.toString().replace('₹', '')) || 0;
     const modifiedItem = {
       ...addonSelectionItem,
-      name:
-        addonNames.length > 0
-          ? `${addonSelectionItem.name} (${addonNames.join(', ')})`
-          : addonSelectionItem.name,
+      name: addonSelectionItem.name,
+      basePrice: originalPrice,
       price: `₹${(originalPrice + totalAddonPrice).toFixed(2)}`,
+      selectedAddons: selectedAddonObjs,
     };
 
     handleClose();

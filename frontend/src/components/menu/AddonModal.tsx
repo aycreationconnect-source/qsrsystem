@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { menuApi } from '../../api/menuApi';
 import { Modal, Input, Button } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Sparkles, IndianRupee, FileText, CheckCircle2 } from 'lucide-react';
 
 interface AddonModalProps {
@@ -42,14 +43,18 @@ export const AddonModal: React.FC<AddonModalProps> = ({
 
       if (editingAddon) {
         await menuApi.updateAddon(editingAddon.id, payload);
+        toast.success(`Add-on "${payload.name}" updated!`);
       } else {
         await menuApi.createAddon(payload);
+        toast.success(`Add-on "${payload.name}" created!`);
       }
 
       await refreshAddons();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save add-on');
+      const msg = err.message || 'Failed to save add-on';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

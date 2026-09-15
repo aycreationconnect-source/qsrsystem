@@ -12,8 +12,10 @@ export const inventoryApi = {
 
   // Categories
   getCategories: () => apiFetch<InventoryCategory[]>('/inventory/categories'),
-  createCategory: (data: { name: string; description?: string }) =>
+  createCategory: (data: { name: string; description?: string; status?: string }) =>
     apiFetch<InventoryCategory>('/inventory/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (id: number, data: { name?: string; description?: string; status?: string }) =>
+    apiFetch<InventoryCategory>(`/inventory/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteCategory: (id: number) =>
     apiFetch<{ success: boolean }>(`/inventory/categories/${id}`, { method: 'DELETE' }),
 };

@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import './index.css';
 import { AppProvider, useApp } from './context/AppContext';
 import { POSProvider } from './context/POSContext';
+import { ToastProvider } from './context/ToastContext';
+import { ToastContainer } from './components/ui';
 import { LoginView } from './components/auth/LoginView';
 import { ActivateLicenseView } from './components/auth/ActivateLicenseView';
 import { AuthGuard } from './components/auth/AuthGuard';
@@ -74,14 +76,16 @@ const AppRoutes: React.FC = () => {
     </BrowserRouter>
   );
 };
-
 function App() {
   return (
-    <AppProvider>
-      <POSProvider>
-        <AppRoutes />
-      </POSProvider>
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <POSProvider>
+          <ToastContainer />
+          <AppRoutes />
+        </POSProvider>
+      </AppProvider>
+    </ToastProvider>
   );
 }
 

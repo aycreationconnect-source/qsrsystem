@@ -33,11 +33,13 @@ export class OrderService {
       ];
     }
 
-    const totalPaid = initialPayments.reduce((sum, p) => sum + p.amount, 0);
-    const balanceDue = Math.max(0, parseFloat((orderTotal - totalPaid).toFixed(2)));
-    const finalStatus = balanceDue <= 0 ? 'Completed' : 'Partially Paid';
-    const computedMethod =
-      initialPayments.length > 1
+    const isCancelled = data.status === 'Cancelled';
+    const totalPaid = isCancelled ? 0 : initialPayments.reduce((sum, p) => sum + p.amount, 0);
+    const balanceDue = isCancelled ? 0 : Math.max(0, parseFloat((orderTotal - totalPaid).toFixed(2)));
+    const finalStatus = isCancelled ? 'Cancelled' : data.status || (balanceDue <= 0 ? 'Completed' : 'Partially Paid');
+    const computedMethod = isCancelled
+      ? (paymentMethod || 'Cancelled')
+      : initialPayments.length > 1
         ? 'Split'
         : initialPayments[0]?.paymentMethod || paymentMethod || 'Cash';
 
@@ -61,45 +63,92 @@ export class OrderService {
             })),
           },
           payments: {
-            create: initialPayments.map((p) => ({
-              amount: p.amount,
-              paymentMethod: p.paymentMethod,
-              reference: p.reference,
-            })),
+            create: isCancelled
+              ? []
+              : initialPayments.map((p) => ({
+                  amount: p.amount,
+                  paymentMethod: p.paymentMethod,
+                  reference: p.reference,
+                })),
           },
         },
         include: { items: true, payments: true },
       });
 
-      // 2. Deduct inventory according to recipes
-      for (const orderItem of items) {
-        const menuItemId = orderItem.menuItemId || orderItem.id;
-        
-        const recipeIngredients = await tx.recipeIngredient.findMany({
-          where: { menuItemId },
-          include: { inventory: true },
-        });
+      // 1b. Auto-persist customer details to DB if provided
+      const rawCustomerName =
+        data.customerName ||
+        (description ? description.match(/Customer:\s*([^|]+)/i)?.[1]?.trim() : '');
+      const rawCustomerMobile =
+        data.customerMobile ||
+        (description ? description.match(/Mobile:\s*([^|]+)/i)?.[1]?.trim() : '');
 
-        for (const recipe of recipeIngredients) {
-          const deductionAmount = recipe.quantity * orderItem.quantity;
-          const newStock = recipe.inventory.stock - deductionAmount;
-          const newStatus = newStock <= recipe.inventory.threshold ? 'Low Stock' : 'Good';
+      if (rawCustomerName) {
+        try {
+          let existingCust: any = null;
+          if (rawCustomerMobile) {
+            existingCust = await tx.customer.findFirst({
+              where: { phone: String(rawCustomerMobile).trim() },
+            });
+          }
+          if (!existingCust) {
+            existingCust = await tx.customer.findFirst({
+              where: { name: String(rawCustomerName).trim() },
+            });
+          }
+
+          if (existingCust) {
+            await tx.customer.update({
+              where: { id: existingCust.id },
+              data: {
+                name: String(rawCustomerName).trim(),
+                phone: rawCustomerMobile ? String(rawCustomerMobile).trim() : existingCust.phone,
+              },
+            });
+          } else {
+            await tx.customer.create({
+              data: {
+                name: String(rawCustomerName).trim(),
+                phone: rawCustomerMobile ? String(rawCustomerMobile).trim() : null,
+              },
+            });
+          }
+        } catch (err) {
+          console.warn('Customer auto-save in order.service skipped:', err);
+        }
+      }
+
+      // 2. Deduct inventory according to recipes (only for non-cancelled orders)
+      if (!isCancelled) {
+        for (const orderItem of items) {
+          const menuItemId = orderItem.menuItemId || orderItem.id;
           
-          await tx.inventoryItem.update({
-            where: { id: recipe.inventoryId },
-            data: { 
-              stock: newStock,
-              status: newStatus,
-            },
+          const recipeIngredients = await tx.recipeIngredient.findMany({
+            where: { menuItemId },
+            include: { inventory: true },
           });
 
-          await tx.inventoryHistory.create({
-            data: {
-              inventoryId: recipe.inventoryId,
-              change: `-${deductionAmount}`,
-              type: `Order #${order.id}`,
-            },
-          });
+          for (const recipe of recipeIngredients) {
+            const deductionAmount = recipe.quantity * orderItem.quantity;
+            const newStock = recipe.inventory.stock - deductionAmount;
+            const newStatus = newStock <= recipe.inventory.threshold ? 'Low Stock' : 'Good';
+            
+            await tx.inventoryItem.update({
+              where: { id: recipe.inventoryId },
+              data: { 
+                stock: newStock,
+                status: newStatus,
+              },
+            });
+
+            await tx.inventoryHistory.create({
+              data: {
+                inventoryId: recipe.inventoryId,
+                change: `-${deductionAmount}`,
+                type: `Order #${order.id}`,
+              },
+            });
+          }
         }
       }
       

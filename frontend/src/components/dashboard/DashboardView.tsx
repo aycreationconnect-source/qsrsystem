@@ -19,7 +19,9 @@ export const DashboardView: React.FC = () => {
   const todayOrders = useMemo(
     () =>
       (appData.orders || []).filter(
-        (o: any) => new Date(o.date).toDateString() === today.toDateString()
+        (o: any) =>
+          o.status !== 'Cancelled' &&
+          new Date(o.date).toDateString() === today.toDateString()
       ),
     [appData.orders]
   );
@@ -27,7 +29,9 @@ export const DashboardView: React.FC = () => {
   const yesterdayOrders = useMemo(
     () =>
       (appData.orders || []).filter(
-        (o: any) => new Date(o.date).toDateString() === yesterday.toDateString()
+        (o: any) =>
+          o.status !== 'Cancelled' &&
+          new Date(o.date).toDateString() === yesterday.toDateString()
       ),
     [appData.orders]
   );
@@ -102,7 +106,9 @@ export const DashboardView: React.FC = () => {
   const revenueByDay = useMemo(() => {
     return last7Days.map((d) => {
       const dayOrders = (appData.orders || []).filter(
-        (o: any) => new Date(o.date).toDateString() === d.toDateString()
+        (o: any) =>
+          o.status !== 'Cancelled' &&
+          new Date(o.date).toDateString() === d.toDateString()
       );
       return dayOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
     });
@@ -174,7 +180,9 @@ export const DashboardView: React.FC = () => {
     >();
 
     const ordersToAnalyze =
-      todayOrders.length > 0 ? todayOrders : (appData.orders || []).slice(-50);
+      todayOrders.length > 0
+        ? todayOrders
+        : (appData.orders || []).filter((o: any) => o.status !== 'Cancelled').slice(-50);
 
     ordersToAnalyze.forEach((order: any) => {
       (order.items || []).forEach((it: any) => {
@@ -220,6 +228,7 @@ export const DashboardView: React.FC = () => {
   // Recent completed orders
   const recentOrders = useMemo(() => {
     return [...(appData.orders || [])]
+      .filter((o: any) => o.status !== 'Cancelled')
       .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 6);
   }, [appData.orders]);

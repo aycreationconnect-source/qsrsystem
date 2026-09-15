@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Button, Tooltip, Modal } from '../ui';
+import { Button, Tooltip, Modal, ConfirmModal } from '../ui';
 import { menuApi } from '../../api/menuApi';
+import { toast } from '../../context/ToastContext';
 import {
   Plus,
   Settings2,
@@ -11,7 +12,9 @@ import {
   Layers,
   Search,
   X,
+  AlertTriangle,
 } from 'lucide-react';
+import { getMenuItemLowStockMaterials, type LowStockMaterial } from '../../lib/orderUtils';
 import { cn } from '../../lib/utils';
 
 interface MenuItemsGridProps {
@@ -44,6 +47,10 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
   const [isSavingSubcat, setIsSavingSubcat] = useState(false);
   const [subcatError, setSubcatError] = useState<string | null>(null);
 
+  // Delete Subcategory Modal State
+  const [subcatToDelete, setSubcatToDelete] = useState<string | null>(null);
+  const [isDeletingSubcat, setIsDeletingSubcat] = useState(false);
+
   // Clear search when category changes
   useEffect(() => {
     setSearchQuery('');
@@ -56,6 +63,18 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
       (m: any) => m.category === selectedCategory && !m.isAddon
     );
   }, [appData.menu, selectedCategory]);
+
+  // Precompute low-stock raw materials attached to each menu item
+  const lowStockMap = useMemo(() => {
+    const map = new Map<number | string, LowStockMaterial[]>();
+    (appData.menu || []).forEach((item: any) => {
+      const lowMaterials = getMenuItemLowStockMaterials(item, appData.inventory);
+      if (lowMaterials.length > 0) {
+        map.set(item.id ?? item.name, lowMaterials);
+      }
+    });
+    return map;
+  }, [appData.menu, appData.inventory]);
 
   // Items scoped by subcategory (if active)
   const subcategoryScopedItems = useMemo(() => {
@@ -128,24 +147,32 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
       setSelectedSubcategory?.(trimmed);
       setNewSubcatName('');
       setIsAddSubcatModalOpen(false);
+      toast.success(`Subcategory "${trimmed}" added!`);
     } catch (err: any) {
-      setSubcatError(err.message || 'Failed to add subcategory');
+      const msg = err.message || 'Failed to add subcategory';
+      setSubcatError(msg);
+      toast.error(msg);
     } finally {
       setIsSavingSubcat(false);
     }
   };
 
-  const handleDeleteSubcat = async (subNameToDelete: string) => {
-    if (!currentCatObj?.id) return;
-    if (!window.confirm(`Are you sure you want to delete subcategory "${subNameToDelete}"?`)) return;
+  const confirmDeleteSubcat = async () => {
+    if (!currentCatObj?.id || !subcatToDelete) return;
     try {
-      await menuApi.removeSubcategory(currentCatObj.id, subNameToDelete);
+      setIsDeletingSubcat(true);
+      await menuApi.removeSubcategory(currentCatObj.id, subcatToDelete);
       await refreshCategories();
-      if (selectedSubcategory === subNameToDelete) {
+      if (selectedSubcategory === subcatToDelete) {
         setSelectedSubcategory?.(null);
       }
-    } catch (err) {
+      toast.success(`Subcategory "${subcatToDelete}" removed.`);
+      setSubcatToDelete(null);
+    } catch (err: any) {
       console.error('Failed to remove subcategory', err);
+      toast.error(err?.message || 'Failed to remove subcategory');
+    } finally {
+      setIsDeletingSubcat(false);
     }
   };
 
@@ -255,7 +282,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteSubcat(sub);
+                      setSubcatToDelete(sub);
                     }}
                     className="opacity-0 group-hover:opacity-100 p-0.5 -ml-1 mr-1 rounded-full text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
                     title={`Delete subcategory "${sub}"`}
@@ -368,6 +395,8 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
               </thead>
               <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                 {filteredItems.map((item: any, i: number) => {
+                  const lowMaterials = lowStockMap.get(item.id ?? item.name) || [];
+
                   return (
                     <tr
                       key={item.id || i}
@@ -379,7 +408,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
 
                       {/* Item Name & Dietary Icon Only (Image 2 - No text) */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
                           {item.type === 'Non-Veg' ? (
                             <span
                               title="Non-Vegetarian"
@@ -409,6 +438,42 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                           <span className="font-bold text-stone-900 dark:text-stone-100">
                             {item.name}
                           </span>
+
+                          {lowMaterials.length > 0 && (
+                            <Tooltip
+                              content={
+                                <div className="p-0.5 text-left">
+                                  <div className="font-extrabold text-[11px] text-rose-300 dark:text-rose-400 border-b border-stone-700/60 pb-1 mb-1.5 flex items-center justify-between gap-2">
+                                    <span className="flex items-center gap-1">
+                                      <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
+                                      <span>Low Stock Ingredients</span>
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/25 text-rose-300 font-mono font-bold">
+                                      {lowMaterials.length}
+                                    </span>
+                                  </div>
+                                  <ul className="space-y-1.5">
+                                    {lowMaterials.map((rm) => (
+                                      <li key={rm.name} className="text-[10px] flex items-center justify-between gap-3">
+                                        <span className="text-stone-200 truncate font-medium">{rm.name}</span>
+                                        <span className="font-mono font-bold text-amber-300 shrink-0">
+                                          {rm.stock} {rm.unit}
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              }
+                              className="whitespace-normal min-w-[170px]"
+                              position="top"
+                              align="center"
+                            >
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 inline-flex items-center gap-1 cursor-help tracking-wide shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                Low Stock
+                              </span>
+                            </Tooltip>
+                          )}
                         </div>
                       </td>
 
@@ -541,6 +606,19 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
           </div>
         </form>
       </Modal>
+
+      {/* Delete Subcategory Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(subcatToDelete)}
+        onClose={() => setSubcatToDelete(null)}
+        onConfirm={confirmDeleteSubcat}
+        title="Delete Subcategory"
+        message={`Are you sure you want to delete subcategory "${subcatToDelete}" from ${selectedCategory}?`}
+        confirmText="Delete Subcategory"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeletingSubcat}
+      />
     </div>
   );
 };

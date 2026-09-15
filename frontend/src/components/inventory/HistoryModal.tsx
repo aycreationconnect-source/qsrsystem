@@ -9,6 +9,27 @@ interface HistoryModalProps {
   historyItemIndex: number | null;
 }
 
+const formatHistoryDateTime = (dateVal: any) => {
+  if (!dateVal) return { dateStr: '—', timeStr: '' };
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return { dateStr: String(dateVal), timeStr: '' };
+
+  const dateStr = d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  const timeStr = d.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+
+  return { dateStr, timeStr };
+};
+
 export const HistoryModal: React.FC<HistoryModalProps> = ({ show, onClose, historyItemIndex }) => {
   const { appData } = useApp();
 
@@ -83,13 +104,23 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ show, onClose, histo
               <tbody className="divide-y divide-stone-100 dark:divide-stone-800/80 text-xs">
                 {historyList.map((hist: any, i: number) => {
                   const isPositive = String(hist.change).startsWith('+');
+                  const { dateStr, timeStr } = formatHistoryDateTime(hist.date);
+
                   return (
                     <tr
                       key={i}
                       className="hover:bg-amber-50/20 dark:hover:bg-amber-950/10 transition-colors"
                     >
-                      <td className="py-2.5 px-4 text-stone-600 dark:text-stone-300 font-mono text-[11px]">
-                        {hist.date}
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <div className="font-semibold text-stone-900 dark:text-stone-100 text-xs">
+                          {dateStr}
+                        </div>
+                        {timeStr && (
+                          <div className="text-[10px] text-stone-500 dark:text-stone-400 inline-flex items-center gap-1 font-mono mt-0.5">
+                            <Clock className="w-3 h-3 text-stone-400 shrink-0" />
+                            <span>{timeStr}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-2.5 px-4">
                         <span

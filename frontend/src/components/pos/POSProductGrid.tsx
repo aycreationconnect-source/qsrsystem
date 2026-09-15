@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { MenuItem } from '../../types/app.types';
-import { X, Utensils } from 'lucide-react';
+import { Tooltip } from '../ui';
+import { X, Utensils, AlertTriangle } from 'lucide-react';
+import { getMenuItemLowStockMaterials, type LowStockMaterial } from '../../lib/orderUtils';
 import { cn } from '../../lib/utils';
 
 export const POSProductGrid: React.FC = () => {
@@ -28,6 +30,18 @@ export const POSProductGrid: React.FC = () => {
       .filter((c: any) => typeof c !== 'string' && (c.status === 'Inactive' || c.isActive === false))
       .map((c: any) => c.name)
   );
+
+  // Precompute low-stock raw materials attached to each menu item
+  const lowStockMap = useMemo(() => {
+    const map = new Map<number | string, LowStockMaterial[]>();
+    (appData.menu || []).forEach((item: any) => {
+      const lowMaterials = getMenuItemLowStockMaterials(item, appData.inventory);
+      if (lowMaterials.length > 0) {
+        map.set(item.id ?? item.name, lowMaterials);
+      }
+    });
+    return map;
+  }, [appData.menu, appData.inventory]);
 
   const activeCategories = (appData.categories || []).filter((c: any) => {
     if (typeof c === 'string') return true;
@@ -179,6 +193,8 @@ export const POSProductGrid: React.FC = () => {
                     .filter((c) => c.id === item.id)
                     .reduce((sum, c) => sum + c.quantity, 0);
 
+                  const lowMaterials = lowStockMap.get(item.id ?? item.name) || [];
+
                   return (
                     <div
                       key={item.id || i}
@@ -193,7 +209,7 @@ export const POSProductGrid: React.FC = () => {
                     >
                       {/* Top Header Row: Dietary Icon Only & Subcategory / Custom Tag */}
                       <div className="flex items-center justify-between gap-1 mb-1.5 min-w-0">
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                           {/* Dietary Icon only (FSSAI standard symbols, zero text) */}
                           {item.type === 'Non-Veg' ? (
                             <span className="badge-diet-nonveg shrink-0" title="Non-Veg" />
@@ -228,12 +244,51 @@ export const POSProductGrid: React.FC = () => {
                           )}
                         </div>
 
-                        {/* In-Cart Quantity Indicator */}
-                        {qty > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-500 text-stone-950 font-mono shadow-2xs">
-                            x{qty}
-                          </span>
-                        )}
+                        {/* Top Right: Low Stock Tag & Quantity Indicator */}
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {lowMaterials.length > 0 && (
+                            <Tooltip
+                              content={
+                                <div className="p-0.5 text-left">
+                                  <div className="font-extrabold text-[11px] text-rose-300 dark:text-rose-400 border-b border-stone-700/60 pb-1 mb-1.5 flex items-center justify-between gap-2">
+                                    <span className="flex items-center gap-1">
+                                      <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
+                                      <span>Low Stock Ingredients</span>
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/25 text-rose-300 font-mono font-bold">
+                                      {lowMaterials.length}
+                                    </span>
+                                  </div>
+                                  <ul className="space-y-1.5">
+                                    {lowMaterials.map((rm) => (
+                                      <li key={rm.name} className="text-[10px] flex items-center justify-between gap-3">
+                                        <span className="text-stone-200 truncate font-medium">{rm.name}</span>
+                                        <span className="font-mono font-bold text-amber-300 shrink-0">
+                                          {rm.stock} {rm.unit}
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              }
+                              className="whitespace-normal min-w-[170px]"
+                              position="top"
+                              align="end"
+                            >
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 inline-flex items-center gap-1 cursor-help tracking-wide shadow-2xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                Low Stock
+                              </span>
+                            </Tooltip>
+                          )}
+
+                          {/* In-Cart Quantity Indicator */}
+                          {qty > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-black bg-amber-500 text-stone-950 font-mono shadow-2xs">
+                              x{qty}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Item Details */}

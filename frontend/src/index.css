@@ -66,6 +66,16 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* 🔢 Remove spinner arrows from number inputs (Chrome, Safari, Edge, Opera, Firefox) */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
   /* 🖋️ Universal High-Contrast Text Selection (WCAG AAA Compliant) */
   ::selection {
     background-color: #fde68a !important; /* Warm honey gold amber-200 */
@@ -139,6 +149,37 @@
 
   html.dark ::-webkit-scrollbar-thumb:hover {
     background: #44403c;
+  }
+
+  /* 🎚️ Ultra-Slim Scrollbar (for chips, horizontal tabs) */
+  .slim-scrollbar::-webkit-scrollbar {
+    height: 3px;
+    width: 3px;
+  }
+  .slim-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .slim-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(168, 162, 158, 0.25);
+    border-radius: 9999px;
+  }
+  .slim-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 162, 158, 0.5);
+  }
+  .slim-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 162, 158, 0.25) transparent;
+  }
+
+  /* 🚫 Complete Hidden Scrollbar Utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

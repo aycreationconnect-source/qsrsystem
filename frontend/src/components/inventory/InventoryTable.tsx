@@ -32,7 +32,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
               <th className="py-3 px-4">Current Stock</th>
               <th className="py-3 px-4">Min Threshold</th>
               <th className="py-3 px-4">Stock Health</th>
-              <th className="py-3 px-4 text-right">Actions</th>
+              <th className="py-3 px-5 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
@@ -87,13 +87,13 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                           : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200'
                       )}
                     >
-                      {isOutOfStock ? 'Depleted' : isLowStock ? 'Low Stock' : 'Optimal'}
+                      {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'Good Stock'}
                     </span>
                   </td>
 
-                  <td className="py-3.5 px-4 text-right">
+                  <td className="py-3.5 px-5 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
-                      <Tooltip content="Stock Movement History" position="top" align="center">
+                      <Tooltip content="Stock Movement History" position="top" align="end">
                         <button
                           type="button"
                           onClick={() => onViewHistory(targetIndex)}

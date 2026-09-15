@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
 import { buildDailyOrderNumberMap, roundPOSAmount } from '../../lib/orderUtils';
-import { Search, Eye, Filter, CheckCircle2, Clock, CreditCard } from 'lucide-react';
+import { Search, Eye, Filter, CheckCircle2, Clock, CreditCard, XCircle } from 'lucide-react';
 
 interface OrderHistoryReportProps {
   orders: Order[];
@@ -57,7 +57,8 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
       const matchesStatus =
         statusFilter === 'ALL' ||
         (statusFilter === 'COMPLETED' && s === 'COMPLETED') ||
-        (statusFilter === 'PARTIAL' && (s.includes('PARTIAL') || (o.balanceAmount || 0) > 0));
+        (statusFilter === 'PARTIAL' && (s.includes('PARTIAL') || (o.balanceAmount || 0) > 0)) ||
+        (statusFilter === 'CANCELLED' && s === 'CANCELLED');
 
       return matchesSearch && matchesPayment && matchesStatus;
     });
@@ -67,9 +68,11 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
   const filteredTotals = useMemo(() => {
     return filteredOrders.reduce(
       (acc, o) => {
-        acc.subtotal += o.subtotal || 0;
-        acc.tax += o.tax || 0;
-        acc.total += roundPOSAmount(o.total || 0);
+        if (o.status !== 'Cancelled') {
+          acc.subtotal += o.subtotal || 0;
+          acc.tax += o.tax || 0;
+          acc.total += roundPOSAmount(o.total || 0);
+        }
         return acc;
       },
       { subtotal: 0, tax: 0, total: 0 }
@@ -114,7 +117,7 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
           {/* Status Filter */}
           <div className="flex items-center gap-1.5 bg-stone-50 dark:bg-stone-850 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-800 text-xs">
             <Filter className="w-3.5 h-3.5 text-stone-400 ml-2" />
-            {['ALL', 'COMPLETED', 'PARTIAL'].map((st) => (
+            {['ALL', 'COMPLETED', 'PARTIAL', 'CANCELLED'].map((st) => (
               <button
                 key={st}
                 type="button"
@@ -125,7 +128,7 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
                 }`}
               >
-                {st === 'ALL' ? 'All' : st === 'COMPLETED' ? 'Completed' : 'Partial'}
+                {st === 'ALL' ? 'All' : st === 'COMPLETED' ? 'Completed' : st === 'PARTIAL' ? 'Partial' : 'Cancelled'}
               </button>
             ))}
           </div>
@@ -228,16 +231,22 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
                     </td>
 
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                          isPartiallyPaid
-                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                            : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
-                        {o.status || 'Completed'}
-                      </span>
+                      {o.status === 'Cancelled' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                          <XCircle className="w-3 h-3" />
+                          Cancelled
+                        </span>
+                      ) : isPartiallyPaid ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                          <CheckCircle2 className="w-3 h-3" />
+                          {o.status || 'Partially Paid'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                          <CheckCircle2 className="w-3 h-3" />
+                          {o.status || 'Completed'}
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">

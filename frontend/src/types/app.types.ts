@@ -60,6 +60,7 @@ export interface InventoryCategory {
   id: number;
   name: string;
   description?: string | null;
+  status?: 'Active' | 'Inactive' | string;
   itemCount?: number;
   lowStockCount?: number;
 }
@@ -154,12 +155,22 @@ export interface AppData {
   settings: Settings;
 }
 
+export interface SelectedAddon {
+  id: string | number;
+  name: string;
+  price: number;
+  quantity?: number;
+}
+
 export interface CartItem extends MenuItem {
   quantity: number;
+  selectedAddons?: SelectedAddon[];
+  basePrice?: number;
+  cartKey?: string;
 }
 
 export interface TableOrderState {
-  savedOrders: { items: CartItem[]; time: number }[];
+  savedOrders: { items: CartItem[]; time: number; note?: string; updatedAt?: number }[];
   activeCart: CartItem[];
   payments?: OrderPayment[];
 }

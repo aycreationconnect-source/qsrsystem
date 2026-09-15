@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { tableApi } from '../../api/tableApi';
 import { useApp } from '../../context/AppContext';
 import { Modal, Button, Input, ConfirmModal, Select, type SelectOption } from '../ui';
+import { toast } from '../../context/ToastContext';
 import { Armchair, Users, Layers, CheckCircle2, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getAreaColorTheme } from '../../utils/areaColors';
@@ -53,14 +54,18 @@ export const TableModal: React.FC<TableModalProps> = ({
 
       if (editingTableId) {
         await tableApi.updateTable(Number(editingTableId), payload);
+        toast.success(`Table "${payload.name}" updated!`);
       } else {
         await tableApi.createTable(payload);
+        toast.success(`Table "${payload.name}" created!`);
       }
 
       await refreshTables();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save table');
+      const msg = err.message || 'Failed to save table';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -74,9 +79,12 @@ export const TableModal: React.FC<TableModalProps> = ({
       await tableApi.deleteTable(Number(editingTableId));
       await refreshTables();
       setShowConfirmDelete(false);
+      toast.success('Table deleted successfully');
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete table');
+      const msg = err.message || 'Failed to delete table';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
     }

@@ -27,6 +27,14 @@ export class InventoryController {
     return this.inventoryService.createCategory(body);
   }
 
+  @Patch('categories/:id')
+  updateCategory(
+    @Param('id') id: string,
+    @Body() body: { name?: string; description?: string; status?: string },
+  ) {
+    return this.inventoryService.updateCategory(+id, body);
+  }
+
   @Delete('categories/:id')
   deleteCategory(@Param('id') id: string) {
     return this.inventoryService.deleteCategory(+id);
