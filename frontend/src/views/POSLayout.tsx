@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { usePOS } from '../context/POSContext';
 import { POSTopNav } from '../components/pos/POSTopNav';
-import { POSCategoryTabs } from '../components/pos/POSCategoryTabs';
+import { POSVerticalCategorySidebar } from '../components/pos/POSVerticalCategorySidebar';
+import { POSTableSubheader } from '../components/pos/POSTableSubheader';
 import { POSProductGrid } from '../components/pos/POSProductGrid';
 import { POSCartSidebar } from '../components/pos/POSCartSidebar';
-import { POSTableSidebar } from '../components/pos/POSTableSidebar';
+import { POSTableTerminalView } from '../components/pos/POSTableTerminalView';
+import { StoreProfileModal } from '../components/settings/StoreProfileModal';
+import { PackageDetailsModal } from '../components/common/PackageDetailsModal';
 import { CheckoutModal } from '../components/pos/CheckoutModal';
 import { AddonSelectModal } from '../components/pos/AddonSelectModal';
 import { ShiftTableModal } from '../components/pos/ShiftTableModal';
@@ -14,86 +17,91 @@ import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { POSOrderHistoryModal } from '../components/pos/POSOrderHistoryModal';
 import { Drawer } from '../components/ui';
 import { useSearchParams } from 'react-router-dom';
-import { Utensils, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export const POSLayout: React.FC = () => {
-  const { posMode: contextPosMode } = useApp();
+  const { posMode: contextPosMode, storeProfile, setStoreProfile } = useApp();
   const [searchParams] = useSearchParams();
   const posMode = searchParams.get('mode') || contextPosMode || 'quick';
   const { selectedTableId, cart, getCartTotals } = usePOS();
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
+  const [isStoreProfileModalOpen, setIsStoreProfileModalOpen] = useState(false);
 
   const { total } = getCartTotals();
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // When in Table Mode and no table is actively selected, show dedicated Floor Terminal (Figure 2)
+  const isFloorTerminalActive = posMode === 'table' && !selectedTableId;
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#faf8f5] dark:bg-[#0c0f17] text-stone-900 dark:text-stone-100 select-none">
-      {/* 1. Left Table / Floor Sidebar (Dine-In Mode Only) */}
-      {posMode === 'table' && (
-        <div className="hidden md:flex h-full shrink-0">
-          <POSTableSidebar />
-        </div>
-      )}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#faf8f5] dark:bg-[#0c0f17] text-stone-900 dark:text-stone-100 select-none">
+      {/* 1. Station Top Navigation Bar */}
+      <POSTopNav
+        onOpenMobileCart={() => setIsMobileCartOpen(true)}
+        onOpenPackageDetails={() => setIsPackageModalOpen(true)}
+        onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
+      />
 
-      {/* 2. Center Main Operational Area (Nav + Categories + Food Grid) */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <POSTopNav onOpenMobileCart={() => setIsMobileCartOpen(true)} />
-
-        {/* If Table Mode and No Table Selected */}
-        {posMode === 'table' && !selectedTableId ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-            {/* Mobile Table Selector if on phone/small tablet */}
-            <div className="md:hidden w-full max-w-md h-full flex flex-col">
-              <POSTableSidebar />
-            </div>
-
-            <div className="hidden md:flex flex-col items-center justify-center text-stone-400 dark:text-stone-500">
-              <div className="w-20 h-20 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
-                <Utensils className="w-10 h-10 stroke-1" />
-              </div>
-              <h3 className="text-lg font-bold text-stone-700 dark:text-stone-300">
-                Select a Dining Table
-              </h3>
-              <p className="text-xs max-w-xs mt-1">
-                Choose an active or available table from the left floor sidebar to take orders.
-              </p>
-            </div>
-          </div>
+      {/* 2. Main Operational Area */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {isFloorTerminalActive ? (
+          /* Component 1: Dedicated Full-Screen Table Terminal View (Figure 2) */
+          <POSTableTerminalView />
         ) : (
-          <>
-            <POSCategoryTabs />
-            <POSProductGrid />
+          /* Component 2: Dedicated Menu & Ordering View (Image 2) */
+          <div className="flex-1 flex overflow-hidden relative">
+            {/* Left & Center Canvas (Subheader + Categories + Product Grid) */}
+            <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
+              {/* Active Table Subheader (Spans only across Left & Center) */}
+              {posMode === 'table' && selectedTableId && (
+                <POSTableSubheader />
+              )}
 
-            {/* Mobile Bottom Order Floating Pill Bar */}
-            {totalCount > 0 && (
-              <div className="lg:hidden fixed bottom-4 left-4 right-4 z-30">
-                <div
-                  onClick={() => setIsMobileCartOpen(true)}
-                  className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-extrabold px-5 py-3.5 rounded-2xl shadow-xl shadow-amber-500/30 flex items-center justify-between cursor-pointer active:scale-98 transition-all"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-xl bg-stone-950 text-amber-400 flex items-center justify-center text-xs">
-                      {totalCount}
+              {/* Menu Operational Canvas */}
+              <div className="flex-1 flex overflow-hidden relative">
+                {/* Left Column: Dedicated Vertical Categories Sidebar */}
+                <div className="hidden md:flex h-full shrink-0">
+                  <POSVerticalCategorySidebar />
+                </div>
+
+                {/* Center Area: Visual Food Catalog Grid */}
+                <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
+                  <POSProductGrid />
+
+                  {/* Mobile Bottom Order Floating Pill Bar */}
+                  {totalCount > 0 && (
+                    <div className="lg:hidden fixed bottom-4 left-4 right-4 z-30">
+                      <div
+                        onClick={() => setIsMobileCartOpen(true)}
+                        className="bg-amber-500 hover:bg-amber-600 text-stone-950 font-extrabold px-5 py-3.5 rounded-2xl shadow-xl shadow-amber-500/30 flex items-center justify-between cursor-pointer active:scale-98 transition-all"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-xl bg-stone-950 text-amber-400 flex items-center justify-center text-xs">
+                            {totalCount}
+                          </div>
+                          <span className="text-sm">View Current Order</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-mono">₹{total.toFixed(2)}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-sm">View Current Order</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-mono">₹{total.toFixed(2)}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
-          </>
+            </div>
+
+            {/* Right Desktop Cart & Ticket Sidebar: EXPANDED TO UPSIDE (Full Height) */}
+            <div className="hidden lg:flex w-96 xl:w-[420px] 2xl:w-[460px] h-full shrink-0">
+              <POSCartSidebar />
+            </div>
+          </div>
         )}
       </div>
 
-      {/* 3. Right Desktop Cart Sidebar (Hidden on mobile/small tablets, fixed on large desktop) */}
-      <div className="hidden lg:flex w-96 xl:w-[420px] 2xl:w-[460px] h-full shrink-0">
-        <POSCartSidebar />
-      </div>
-
-      {/* 4. Mobile Waiter Cart Drawer (Slide-Up Drawer for Phones & Small Tablets) */}
+      {/* Mobile Waiter Cart Drawer (Slide-Up Drawer for Phones & Small Tablets) */}
       <Drawer
         isOpen={isMobileCartOpen}
         onClose={() => setIsMobileCartOpen(false)}
@@ -112,6 +120,16 @@ export const POSLayout: React.FC = () => {
       <AddTablePOSModal />
       <OrderSuccessModal />
       <POSOrderHistoryModal />
+      <PackageDetailsModal
+        isOpen={isPackageModalOpen}
+        onClose={() => setIsPackageModalOpen(false)}
+      />
+      <StoreProfileModal
+        isOpen={isStoreProfileModalOpen}
+        onClose={() => setIsStoreProfileModalOpen(false)}
+        storeProfile={storeProfile}
+        onProfileUpdated={(updated) => setStoreProfile(updated)}
+      />
     </div>
   );
 };

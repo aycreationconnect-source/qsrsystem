@@ -190,34 +190,34 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
   return (
     <aside className="h-full w-full flex flex-col bg-white dark:bg-stone-900 border-l border-stone-200/80 dark:border-stone-800 select-none">
       {/* Top Header Row */}
-      <div className="p-3.5 sm:p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-2 shrink-0 bg-stone-50/50 dark:bg-stone-900/50">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <IndianRupee className="w-4 h-4" />
+      <div className="px-3.5 py-2 sm:px-4 sm:py-2.5 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-2 shrink-0 bg-stone-50/50 dark:bg-stone-900/50">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <IndianRupee className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
+            <h3 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
               {posMode === 'table' && selectedTable
                 ? `${selectedTable.name} Ticket`
                 : 'Current Ticket'}
             </h3>
-            <span className="text-[11px] text-stone-400 font-medium">
+            <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium">
               {cart.reduce((s, c) => s + c.quantity, 0)} items in bill
             </span>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           {posMode === 'table' && selectedTableId && (
             <Tooltip content="Shift / Transfer Order to Another Table" position="bottom" align="end">
               <button
                 type="button"
                 onClick={() => setShowShiftTableModal(true)}
-                className="p-2 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer"
+                className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer"
                 title="Shift Table"
               >
-                <ArrowRightLeft className="w-4 h-4" />
+                <ArrowRightLeft className="w-3.5 h-3.5" />
               </button>
             </Tooltip>
           )}
@@ -227,10 +227,10 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
               type="button"
               disabled={cart.length === 0 && !hasSavedOrders}
               onClick={handleClearCart}
-              className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
               title="Clear All Items"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
 
@@ -238,11 +238,11 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             <button
               type="button"
               onClick={onCloseMobileDrawer}
-              className="lg:hidden p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+              className="lg:hidden p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
               title="Close Drawer"
               aria-label="Close cart drawer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -250,7 +250,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
 
       {/* Bill Table Column Headers (Item Name | Quantity | Price | Actions) */}
       {(cart.length > 0 || hasSavedOrders) && (
-        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 border-b border-stone-200/80 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/80 shrink-0 select-none">
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 border-b border-stone-200/80 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/80 shrink-0 select-none">
           <span className="flex-1 min-w-0">Item Name</span>
           <span className="w-24 sm:w-26 text-center shrink-0">Quantity</span>
           <span className="w-20 sm:w-24 text-right shrink-0">Price</span>

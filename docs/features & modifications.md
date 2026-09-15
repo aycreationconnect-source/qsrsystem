@@ -6,7 +6,50 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-12 — Feature: "Tax Not Applicable" Item Badge & Tax Rate Percentage Display in POS Billing ([`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx), [`CheckoutModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/CheckoutModal.tsx), [`orderUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/orderUtils.ts), [`thermalPrintUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/thermalPrintUtils.ts))
+### 1. 2026-09-15 — Feature: POS Menu Page Redesign — Ordering View & Visual Food Catalog ([`pos-menu-page-redesign.md`](file:///c:/Learning/projects/qsrsystem/docs/pos-menu-page-redesign.md), [`POSTableSubheader.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSubheader.tsx), [`POSVerticalCategorySidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSVerticalCategorySidebar.tsx), [`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), [`foodImageUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/foodImageUtils.ts), [`POSLayout.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/views/POSLayout.tsx), [`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx))
+- **Type**: UI/UX & High-Velocity POS Ordering Redesign (Matching Image 2 / Figure 2)
+- **Summary**:
+  - **Active Table Subheader**:
+    - Dedicated subheader strip below top nav with `← Change Table` button (seamless return to Floor Terminal), vibrant orange table badge (`[Icon] T-03`), capacity chip (`👥 4 Pax`), live dining duration timer (`⏱ 42 min`), and pulse status pill. Removed redundant `••• More` button.
+  - **Full-Height Expanded Cart Sidebar (`POSCartSidebar`)**:
+    - Expanded `POSCartSidebar` to the top (upside) so it starts directly below the station top nav, spanning full screen height. Provides ~56px of extra vertical space for multiple KOT batches, kitchen notes, and long guest bills.
+    - Streamlined `Current Ticket` header container (`px-3.5 py-2 sm:px-4 sm:py-2.5`) and column headers (`py-1.5`) to eliminate wasted vertical whitespace and maximize visible items.
+  - **Vertical Categories Sidebar (`POSVerticalCategorySidebar`)**:
+    - Replaced the old horizontal dropdown category strip with a dedicated vertical sidebar on the left (`w-56 xl:w-64`) featuring culinary icons (`Flame`, `Soup`, `CookingPot`, `Wheat`, `CupSoda`, `Cake`), live item counts, soft amber active selection pill, and a `⚙️ Manage Menu` quick shortcut.
+  - **Visual Food Catalog Grid (`POSProductGrid`)**:
+    - Upgraded food cards into rich visual cards featuring high-resolution dish photography (with automatic fallback resolution via `foodImageUtils.ts`), floating FSSAI dietary symbols (`Veg`, `Non-Veg`, `Egg`, `Vegan`), dish title, price, and responsive orange `+ Add` button.
+    - Inline Quantity Stepper (`[- qty +]`): When dishes are in the cart, the card renders instant quantity controls directly on the card for effortless increment/decrement.
+    - Sectioned catalog grouping on `All Items` (`Popular Items`, `Starters`, `Soups`, etc.) with `View All →` links that jump directly to category filters.
+    - Dietary filter pills on top (`All`, `Veg`, `Non-Veg`, `Egg`, `Vegan`) and View Mode Toggle (Grid view vs. compact List view).
+
+---
+
+### 2. 2026-09-15 — Feature: POS Table Mode Complete Redesign — Table Grid & Floor Terminal ([`pos-table-grid-terminal-feature.md`](file:///c:/Learning/projects/qsrsystem/docs/pos-table-grid-terminal-feature.md), [`POSTableTerminalView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableTerminalView.tsx), [`TablePaxIcon.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/TablePaxIcon.tsx), [`POSTopNav.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTopNav.tsx), [`POSLayout.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/views/POSLayout.tsx))
+- **Type**: Architecture & UI/UX Floor Plan Redesign
+- **Summary**:
+  - **Transition from Crammed 3-Column Layout to Dedicated Single Components**:
+    - Replaced the legacy 3-column layout (narrow table sidebar + center placeholder + empty cart) with a dedicated full-screen **Table Terminal (Floor View)** component and a separate **Menu & Order Taking** component.
+    - **Spacing & Visual Hierarchy Rationale**: The legacy layout crammed the entire restaurant floor into a tiny 280px left rail while leaving >75% of the screen idle before a table was selected. The dedicated floor component utilizes 100% of the viewport for visual table cards, area navigation, and status metrics, with seamless transition to ordering upon selecting a table.
+  - **Dynamic Pax Seating Icons (`TablePaxIcon`)**:
+    - Created custom scalable vector table illustrations tailored for 2 Pax, 4 Pax, 6 Pax, 8 Pax, and 10+ Pax with status-driven styling (Available in slate, Occupied in amber with dining accents, Reserved in rose with calendar time, Cleaning in cyan with housekeeping sparkle).
+  - **Areas & Sections Category Sidebar**:
+    - Collapsible left sidebar (`ChevronLeft` / `ChevronRight`) minimizing to an ultra-compact icon rail (`w-12 lg:w-14`) with persistent `localStorage` state. Displaying floor zones with real-time table counts and instant filtering. Transforms to horizontal scroll chips on mobile.
+  - **Optimized 5-Column Responsive Grid**:
+    - Expands to **5 tables/row on desktop** (`xl:grid-cols-5`), **4 on tablet** (`lg:grid-cols-4 md:grid-cols-3`), and **2 on mobile** (`grid-cols-2`).
+  - **Extra Table Card in Grid**:
+    - Added an ad-hoc "Extra Table" dashed card in the grid to create temporary dining tables on the fly via `AddTablePOSModal`.
+  - **Cleaned Top Actions & Streamlined User Dropdown**:
+    - Removed redundant "Floor Management" and "Floor Plan" buttons from active billing screens.
+    - Streamlined owner profile dropdown (`POSTopNav`): removed "Floor Plan Setup" and "Switch to Quick POS"; preserved Profile Name, Online badge, Role, and Logout; added "Store & Owner Profile" (opening `StoreProfileModal`) and "Store Settings" (`/settings`).
+  - **Top Navigation Upgrades**:
+    - Added **License Status Pill** (`● 365 Days Left`) with `PackageDetailsModal` integration, **Notification Bell** with unread count badge and live alerts popover, and **Staff Profile Avatar** dropdown.
+  - **Contextual Operations & Dropdowns**:
+    - Interactive `•••` table card dropdown supporting instant order opening, table reservations (`POSReserveTableModal`), housekeeping cleaning state, and table shifting.
+    - Fixed bottom legend and floor statistics telemetry bar.
+
+---
+
+### 2. 2026-09-12 — Feature: "Tax Not Applicable" Item Badge & Tax Rate Percentage Display in POS Billing ([`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx), [`CheckoutModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/CheckoutModal.tsx), [`orderUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/orderUtils.ts), [`thermalPrintUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/thermalPrintUtils.ts))
 - **Type**: POS Cart UX & Bill Transparency Enhancement
 - **Summary**:
   - **"Tax Not Applicable" Item Badge**:

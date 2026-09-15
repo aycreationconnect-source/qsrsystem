@@ -4,6 +4,7 @@ import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
 import { roundPOSAmount, getStoreGlobalTaxRate, getItemTaxRate, mergeOrAddPayment } from '../lib/orderUtils';
 import { toast } from './ToastContext';
+import type { ReservationData } from '../components/pos/POSReserveTableModal';
 
 export type DietFilterType = 'ALL' | 'Veg' | 'Non-Veg' | 'Egg' | 'Vegan';
 
@@ -41,9 +42,17 @@ interface POSContextType {
   setTableStartTimes: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   tablePrinted: Record<string, boolean>;
   setTablePrinted: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  tableReservations: Record<string, ReservationData>;
+  setTableReservations: React.Dispatch<React.SetStateAction<Record<string, ReservationData>>>;
+  tableCleaningStatus: Record<string, boolean>;
+  setTableCleaningStatus: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   selectedTableId: string | null;
   setSelectedTableId: (id: string | null) => void;
   now: number;
+
+  reserveTable: (tableId: string | number, data: ReservationData) => void;
+  cancelReservation: (tableId: string | number) => void;
+  markTableCleaning: (tableId: string | number, isCleaning: boolean) => void;
 
   showAddTableModal: boolean;
   setShowAddTableModal: (show: boolean) => void;
@@ -144,6 +153,24 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
+  const [tableReservations, setTableReservations] = useState<Record<string, ReservationData>>(() => {
+    try {
+      const saved = localStorage.getItem('pos_table_reservations');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [tableCleaningStatus, setTableCleaningStatus] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('pos_table_cleaning');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [showShiftTableModal, setShowShiftTableModal] = useState(false);
@@ -190,6 +217,22 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [tablePrinted]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('pos_table_reservations', JSON.stringify(tableReservations));
+    } catch (e) {
+      console.error('Failed to sync table reservations to localStorage', e);
+    }
+  }, [tableReservations]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pos_table_cleaning', JSON.stringify(tableCleaningStatus));
+    } catch (e) {
+      console.error('Failed to sync table cleaning to localStorage', e);
+    }
+  }, [tableCleaningStatus]);
+
   // Sync across tabs / windows via storage event
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
@@ -208,9 +251,51 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setTablePrinted(JSON.parse(e.newValue));
         } catch {}
       }
+      if (e.key === 'pos_table_reservations' && e.newValue) {
+        try {
+          setTableReservations(JSON.parse(e.newValue));
+        } catch {}
+      }
+      if (e.key === 'pos_table_cleaning' && e.newValue) {
+        try {
+          setTableCleaningStatus(JSON.parse(e.newValue));
+        } catch {}
+      }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const reserveTable = useCallback((tableId: string | number, data: ReservationData) => {
+    const key = String(tableId);
+    setTableReservations((prev) => ({ ...prev, [key]: data }));
+    setTableCleaningStatus((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  }, []);
+
+  const cancelReservation = useCallback((tableId: string | number) => {
+    const key = String(tableId);
+    setTableReservations((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  }, []);
+
+  const markTableCleaning = useCallback((tableId: string | number, isCleaning: boolean) => {
+    const key = String(tableId);
+    setTableCleaningStatus((prev) => {
+      const copy = { ...prev };
+      if (isCleaning) {
+        copy[key] = true;
+      } else {
+        delete copy[key];
+      }
+      return copy;
+    });
   }, []);
 
   const updateTableActiveCart = useCallback((tableId: string | number, newCart: CartItem[]) => {
@@ -1032,6 +1117,13 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setTableStartTimes,
         tablePrinted,
         setTablePrinted,
+        tableReservations,
+        setTableReservations,
+        tableCleaningStatus,
+        setTableCleaningStatus,
+        reserveTable,
+        cancelReservation,
+        markTableCleaning,
         selectedTableId,
         setSelectedTableId,
         now,

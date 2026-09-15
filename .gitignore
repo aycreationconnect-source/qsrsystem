@@ -42,3 +42,10 @@ coverage/
 # Decoupled Superadmin HQ
 support-platform/
 
+# Ignore TypeScript incremental build cache
+*.tsbuildinfo
+tsconfig.build.tsbuildinfo
+
+# Ignore build output folders
+dist/
+backend/dist/
