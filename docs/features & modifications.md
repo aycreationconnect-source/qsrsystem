@@ -21,6 +21,9 @@ This document provides a concise, chronological log of all features, enhancement
     - Inline Quantity Stepper (`[- qty +]`): When dishes are in the cart, the card renders instant quantity controls directly on the card for effortless increment/decrement.
     - Sectioned catalog grouping on `All Items` (`Popular Items`, `Starters`, `Soups`, etc.) with `View All →` links that jump directly to category filters.
     - Dietary filter pills on top (`All`, `Veg`, `Non-Veg`, `Egg`, `Vegan`) and View Mode Toggle (Grid view vs. compact List view).
+  - **Role-Based Profile Section Visibility (`POSTopNav`)**:
+    - Restricted "Store & Owner Profile" and "Store Settings" dropdown options exclusively to **OWNER** and **ADMIN** roles.
+    - When staff members log in (e.g. `CASHIER`, `WAITER`), these sensitive administration links are hidden from their profile dropdown, showing only their Name, Online status, Role, Cafe identity, and "Lock / Log Out".
 
 ---
 
