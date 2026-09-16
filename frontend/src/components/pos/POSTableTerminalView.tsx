@@ -808,11 +808,10 @@ export const POSTableTerminalView: React.FC = () => {
                   onClick={() => setShowAddTableModal(true)}
                   className="relative rounded-3xl p-3.5 sm:p-4 border-2 border-dashed border-stone-300 dark:border-stone-700 hover:border-amber-500 dark:hover:border-amber-500 bg-stone-50/50 dark:bg-stone-850/30 hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-all duration-200 cursor-pointer select-none flex flex-col justify-between items-center text-center group min-h-[200px] shadow-2xs hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="w-full flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-300/60 dark:border-amber-800/40 uppercase tracking-wider">
+                  <div className="w-full flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-950/50 px-2.5 py-0.5 rounded-full border border-amber-300/60 dark:border-amber-800/40 uppercase tracking-wider">
                       Temporary
                     </span>
-                    <Plus className="w-4 h-4 text-stone-400 group-hover:text-amber-500 transition-colors" />
                   </div>
 
                   <div className="py-3 flex flex-col items-center justify-center">
@@ -821,7 +820,7 @@ export const POSTableTerminalView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center justify-center mb-2">
+                  <div className="flex flex-col items-center justify-center mb-1">
                     <h4 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                       Extra Table
                     </h4>
@@ -830,12 +829,7 @@ export const POSTableTerminalView: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="w-full">
-                    <span className="w-full py-1 rounded-full text-[11px] font-extrabold bg-amber-100/80 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 group-hover:bg-amber-500 group-hover:text-stone-950 border border-amber-300/80 dark:border-amber-800/60 transition-all flex items-center justify-center gap-1 shadow-2xs">
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Table</span>
-                    </span>
-                  </div>
+                  <div className="h-1" />
                 </div>
               </div>
             )}

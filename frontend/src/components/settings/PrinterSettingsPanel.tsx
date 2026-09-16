@@ -258,29 +258,22 @@ export const PrinterSettingsPanel: React.FC = () => {
   // Render
   // -------------------------------------------------------------
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Global Default Printer Roll Setup Card */}
-      <div className="bg-white dark:bg-stone-900 border border-sky-500/40 dark:border-sky-500/30 rounded-2xl p-3 sm:p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5 min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-                <Printer className="w-3.5 h-3.5" />
-              </div>
-              <h3 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 whitespace-nowrap">
-                Default Thermal Page & Paper Format
-              </h3>
-              <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shrink-0">
-                DEFAULT: {defaultPaperWidth.toUpperCase()}
-              </span>
-            </div>
-            <p className="text-xs text-stone-500 dark:text-stone-400 truncate">
-              Standard 80mm full-width counter roll or 58mm compact mobile Bluetooth roll.
-            </p>
-          </div>
+    <div className="bg-white dark:bg-stone-900 border border-sky-500/40 dark:border-sky-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-150">
+      {/* 1. Main Card Header & Default Roll Switcher */}
+      <div className="pb-4 border-b border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+            <Printer className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            <span>Thermal Printer & Receipt Settings</span>
+          </h3>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            Configure thermal paper roll widths, customer receipts, kitchen KOT tickets, and item barcode labels.
+          </p>
+        </div>
 
-          {/* Toggle Switch between 58mm and 80mm */}
-          <div className="flex items-center gap-2 shrink-0 select-none bg-stone-100/70 dark:bg-stone-800/60 p-1.5 rounded-xl border border-stone-200/60 dark:border-stone-700/60">
+        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+          {/* Quick Roll Switcher */}
+          <div className="flex items-center gap-2 select-none bg-stone-100/70 dark:bg-stone-800/60 p-1.5 rounded-xl border border-stone-200/60 dark:border-stone-700/60 shrink-0">
             <span
               onClick={() => {
                 setDefaultPaperWidth('58mm');
@@ -339,7 +332,7 @@ export const PrinterSettingsPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Printer Category Tabs / Pills */}
+      {/* 2. Printer Category Tabs / Pills */}
       <div className="flex items-center gap-2 p-1.5 bg-stone-100/80 dark:bg-stone-800/50 rounded-2xl border border-stone-200/60 dark:border-stone-800">
         {[
           {
@@ -394,7 +387,7 @@ export const PrinterSettingsPanel: React.FC = () => {
         })}
       </div>
 
-      {/* Main Split Configuration & Live Preview Area */}
+      {/* 3. Main Split Configuration & Live Preview Area */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* =========================================================================
             LEFT COLUMN: CONFIGURATION CONTROLS (lg:col-span-7)
@@ -402,7 +395,7 @@ export const PrinterSettingsPanel: React.FC = () => {
         <div className="lg:col-span-7 space-y-6">
           {/* TAB 1: BILL PRINT CONFIGURATION */}
           {activeSubTab === 'bill' && (
-            <div className="bg-white dark:bg-stone-900 border border-sky-500/30 dark:border-sky-500/25 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+            <div className="bg-stone-50/60 dark:bg-stone-850/40 border border-stone-200/70 dark:border-stone-800 rounded-2xl p-5 sm:p-6 space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
@@ -672,7 +665,7 @@ export const PrinterSettingsPanel: React.FC = () => {
 
           {/* TAB 2: KOT PRINT CONFIGURATION */}
           {activeSubTab === 'kot' && (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+            <div className="bg-stone-50/60 dark:bg-stone-850/40 border border-stone-200/70 dark:border-stone-800 rounded-2xl p-5 sm:p-6 space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -882,7 +875,7 @@ export const PrinterSettingsPanel: React.FC = () => {
 
           {/* TAB 3: ITEM PRINT CONFIGURATION */}
           {activeSubTab === 'item' && (
-            <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+            <div className="bg-stone-50/60 dark:bg-stone-850/40 border border-stone-200/70 dark:border-stone-800 rounded-2xl p-5 sm:p-6 space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -1015,22 +1008,11 @@ export const PrinterSettingsPanel: React.FC = () => {
           )}
 
           {/* Action Row: Save All Settings */}
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-center pt-2">
             <div className="flex items-center gap-2 text-xs text-stone-400">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Settings apply immediately across POS checkout and kitchen printers</span>
             </div>
-
-            <Button
-              type="button"
-              variant="primary"
-              size="touch"
-              onClick={() => handleSaveAllPrinterSettings()}
-              className="px-8 font-extrabold cursor-pointer shadow-md shadow-amber-500/20 shrink-0"
-              isLoading={isSaving}
-            >
-              Save Printer Settings
-            </Button>
           </div>
         </div>
 
@@ -1078,8 +1060,8 @@ export const PrinterSettingsPanel: React.FC = () => {
                       ? 'w-[200px] rounded-lg'
                       : 'w-[240px] rounded-lg'
                     : (activeSubTab === 'bill' ? billPaperWidth : kotPaperWidth) === '58mm'
-                    ? 'w-[220px] text-[10px] leading-tight rounded-sm'
-                    : 'w-[280px] text-[11px] leading-normal rounded-sm'
+                      ? 'w-[220px] text-[10px] leading-tight rounded-sm'
+                      : 'w-[280px] text-[11px] leading-normal rounded-sm'
                 )}
                 style={{
                   boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
@@ -1378,6 +1360,29 @@ export const PrinterSettingsPanel: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 4. Bottom Action Footer */}
+      <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
+        <button
+          type="button"
+          onClick={handleTestPrint}
+          className="px-4 py-2.5 rounded-2xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs transition-colors cursor-pointer flex items-center gap-2"
+        >
+          <Sparkles className="w-4 h-4 text-sky-500" />
+          <span>Test Print Sample</span>
+        </button>
+
+        <Button
+          type="button"
+          variant="primary"
+          size="touch"
+          onClick={() => handleSaveAllPrinterSettings()}
+          isLoading={isSaving}
+          className="px-8 font-extrabold cursor-pointer shadow-md shadow-sky-500/20"
+        >
+          Save Printer Settings
+        </Button>
       </div>
     </div>
   );

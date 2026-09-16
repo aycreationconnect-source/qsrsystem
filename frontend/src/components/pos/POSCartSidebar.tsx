@@ -196,7 +196,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
             <IndianRupee className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
+            <h3 className="text-xs sm:text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate" style={{ marginBottom: '-8px' }}>
               {posMode === 'table' && selectedTable
                 ? `${selectedTable.name} Ticket`
                 : 'Current Ticket'}
@@ -367,11 +367,11 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                               className={cn(
                                 'text-[9px] font-semibold px-1.5 py-0.2 rounded leading-tight border',
                                 taxBadge.variant === 'exempt' &&
-                                  'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
+                                'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
                                 taxBadge.variant === 'applicable' &&
-                                  'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
+                                'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
                                 taxBadge.variant === 'custom' &&
-                                  'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
+                                'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
                               )}
                             >
                               {taxBadge.text}
@@ -470,11 +470,11 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                           className={cn(
                             'text-[9px] font-semibold px-1.5 py-0.2 rounded leading-tight border',
                             taxBadge.variant === 'exempt' &&
-                              'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
+                            'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 border-stone-200/80 dark:border-stone-700',
                             taxBadge.variant === 'applicable' &&
-                              'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
+                            'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60',
                             taxBadge.variant === 'custom' &&
-                              'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
+                            'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200/80 dark:border-sky-800/60'
                           )}
                         >
                           {taxBadge.text}
@@ -955,7 +955,7 @@ export const POSCartSidebar: React.FC<POSCartSidebarProps> = ({ onCloseMobileDra
                       {tbls.map((t: Table) => {
                         const hasExisting = Boolean(
                           tableOrders[t.id]?.savedOrders?.length > 0 ||
-                            tableOrders[t.id]?.activeCart?.length > 0
+                          tableOrders[t.id]?.activeCart?.length > 0
                         );
                         return (
                           <button
