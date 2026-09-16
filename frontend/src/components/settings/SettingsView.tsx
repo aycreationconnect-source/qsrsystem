@@ -541,14 +541,37 @@ export const SettingsView: React.FC = () => {
               CATEGORY 1: STORE PROFILE & IDENTITY (COMPREHENSIVE REDESIGN)
               ========================================================================= */}
           {activeTab === 'profile' && (
-            <div className="space-y-6 animate-in fade-in duration-150">
-              {/* 1. Hero Identity Banner */}
-              <div className="bg-gradient-to-br from-stone-900 via-stone-850 to-stone-900 text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-amber-500/40 shadow-amber-500/5 relative overflow-hidden">
+            <div className="bg-white dark:bg-stone-900 border border-amber-500/40 dark:border-amber-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-150">
+              {/* 1. Header & Edit Action Bar */}
+              <div className="pb-4 border-b border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                    <Store className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    <span>Store Profile & Business Identity</span>
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                    Store details, brand logo, contact information, fiscal compliance, and receipt customization.
+                  </p>
+                </div>
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => setIsStoreProfileModalOpen(true)}
+                  leftIcon={<Edit2 className="w-4 h-4" />}
+                  className="cursor-pointer font-bold shrink-0 shadow-md shadow-amber-500/20 self-start sm:self-auto"
+                >
+                  Edit Store Profile
+                </Button>
+              </div>
+
+              {/* 2. Brand Identity & Live Status Banner (Inner styled banner) */}
+              <div className="bg-gradient-to-br from-stone-900 via-stone-850 to-stone-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-stone-800 relative overflow-hidden">
                 {/* Decorative background circle */}
                 <div className="absolute -right-12 -top-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   {/* Brand Monogram & Titles */}
                   <div className="flex items-center gap-4">
                     <div className="relative shrink-0">
@@ -556,25 +579,25 @@ export const SettingsView: React.FC = () => {
                         <img
                           src={storeProfile.logoUrl}
                           alt={storeProfile?.businessName || 'Velora Cafe'}
-                          className="w-16 h-16 object-cover rounded-2xl border-2 border-amber-500/40 shadow-md"
+                          className="w-14 h-14 object-cover rounded-2xl border-2 border-amber-500/40 shadow-md"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = 'none';
                           }}
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black tracking-wider bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-md shadow-amber-500/20 border border-amber-400/50 text-2xl">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black tracking-wider bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-md shadow-amber-500/20 border border-amber-400/50 text-xl">
                           {initials}
                         </div>
                       )}
-                      <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-stone-900" />
+                      <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-3 ring-stone-900" />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                        <h4 className="text-lg sm:text-xl font-black tracking-tight text-white">
                           {storeProfile?.businessName || 'Velora Cafe'}
-                        </h3>
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono text-xs font-bold">
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono text-xs font-bold">
                           {storeProfile?.cafeCode || 'CF-NAG-001'}
                         </span>
                       </div>
@@ -590,74 +613,63 @@ export const SettingsView: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Edit Action Button */}
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => setIsStoreProfileModalOpen(true)}
-                    leftIcon={<Edit2 className="w-4 h-4" />}
-                    className="cursor-pointer font-bold shrink-0 shadow-md shadow-amber-500/20 self-start sm:self-auto"
-                  >
-                    Edit Store Profile
-                  </Button>
                 </div>
 
                 {/* Operational KPIs Strip inside Banner */}
-                <div className="mt-6 pt-5 border-t border-stone-800 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                  <div className="bg-stone-800/60 rounded-2xl p-3 border border-stone-750">
-                    <span className="text-[11px] text-stone-400 font-bold uppercase tracking-wider block">
+                <div className="mt-5 pt-4 border-t border-stone-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 border border-stone-750">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">
                       Floor Tables
                     </span>
-                    <span className="text-lg font-black text-amber-400 mt-0.5 block">
+                    <span className="text-base font-black text-amber-400 mt-0.5 block">
                       {appData.tables.length} Tables
                     </span>
-                    <span className="text-[10px] text-stone-400">
+                    <span className="text-[9px] text-stone-400">
                       {appData.areas.length} Dining Areas
                     </span>
                   </div>
 
-                  <div className="bg-stone-800/60 rounded-2xl p-3 border border-stone-750">
-                    <span className="text-[11px] text-stone-400 font-bold uppercase tracking-wider block">
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 border border-stone-750">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">
                       Menu Dishes
                     </span>
-                    <span className="text-lg font-black text-white mt-0.5 block">
+                    <span className="text-base font-black text-white mt-0.5 block">
                       {appData.menu.length} Dishes
                     </span>
-                    <span className="text-[10px] text-stone-400">
+                    <span className="text-[9px] text-stone-400">
                       {appData.categories.length} Categories
                     </span>
                   </div>
 
-                  <div className="bg-stone-800/60 rounded-2xl p-3 border border-stone-750">
-                    <span className="text-[11px] text-stone-400 font-bold uppercase tracking-wider block">
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 border border-stone-750">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">
                       Tracked Inventory
                     </span>
-                    <span className="text-lg font-black text-white mt-0.5 block">
+                    <span className="text-base font-black text-white mt-0.5 block">
                       {appData.inventory.length} Items
                     </span>
-                    <span className="text-[10px] text-stone-400">Live Stock Monitored</span>
+                    <span className="text-[9px] text-stone-400">Live Stock Monitored</span>
                   </div>
 
-                  <div className="bg-stone-800/60 rounded-2xl p-3 border border-stone-750">
-                    <span className="text-[11px] text-stone-400 font-bold uppercase tracking-wider block">
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 border border-stone-750">
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">
                       Thermal Format
                     </span>
-                    <span className="text-lg font-black text-emerald-400 mt-0.5 block">
+                    <span className="text-base font-black text-emerald-400 mt-0.5 block">
                       {appData.settings?.printer_default_paper_width || '80mm'} Roll
                     </span>
-                    <span className="text-[10px] text-stone-400">High-Speed POS</span>
+                    <span className="text-[9px] text-stone-400">High-Speed POS</span>
                   </div>
                 </div>
               </div>
 
-              {/* 2. Structured 6-Card Operations & Business Grid */}
+              {/* 3. Structured 6-Panel Operations & Business Grid (nested inside the main card) */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {/* Card 1: Store Ownership */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                      <User className="w-4 h-4" />
+                {/* Panel 1: Store Ownership */}
+                <div className="bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-2.5 hover:border-amber-500/40 transition-colors">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200/60 dark:border-stone-800">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-wider">
@@ -667,23 +679,23 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Owner / Manager Name:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Owner / Manager Name:</span>
                       <span className="font-extrabold text-stone-900 dark:text-stone-100 text-sm">
                         {storeProfile?.ownerName || 'Rajesh Sharma'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Phone Number:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Phone Number:</span>
                       <span className="font-mono font-bold text-stone-800 dark:text-stone-200">
                         {storeProfile?.phone ? `+91 ${storeProfile.phone}` : '9876543210'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">System Role:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">System Role:</span>
                       <span className="font-bold text-amber-600 dark:text-amber-400">
                         Primary Store Administrator
                       </span>
@@ -691,11 +703,11 @@ export const SettingsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 2: Physical Location */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-                      <MapPin className="w-4 h-4" />
+                {/* Panel 2: Physical Location */}
+                <div className="bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-2.5 hover:border-amber-500/40 transition-colors">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200/60 dark:border-stone-800">
+                    <div className="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                      <MapPin className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-wider">
@@ -705,23 +717,23 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">City & State:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">City & State:</span>
                       <span className="font-extrabold text-stone-900 dark:text-stone-100 text-sm">
                         {storeProfile?.city || 'Mumbai'}, {storeProfile?.state || 'Maharashtra'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Store Street Address:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Store Street Address:</span>
                       <span className="font-medium text-stone-700 dark:text-stone-300 leading-snug block line-clamp-2">
                         {storeProfile?.address || 'Main Commercial Road, Central District'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Dispatch Jurisdiction:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Dispatch Jurisdiction:</span>
                       <span className="font-bold text-stone-800 dark:text-stone-200">
                         Local Dine-In & Counter Takeaway
                       </span>
@@ -729,11 +741,11 @@ export const SettingsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 3: Tax & Legal Compliance */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                      <ShieldCheck className="w-4 h-4" />
+                {/* Panel 3: Tax & Legal Compliance */}
+                <div className="bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-2.5 hover:border-amber-500/40 transition-colors">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200/60 dark:border-stone-800">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <ShieldCheck className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-wider">
@@ -743,22 +755,22 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">GSTIN / Tax ID:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">GSTIN / Tax ID:</span>
                       <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-sm">
                         {storeProfile?.gstin || 'Not Provided'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Registration Status:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Registration Status:</span>
                       <span
                         className={cn(
-                          'text-[11px] font-bold px-2 py-0.5 rounded-md inline-block',
+                          'text-[10px] font-bold px-2 py-0.5 rounded-md inline-block',
                           storeProfile?.gstin
                             ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500'
+                            : 'bg-stone-200/60 dark:bg-stone-800 text-stone-500'
                         )}
                       >
                         {storeProfile?.gstin ? 'GST Registered Entity' : 'Composition / Unregistered'}
@@ -766,7 +778,7 @@ export const SettingsView: React.FC = () => {
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Applied Invoice Tax:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Applied Invoice Tax:</span>
                       <span className="font-bold text-stone-800 dark:text-stone-200">
                         {appData.settings?.globalTaxRate || '0'}% ({appData.settings?.globalTaxName || 'Tax'})
                       </span>
@@ -774,11 +786,11 @@ export const SettingsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 4: Printed Receipt Customization */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                      <Receipt className="w-4 h-4" />
+                {/* Panel 4: Printed Receipt Customization */}
+                <div className="bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-2.5 hover:border-amber-500/40 transition-colors">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200/60 dark:border-stone-800">
+                    <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                      <Receipt className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-wider">
@@ -788,28 +800,28 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Invoice Header:</span>
+                      <span className="text-[10px] text-stone-400 font-medium block">Invoice Header:</span>
                       <span className="font-bold text-stone-900 dark:text-stone-100">
                         {appData.settings?.printer_bill_header_title || 'TAX INVOICE'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[11px] text-stone-400 font-medium block">Receipt Footer Note:</span>
-                      <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-200/70 dark:border-amber-900/40 text-amber-950 dark:text-amber-200 italic text-xs leading-snug">
+                      <span className="text-[10px] text-stone-400 font-medium block">Receipt Footer Note:</span>
+                      <div className="p-2 rounded-xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-200/70 dark:border-amber-900/40 text-amber-950 dark:text-amber-200 italic text-[11px] leading-snug">
                         "{storeProfile?.receiptFooter || 'Thank you for visiting! Please visit again.'}"
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Card 5: Active Terminal Modes */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                      <Zap className="w-4 h-4" />
+                {/* Panel 5: Active Terminal Modes */}
+                <div className="bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-2.5 hover:border-amber-500/40 transition-colors">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200/60 dark:border-stone-800">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <Zap className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-wider">
@@ -819,8 +831,8 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-stone-50 dark:bg-stone-850">
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200/60 dark:border-stone-750">
                       <span className="font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
                         <Zap className="w-3.5 h-3.5 text-amber-500" />
                         <span>Quick Service Mode</span>
@@ -830,7 +842,7 @@ export const SettingsView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-stone-50 dark:bg-stone-850">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200/60 dark:border-stone-750">
                       <span className="font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
                         <Utensils className="w-3.5 h-3.5 text-amber-500" />
                         <span>Table Dine-In Mode</span>
@@ -842,11 +854,11 @@ export const SettingsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card 6: Database & Synchronization */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/25 dark:border-amber-500/20 rounded-3xl p-5 shadow-sm space-y-3 hover:border-amber-500/40 transition-colors">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-100 dark:border-stone-800">
-                    <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-                      <Activity className="w-4 h-4" />
+                {/* Panel 6: Database & Synchronization */}
+                <div className="bg-stone-50/70 dark:bg-stone-850/50 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-2.5 hover:border-amber-500/40 transition-colors">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200/60 dark:border-stone-800">
+                    <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                      <Activity className="w-3.5 h-3.5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-stone-900 dark:text-stone-100 uppercase tracking-wider">
@@ -856,7 +868,7 @@ export const SettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-stone-500">Offline Resilience:</span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">

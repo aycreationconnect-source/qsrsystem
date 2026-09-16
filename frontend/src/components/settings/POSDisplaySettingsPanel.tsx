@@ -112,36 +112,31 @@ export const POSDisplaySettingsPanel: React.FC = () => {
     id: SubmoduleMode;
     label: string;
   }[] = [
-    {
-      id: 'qsr',
-      label: 'QSR',
-    },
-    {
-      id: 'table',
-      label: 'Table',
-    },
-    {
-      id: 'digital_menu',
-      label: 'Digital Menu',
-    },
-  ];
+      {
+        id: 'qsr',
+        label: 'QSR (Quick POS)',
+      },
+      {
+        id: 'table',
+        label: 'Table POS',
+      },
+      {
+        id: 'digital_menu',
+        label: 'Digital Menu',
+      },
+    ];
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white dark:bg-stone-900 border border-amber-500/40 dark:border-amber-500/30 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 animate-in fade-in duration-150">
       {/* 1. Header & Save Action Bar */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="pb-4 border-b border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-amber-500 mb-1">
-            <LayoutGrid className="w-5 h-5" />
-            <span className="text-xs font-black uppercase tracking-wider">
-              Display & Ordering
-            </span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-stone-100">
-            POS & Menu Card Display Settings
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1 max-w-2xl">
-            Configure dish image visibility and fast card tap actions across devices (Desktop, Tablet, Mobile) and ordering modules (QSR, Table Service, Digital Menu).
+          <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <span>POS & Menu Card Display Settings</span>
+          </h3>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            Configure dish image visibility and fast card tap actions across devices (Desktop, Tablet, Mobile) and ordering terminals (QSR (Quick POS), Table POS, Digital Menu).
           </p>
         </div>
 
@@ -150,7 +145,7 @@ export const POSDisplaySettingsPanel: React.FC = () => {
           onClick={handleSave}
           disabled={isSaving}
           className={cn(
-            'px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs sm:text-sm shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-50 active:scale-98'
+            'px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs sm:text-sm shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-50 active:scale-98 self-start sm:self-auto'
           )}
         >
           {isSaving ? (
@@ -162,15 +157,15 @@ export const POSDisplaySettingsPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* 2. Granular Visibility Matrix Table (Devices × Modules) */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100 dark:border-stone-800">
+      {/* 2. Granular Visibility Matrix Section */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-stone-100 dark:border-stone-800">
           <div>
-            <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-stone-100">
+            <h4 className="text-xs sm:text-sm font-black text-stone-900 dark:text-stone-100">
               Granular Visibility Matrix
-            </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
-              Control dish photo visibility individually for each device and submodule.
+            </h4>
+            <p className="text-[11px] text-stone-400 mt-0.5">
+              Control dish photo visibility individually for each device and terminal.
             </p>
           </div>
 
@@ -204,11 +199,11 @@ export const POSDisplaySettingsPanel: React.FC = () => {
         </div>
 
         {/* Matrix Grid */}
-        <div className="overflow-x-auto mt-4">
+        <div className="overflow-x-auto rounded-2xl border border-stone-200/80 dark:border-stone-800">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-stone-200/80 dark:border-stone-800 text-stone-500 dark:text-stone-400 text-xs uppercase tracking-wider">
-                <th className="py-3 px-4 font-black">Submodule</th>
+                <th className="py-3 px-4 font-black">Terminals</th>
                 <th className="py-3 px-4 font-black text-center w-36 sm:w-44">
                   <div className="flex items-center justify-center gap-1.5">
                     <Monitor className="w-4 h-4 text-stone-600 dark:text-stone-300" />
@@ -351,51 +346,48 @@ export const POSDisplaySettingsPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Live Interactive Preview Canvas */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
+      {/* 3. Live Interactive Preview Section */}
+      <div className="pt-2 border-t border-stone-100 dark:border-stone-800 space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2">
           <div>
             <div className="flex items-center gap-1.5 text-xs font-black text-amber-500 uppercase tracking-wider mb-0.5">
               <span>Interactive Simulator</span>
             </div>
-            <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-stone-100">
+            <h4 className="text-xs sm:text-sm font-black text-stone-900 dark:text-stone-100">
               Live Card Appearance Preview
-            </h3>
-            <p className="text-xs text-stone-400 mt-0.5">
-              Select a submodule and device to inspect exactly how dish cards behave on the terminal. Tap the card to test ordering!
-            </p>
+            </h4>
           </div>
 
-          {/* Module & Device Selector for Simulator with Distinct Colors */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Submodule Group: Amber Theme */}
-            <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200/80 dark:border-stone-750">
+          {/* Module & Device Selector for Simulator with Distinct Colors - Side by Side */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Terminal Group: Amber Theme */}
+            <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200/80 dark:border-stone-750 shrink-0">
               {(['qsr', 'table', 'digital_menu'] as SubmoduleMode[]).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setPreviewMode(m)}
                   className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
+                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap',
                     previewMode === m
                       ? 'bg-amber-500 text-stone-950 font-black shadow-xs'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
                   )}
                 >
-                  {m === 'qsr' ? 'QSR' : m === 'table' ? 'Table' : 'Digital Menu'}
+                  {m === 'qsr' ? 'QSR (Quick POS)' : m === 'table' ? 'Table POS' : 'Digital Menu'}
                 </button>
               ))}
             </div>
 
             {/* Device Group: Distinct Sky Blue Theme */}
-            <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200/80 dark:border-stone-750">
+            <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200/80 dark:border-stone-750 shrink-0">
               {(['desktop', 'tablet', 'mobile'] as DeviceType[]).map((d) => (
                 <button
                   key={d}
                   type="button"
                   onClick={() => setPreviewDevice(d)}
                   className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer capitalize select-none',
+                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer capitalize select-none whitespace-nowrap',
                     previewDevice === d
                       ? 'bg-sky-600 text-white font-black shadow-xs'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
@@ -409,7 +401,7 @@ export const POSDisplaySettingsPanel: React.FC = () => {
         </div>
 
         {/* Simulator Card Box */}
-        <div className="mt-6 flex flex-col md:flex-row items-center justify-center gap-6 p-6 rounded-2xl bg-stone-50/70 dark:bg-stone-950/40 border border-dashed border-stone-200 dark:border-stone-800">
+        <div className="mt-4 flex flex-col md:flex-row items-center justify-center gap-6 p-4 sm:p-5 rounded-2xl bg-stone-50/70 dark:bg-stone-950/40 border border-dashed border-stone-200 dark:border-stone-800">
           {/* Card Simulation */}
           <div className="w-full max-w-sm">
             <div className="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">
@@ -582,7 +574,7 @@ export const POSDisplaySettingsPanel: React.FC = () => {
             </div>
             <ul className="list-disc list-inside space-y-1 text-[11px] text-stone-500">
               <li>
-                <strong>Module:</strong> {previewMode === 'qsr' ? 'QSR Counter' : previewMode === 'table' ? 'Table Service' : 'Digital Menu'}
+                <strong>Terminal:</strong> {previewMode === 'qsr' ? 'QSR (Quick POS)' : previewMode === 'table' ? 'Table POS' : 'Digital Menu'}
               </li>
               <li>
                 <strong>Device:</strong> {previewDevice.toUpperCase()}
@@ -599,6 +591,25 @@ export const POSDisplaySettingsPanel: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Bottom Save Action Footer */}
+      <div className="flex justify-end pt-3 border-t border-stone-100 dark:border-stone-800">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className={cn(
+            'px-8 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-98'
+          )}
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Check className="w-4 h-4 stroke-[2.5]" />
+          )}
+          <span>{isSaving ? 'Saving...' : 'Save Configuration'}</span>
+        </button>
       </div>
     </div>
   );

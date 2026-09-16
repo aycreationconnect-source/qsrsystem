@@ -129,28 +129,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* 1. Cafe Brand Badge Header */}
       <div className="h-16 border-b border-stone-200/80 dark:border-stone-800 flex items-center shrink-0 relative overflow-hidden">
         {/* Monogram / Logo Slot: Fixed in 72px slot (centered at x=36px) */}
-        <div
-          className="w-[72px] shrink-0 flex items-center justify-center"
-          title={storeProfile?.businessName || 'Velora Cafe'}
+        <Tooltip
+          content={isCollapsed ? (storeProfile?.businessName || 'Velora Cafe') : null}
+          position="right"
+          offset={10}
         >
-          <div className="relative shrink-0">
-            {storeProfile?.logoUrl ? (
-              <img
-                src={storeProfile.logoUrl}
-                alt={storeProfile?.businessName || 'Velora Cafe'}
-                className="w-10 h-10 object-cover rounded-xl border border-amber-500/30 shadow-sm"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold tracking-wider bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-sm shadow-amber-500/20 border border-amber-400/40 text-sm">
-                {initials}
-              </div>
-            )}
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900" />
+          <div
+            className="w-[72px] shrink-0 flex items-center justify-center cursor-pointer"
+          >
+            <div className="relative shrink-0">
+              {storeProfile?.logoUrl ? (
+                <img
+                  src={storeProfile.logoUrl}
+                  alt={storeProfile?.businessName || 'Velora Cafe'}
+                  className="w-10 h-10 object-cover rounded-xl border border-amber-500/30 shadow-sm"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold tracking-wider bg-gradient-to-br from-amber-500 to-amber-600 text-stone-950 shadow-sm shadow-amber-500/20 border border-amber-400/40 text-sm">
+                  {initials}
+                </div>
+              )}
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-stone-900" />
+            </div>
           </div>
-        </div>
+        </Tooltip>
 
         {/* Cafe Name & Code details: Smooth reveal without jerking */}
         <div
@@ -200,6 +205,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.path}
                 content={isCollapsed ? item.label : null}
                 position="right"
+                offset={10}
                 wrapperClassName="w-full block"
               >
                 <NavLink
@@ -251,6 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Tooltip
               content={isCollapsed ? 'Quick POS Terminal' : null}
               position="right"
+              offset={10}
               wrapperClassName="w-full block"
             >
               <a
@@ -277,6 +284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Tooltip
               content={isCollapsed ? 'Table POS Terminal' : null}
               position="right"
+              offset={10}
               wrapperClassName="w-full block"
             >
               <a
@@ -308,6 +316,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <Tooltip
           content={isCollapsed ? 'Sign Out' : null}
           position="right"
+          offset={10}
           wrapperClassName="w-full block"
         >
           <button
