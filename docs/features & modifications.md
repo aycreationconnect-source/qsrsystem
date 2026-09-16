@@ -21,6 +21,9 @@ This document provides a concise, chronological log of all features, enhancement
     - Inline Quantity Stepper (`[- qty +]`): When dishes are in the cart, the card renders instant quantity controls directly on the card for effortless increment/decrement.
     - Sectioned catalog grouping on `All Items` (`Popular Items`, `Starters`, `Soups`, etc.) with `View All →` links that jump directly to category filters.
     - Dietary filter pills on top (`All`, `Veg`, `Non-Veg`, `Egg`, `Vegan`) and View Mode Toggle (Grid view vs. compact List view).
+  - **Role-Based Profile Section Visibility (`POSTopNav`)**:
+    - Restricted "Store & Owner Profile" and "Store Settings" dropdown options exclusively to **OWNER** and **ADMIN** roles.
+    - When staff members log in (e.g. `CASHIER`, `WAITER`), these sensitive administration links are hidden from their profile dropdown, showing only their Name, Online status, Role, Cafe identity, and "Lock / Log Out".
 
 ---
 
@@ -764,6 +767,26 @@ This document provides a concise, chronological log of all features, enhancement
   - Built Dine-In Table Management with multi-area floor plans (Main Dining, Rooftop, AC Hall), seat capacities, live occupancy elapsed timers, and table shifting.
 - **Documentation**:
   - [**System README**](../README.md)
+
+---
+
+### 19. 2026-09-15 — Admin Settings Grouping & Category Organization
+- **Type**: UI Architecture & Information Architecture
+- **Summary**:
+  - Organized Admin Panel Settings sidebar into clean, semantic group headings:
+    - **General Settings**:
+      1. `Store Profile`: Cafe identity, logo, address, contact, and GSTIN.
+      2. `Tax & Billing`: Custom tax rates (CGST, SGST, VAT), reverse tax calculations, and global tax defaults.
+      3. `Printer Settings`: Thermal paper widths (80mm/58mm), KOT kitchen routing, auto-print, and receipts.
+    - **System Configuration**:
+      1. `POS & Menu Display`: Dish image visibility matrix (Desktop, Tablet, Mobile) × (QSR, Table, Digital Menu) and tap-to-add mode.
+      2. `Audio Chimes`: Order completion bells, chime tone previews, and volume sliders.
+      3. `Popup Alerts`: Cashier on-screen notification toasts and display duration.
+  - **Rules for Future Category Additions**:
+    - **General Settings Group**: Use for business identity, fiscal/tax configurations, physical store settings, printers, and store-wide policies.
+    - **System Configuration Group**: Use for terminal operational behaviors, UI/card presentation, audio/visual cues, hardware screen rules, and cashier workflows.
+    - **New Semantic Group**: If a newly added category does not logically belong to either (e.g. *User Management & Staff Roles*, *Third-Party Integrations / Aggregators*), instantiate a new distinct group header.
+- **Implementation**: [`SettingsView.tsx`](../frontend/src/components/settings/SettingsView.tsx)
 
 ---
 

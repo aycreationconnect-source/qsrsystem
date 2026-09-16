@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
-import type { MenuItem } from '../../types/app.types';
+import type { MenuItem, SubmoduleMode } from '../../types/app.types';
 import { Tooltip } from '../ui';
 import {
   X,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { getMenuItemLowStockMaterials, type LowStockMaterial } from '../../lib/orderUtils';
 import { getMenuItemImage } from '../../lib/foodImageUtils';
+import { useDeviceType, isItemImageVisible } from '../../lib/imageVisibilityUtils';
 import { cn } from '../../lib/utils';
 
 interface CategoryIconProps {
@@ -45,7 +46,7 @@ const CategorySectionIcon: React.FC<CategoryIconProps> = ({ name, className = 'w
 };
 
 export const POSProductGrid: React.FC = () => {
-  const { appData } = useApp();
+  const { appData, posMode } = useApp();
   const {
     posCategory,
     setPosCategory,
@@ -57,6 +58,10 @@ export const POSProductGrid: React.FC = () => {
     handleAddToCart,
     updateCartQty,
   } = usePOS();
+
+  const deviceType = useDeviceType();
+  const submoduleMode: SubmoduleMode = posMode === 'table' ? 'table' : 'qsr';
+  const showItemImages = isItemImageVisible(appData.settings, submoduleMode, deviceType);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [catSubcategoryMap, setCatSubcategoryMap] = useState<Record<string, string | null>>({});
@@ -487,24 +492,34 @@ export const POSProductGrid: React.FC = () => {
       return (
         <div
           key={item.id}
-          className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-md transition-all select-none"
+          onClick={() => handleAddToCart(item)}
+          className={cn(
+            'bg-white dark:bg-stone-900 border rounded-2xl p-3 flex items-center justify-between gap-3 shadow-2xs hover:shadow-md transition-all select-none cursor-pointer active:scale-[0.99] group',
+            qty > 0
+              ? 'border-amber-500 ring-2 ring-amber-500/40 bg-amber-500/[0.03] dark:bg-amber-500/[0.05]'
+              : 'border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80'
+          )}
         >
-          {/* Left: Image + Info */}
+          {/* Left: (Optional Image) + Info */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 shrink-0">
-              <img
-                src={imageUrl}
-                alt={item.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute top-1 left-1 bg-white/95 dark:bg-stone-900/95 p-0.5 rounded shadow-2xs">
-                {renderDietBadge(item.type)}
+            {showItemImages ? (
+              <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 shrink-0">
+                <img
+                  src={imageUrl}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute top-1 left-1 bg-white/95 dark:bg-stone-900/95 p-0.5 rounded shadow-2xs">
+                  {renderDietBadge(item.type)}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="shrink-0">{renderDietBadge(item.type)}</div>
+            )}
 
             <div className="min-w-0">
-              <h4 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
+              <h4 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                 {item.name}
               </h4>
               {item.description && (
@@ -518,21 +533,87 @@ export const POSProductGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Quantity Stepper or + Add */}
+          {/* Right: Stepper or + Add or Custom/Low Stock Tags */}
           <div className="shrink-0 flex items-center gap-2">
+            {item.addonIds && item.addonIds.trim() !== '' && (
+              <span className="text-[9px] font-black text-amber-900 dark:text-amber-200 bg-amber-200/90 dark:bg-amber-900/90 px-1.5 py-0.5 rounded-md shadow-2xs hidden sm:inline-block">
+                Custom
+              </span>
+            )}
+            {lowMaterials.length > 0 && (
+              <div className="hidden sm:inline-block">{renderLowStockBadge(lowMaterials)}</div>
+            )}
             {renderActionControl(item, qty)}
           </div>
         </div>
       );
     }
 
+    // Grid View: Text-Only Fast POS Mode (Default when showItemImages is false)
+    if (!showItemImages) {
+      return (
+        <div
+          key={item.id}
+          onClick={() => handleAddToCart(item)}
+          className={cn(
+            'bg-white dark:bg-stone-900 border rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between min-h-[118px] shadow-2xs hover:shadow-md transition-all duration-150 select-none cursor-pointer active:scale-[0.98] group relative',
+            qty > 0
+              ? 'border-amber-500 ring-2 ring-amber-500/40 bg-amber-500/[0.04] dark:bg-amber-500/[0.06]'
+              : 'border-stone-200/80 dark:border-stone-800 hover:border-amber-400'
+          )}
+        >
+          {/* Top: Dietary Badge + Item Name + Tags */}
+          <div className="space-y-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="shrink-0">{renderDietBadge(item.type)}</span>
+                <h4 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors line-clamp-1 leading-snug">
+                  {item.name}
+                </h4>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {item.addonIds && item.addonIds.trim() !== '' && (
+                  <span className="text-[9px] font-black text-amber-900 dark:text-amber-200 bg-amber-200/90 dark:bg-amber-900/90 px-1.5 py-0.5 rounded-md shadow-2xs">
+                    Custom
+                  </span>
+                )}
+                {lowMaterials.length > 0 && renderLowStockBadge(lowMaterials)}
+              </div>
+            </div>
+
+            {item.description ? (
+              <p className="text-[11px] text-stone-400 dark:text-stone-500 line-clamp-2 leading-relaxed">
+                {item.description}
+              </p>
+            ) : item.subcategory ? (
+              <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider">
+                {item.subcategory}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Bottom: Price + (Stepper if qty > 0) */}
+          <div className="flex items-center justify-between gap-2 pt-2 mt-2 border-t border-stone-100 dark:border-stone-800/80">
+            <div className="text-sm sm:text-base font-black font-mono text-stone-900 dark:text-stone-100">
+              ₹{priceNum}
+            </div>
+
+            {renderActionControl(item, qty)}
+          </div>
+        </div>
+      );
+    }
+
+    // Grid View: Photo Mode (when showItemImages is true)
     return (
       <div
         key={item.id}
+        onClick={() => handleAddToCart(item)}
         className={cn(
-          'bg-white dark:bg-stone-900 border rounded-2xl overflow-hidden flex flex-col justify-between shadow-2xs hover:shadow-lg transition-all duration-200 select-none group',
+          'bg-white dark:bg-stone-900 border rounded-2xl overflow-hidden flex flex-col justify-between shadow-2xs hover:shadow-lg transition-all duration-200 select-none group cursor-pointer active:scale-[0.98]',
           qty > 0
-            ? 'border-amber-500 ring-1 ring-amber-500/50'
+            ? 'border-amber-500 ring-2 ring-amber-500/50'
             : 'border-stone-200/80 dark:border-stone-800 hover:border-amber-400'
         )}
       >
@@ -558,47 +639,14 @@ export const POSProductGrid: React.FC = () => {
               </span>
             )}
 
-            {lowMaterials.length > 0 && (
-              <Tooltip
-                content={
-                  <div className="p-0.5 text-left">
-                    <div className="font-extrabold text-[11px] text-rose-300 border-b border-stone-700/60 pb-1 mb-1.5 flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
-                        <span>Low Stock</span>
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/25 text-rose-300 font-mono font-bold">
-                        {lowMaterials.length}
-                      </span>
-                    </div>
-                    <ul className="space-y-1.5">
-                      {lowMaterials.map((rm) => (
-                        <li key={rm.name} className="text-[10px] flex items-center justify-between gap-3">
-                          <span className="text-stone-200 truncate">{rm.name}</span>
-                          <span className="font-mono font-bold text-amber-300 shrink-0">
-                            {rm.stock} {rm.unit}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                }
-                className="whitespace-normal min-w-[170px]"
-                position="top"
-                align="end"
-              >
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-rose-500/90 text-white shadow-2xs cursor-help">
-                  Low Stock
-                </span>
-              </Tooltip>
-            )}
+            {lowMaterials.length > 0 && renderLowStockBadge(lowMaterials)}
           </div>
         </div>
 
         {/* 2. Card Content & Action Button */}
         <div className="p-3 sm:p-3.5 flex flex-col flex-1 justify-between gap-2.5">
           <div>
-            <h4 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 line-clamp-1 leading-snug">
+            <h4 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 line-clamp-1 leading-snug group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
               {item.name}
             </h4>
             {item.description ? (
@@ -621,6 +669,44 @@ export const POSProductGrid: React.FC = () => {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Low stock badge helper
+  function renderLowStockBadge(lowMaterials: LowStockMaterial[]) {
+    return (
+      <Tooltip
+        content={
+          <div className="p-0.5 text-left">
+            <div className="font-extrabold text-[11px] text-rose-300 border-b border-stone-700/60 pb-1 mb-1.5 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
+                <span>Low Stock</span>
+              </span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/25 text-rose-300 font-mono font-bold">
+                {lowMaterials.length}
+              </span>
+            </div>
+            <ul className="space-y-1.5">
+              {lowMaterials.map((rm) => (
+                <li key={rm.name} className="text-[10px] flex items-center justify-between gap-3">
+                  <span className="text-stone-200 truncate">{rm.name}</span>
+                  <span className="font-mono font-bold text-amber-300 shrink-0">
+                    {rm.stock} {rm.unit}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        }
+        className="whitespace-normal min-w-[170px]"
+        position="top"
+        align="end"
+      >
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-rose-500/90 text-white shadow-2xs cursor-help">
+          Low Stock
+        </span>
+      </Tooltip>
     );
   }
 
@@ -649,18 +735,21 @@ export const POSProductGrid: React.FC = () => {
     return <span className="badge-diet-veg" title="Veg" />;
   }
 
-  // + Add or Stepper action helper
+  // Action Control helper (+ Add button or Quantity Stepper)
   function renderActionControl(item: MenuItem, qty: number) {
     if (qty > 0) {
       return (
-        <div className="flex items-center bg-amber-500 text-stone-950 font-black rounded-xl p-0.5 shadow-2xs">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center bg-amber-500 text-stone-950 font-black rounded-xl p-0.5 shadow-2xs"
+        >
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               updateCartQty(item, -1);
             }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-amber-600 active:scale-90 transition-all cursor-pointer"
+            className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg hover:bg-amber-600 active:scale-90 transition-all cursor-pointer"
             title="Decrease quantity"
           >
             <Minus className="w-3.5 h-3.5 text-stone-950 stroke-[2.5]" />
@@ -672,13 +761,18 @@ export const POSProductGrid: React.FC = () => {
               e.stopPropagation();
               updateCartQty(item, 1);
             }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-amber-600 active:scale-90 transition-all cursor-pointer"
+            className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg hover:bg-amber-600 active:scale-90 transition-all cursor-pointer"
             title="Increase quantity"
           >
             <Plus className="w-3.5 h-3.5 text-stone-950 stroke-[2.5]" />
           </button>
         </div>
       );
+    }
+
+    // When images are hidden, remove the "+ Add" button (tapping entire card adds item)
+    if (!showItemImages) {
+      return null;
     }
 
     return (

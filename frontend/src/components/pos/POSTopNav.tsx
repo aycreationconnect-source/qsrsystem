@@ -234,6 +234,9 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
     .substring(0, 2)
     .toUpperCase() || 'SK';
 
+  const userRole = (currentUser?.role || 'OWNER').toUpperCase();
+  const isOwnerOrAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
+
   return (
     <header className="h-16 px-4 sm:px-6 bg-white dark:bg-stone-900 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-3 shrink-0 z-30 select-none">
       {/* Left: Brand Badge, Mode Indicator & Floor Navigation */}
@@ -517,50 +520,57 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
                 </div>
               </div>
 
-              {/* Profile Page & Business Details */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  if (onOpenStoreProfile) onOpenStoreProfile();
-                }}
-                className="w-full px-3 py-2.5 rounded-xl text-left text-stone-700 dark:text-stone-200 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 dark:hover:text-amber-400 font-bold flex items-center gap-2.5 cursor-pointer transition-colors"
-              >
-                <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                  <Store className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="leading-tight">Store & Owner Profile</div>
-                  <div className="text-[10px] font-normal text-stone-400">Cafe info, contact & GSTIN</div>
-                </div>
-              </button>
+              {/* Profile Page & Business Details - Only visible for Owner/Admin */}
+              {isOwnerOrAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      if (onOpenStoreProfile) onOpenStoreProfile();
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl text-left text-stone-700 dark:text-stone-200 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 dark:hover:text-amber-400 font-bold flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                      <Store className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="leading-tight">Store & Owner Profile</div>
+                      <div className="text-[10px] font-normal text-stone-400">Cafe info, contact & GSTIN</div>
+                    </div>
+                  </button>
 
-              {/* Store Settings Link */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  navigate('/settings');
-                }}
-                className="w-full px-3 py-2.5 rounded-xl text-left text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold flex items-center gap-2.5 cursor-pointer transition-colors"
-              >
-                <div className="w-7 h-7 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center shrink-0">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="leading-tight">Store Settings</div>
-                  <div className="text-[10px] font-normal text-stone-400">Taxes, printer & station node</div>
-                </div>
-              </button>
+                  {/* Store Settings Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      navigate('/settings');
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl text-left text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 font-bold flex items-center gap-2.5 cursor-pointer transition-colors"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center shrink-0">
+                      <Settings className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="leading-tight">Store Settings</div>
+                      <div className="text-[10px] font-normal text-stone-400">Taxes, printer & station node</div>
+                    </div>
+                  </button>
+                </>
+              )}
 
-              {/* Station Logout (Kept) */}
+              {/* Station Logout */}
               <button
                 type="button"
                 onClick={() => {
                   setIsUserMenuOpen(false);
                   handleLogout();
                 }}
-                className="w-full px-3 py-2.5 rounded-xl text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold flex items-center gap-2.5 cursor-pointer transition-colors border-t border-stone-100 dark:border-stone-800 mt-1"
+                className={cn(
+                  "w-full px-3 py-2.5 rounded-xl text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold flex items-center gap-2.5 cursor-pointer transition-colors",
+                  isOwnerOrAdmin ? "border-t border-stone-100 dark:border-stone-800 mt-1" : "mt-0.5"
+                )}
               >
                 <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center shrink-0">
                   <LogOut className="w-4 h-4" />

@@ -135,11 +135,28 @@ export interface Table {
   areaId?: number | null;
 }
 
+export type DeviceType = 'desktop' | 'tablet' | 'mobile';
+export type SubmoduleMode = 'qsr' | 'table' | 'digital_menu';
+
+export interface ItemImageVisibilityConfig {
+  desktop: boolean;
+  tablet: boolean;
+  mobile: boolean;
+}
+
+export interface ItemImageVisibilityMatrix {
+  qsr: ItemImageVisibilityConfig;
+  table: ItemImageVisibilityConfig;
+  digital_menu: ItemImageVisibilityConfig;
+}
+
 export interface Settings {
   globalTaxName?: string;
   globalTaxRate?: string;
   customTaxes?: string;
   taxCalculationType?: 'exclusive' | 'reverse';
+  showItemImages?: boolean | string;
+  itemImageVisibility?: string | ItemImageVisibilityMatrix;
   [key: string]: any;
 }
 
