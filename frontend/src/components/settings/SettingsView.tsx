@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { settingsApi } from '../../api/settingsApi';
 import { StoreProfileModal } from './StoreProfileModal';
 import { PrinterSettingsPanel } from './PrinterSettingsPanel';
+import { POSDisplaySettingsPanel } from './POSDisplaySettingsPanel';
 import { Button, Input } from '../ui';
 import { toast } from '../../context/ToastContext';
 import { cafeAudio, CAFE_SOUND_OPTIONS } from '../../lib/sound';
@@ -27,10 +28,11 @@ import {
   Coins,
   Plus,
   Trash2,
+  LayoutGrid,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export type SettingsCategory = 'profile' | 'tax' | 'printer' | 'audio' | 'popup';
+export type SettingsCategory = 'profile' | 'pos' | 'tax' | 'printer' | 'audio' | 'popup';
 
 export const SettingsView: React.FC = () => {
   const { appData, setAppData, refreshSettings, storeProfile, setStoreProfile } =
@@ -281,42 +283,68 @@ export const SettingsView: React.FC = () => {
 
   const initials = getInitials(storeProfile?.businessName || 'Velora Cafe');
 
-  // Categories configuration (icons with setting category names & descriptions)
-  const categories: {
-    id: SettingsCategory;
-    label: string;
-    description: string;
-    icon: React.ReactNode;
+  // Grouped Categories Configuration
+  // Rule for future additions:
+  // - General Settings: Store identity, legal/fiscal taxes, receipt & thermal printers, business operations.
+  // - System Configuration: POS terminal UI, card displays, audio bells, popup notifications, hardware/device settings.
+  // - If a new category does not fit into General or System, create a new semantic group.
+  const settingGroups: {
+    id: string;
+    title: string;
+    items: {
+      id: SettingsCategory;
+      label: string;
+      description: string;
+      icon: React.ReactNode;
+    }[];
   }[] = [
     {
-      id: 'profile',
-      label: 'Store Profile',
-      description: 'Manage cafe identity, store logo, registered address and contact information.',
-      icon: <Store className="w-4 h-4" />,
+      id: 'general',
+      title: 'General Settings',
+      items: [
+        {
+          id: 'profile',
+          label: 'Store Profile',
+          description: 'Manage cafe identity, store logo, registered address and contact information.',
+          icon: <Store className="w-4 h-4" />,
+        },
+        {
+          id: 'tax',
+          label: 'Tax & Billing',
+          description: 'Configure multi-tax rates (CGST, SGST, VAT), reverse calculation, and POS tax modes.',
+          icon: <Percent className="w-4 h-4" />,
+        },
+        {
+          id: 'printer',
+          label: 'Printer Settings',
+          description: 'Setup thermal receipt paper widths (80mm/58mm), KOT kitchen printing, and templates.',
+          icon: <Printer className="w-4 h-4" />,
+        },
+      ],
     },
     {
-      id: 'tax',
-      label: 'Tax & Billing',
-      description: 'Configure multi-tax rates (CGST, SGST, VAT), reverse calculation, and POS tax modes.',
-      icon: <Percent className="w-4 h-4" />,
-    },
-    {
-      id: 'printer',
-      label: 'Printer Settings',
-      description: 'Setup thermal receipt paper widths (80mm/58mm), KOT kitchen printing, and templates.',
-      icon: <Printer className="w-4 h-4" />,
-    },
-    {
-      id: 'audio',
-      label: 'Audio Chimes',
-      description: 'Configure order notification audio bells, chime tones, and terminal sound volume.',
-      icon: <Volume2 className="w-4 h-4" />,
-    },
-    {
-      id: 'popup',
-      label: 'Popup Alerts',
-      description: 'Manage on-screen order toast notifications and display durations for cashiers.',
-      icon: <BellRing className="w-4 h-4" />,
+      id: 'system',
+      title: 'System Configuration',
+      items: [
+        {
+          id: 'pos',
+          label: 'POS & Menu Display',
+          description: 'Configure dish image visibility and fast card tap actions across QSR, Table, and Digital Menu.',
+          icon: <LayoutGrid className="w-4 h-4" />,
+        },
+        {
+          id: 'audio',
+          label: 'Audio Chimes',
+          description: 'Configure order notification audio bells, chime tones, and terminal sound volume.',
+          icon: <Volume2 className="w-4 h-4" />,
+        },
+        {
+          id: 'popup',
+          label: 'Popup Alerts',
+          description: 'Manage on-screen order toast notifications and display durations for cashiers.',
+          icon: <BellRing className="w-4 h-4" />,
+        },
+      ],
     },
   ];
 
@@ -333,6 +361,14 @@ export const SettingsView: React.FC = () => {
     }
   > = {
     profile: {
+      sidebarBorder: 'border-amber-400 dark:border-amber-500/50',
+      sidebarBg: 'bg-amber-500/10 dark:bg-amber-500/15',
+      sidebarText: 'text-amber-950 dark:text-amber-200',
+      sidebarIconBg: 'bg-amber-500 text-stone-950 shadow-xs',
+      mobileActive: 'bg-amber-500 text-stone-950 border-amber-500 shadow-sm ring-1 ring-amber-400',
+      cardBorder: 'border-amber-500/40 dark:border-amber-500/30',
+    },
+    pos: {
       sidebarBorder: 'border-amber-400 dark:border-amber-500/50',
       sidebarBg: 'bg-amber-500/10 dark:bg-amber-500/15',
       sidebarText: 'text-amber-950 dark:text-amber-200',
@@ -400,26 +436,38 @@ export const SettingsView: React.FC = () => {
     <div className="p-4 sm:p-6 lg:p-7 max-w-[1540px] mx-auto w-full lg:h-full lg:flex lg:flex-col lg:overflow-hidden min-h-0">
       {/* Mobile Category Pill Selector (visible only on small screens < lg) */}
       <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 shrink-0">
-        {categories.map((cat) => {
-          const isActive = activeTab === cat.id;
-          const theme = categoryThemes[cat.id];
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setActiveTab(cat.id)}
+        {settingGroups.map((group, gIdx) => (
+          <React.Fragment key={group.id}>
+            <span
               className={cn(
-                'px-3.5 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 shrink-0 border select-none',
-                isActive
-                  ? cn(theme.mobileActive, 'font-extrabold')
-                  : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+                'text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500 shrink-0 select-none',
+                gIdx > 0 && 'pl-2 border-l border-stone-200 dark:border-stone-800'
               )}
             >
-              <span className="shrink-0">{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          );
-        })}
+              {group.title}:
+            </span>
+            {group.items.map((cat) => {
+              const isActive = activeTab === cat.id;
+              const theme = categoryThemes[cat.id];
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveTab(cat.id)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 border select-none',
+                    isActive
+                      ? cn(theme.mobileActive, 'font-extrabold')
+                      : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+                  )}
+                >
+                  <span className="shrink-0">{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </div>
 
       {/* Main 2-Column Responsive Layout (Desktop & Tablet) */}
@@ -427,37 +475,59 @@ export const SettingsView: React.FC = () => {
         {/* Left Column: Fixed Category Navigation (Stationary on screen, does not scroll) */}
         <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col lg:h-full shrink-0">
           {/* Category Menu Card */}
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3 shadow-sm h-full flex flex-col justify-between overflow-y-auto">
-            <div className="space-y-1.5">
-              {categories.map((cat) => {
-                const isActive = activeTab === cat.id;
-                const theme = categoryThemes[cat.id];
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setActiveTab(cat.id)}
+          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3.5 shadow-sm h-full flex flex-col justify-between overflow-y-auto">
+            <div className="space-y-4">
+              {settingGroups.map((group, groupIdx) => (
+                <div key={group.id} className="space-y-1">
+                  {/* Group Header Label */}
+                  <div
                     className={cn(
-                      'w-full text-left p-3 rounded-2xl transition-all cursor-pointer flex items-center gap-3 select-none border group',
-                      isActive
-                        ? cn(theme.sidebarBg, theme.sidebarText, theme.sidebarBorder, 'font-extrabold shadow-xs')
-                        : 'hover:bg-stone-100/80 dark:hover:bg-stone-800/60 text-stone-700 dark:text-stone-300 border-transparent font-bold'
+                      'px-3 pb-1.5 flex items-center justify-between',
+                      groupIdx > 0 && 'pt-2.5 border-t border-stone-100 dark:border-stone-800/80'
                     )}
                   >
-                    <div
-                      className={cn(
-                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105',
-                        isActive
-                          ? theme.sidebarIconBg
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
-                      )}
-                    >
-                      {cat.icon}
-                    </div>
-                    <span className="text-xs truncate">{cat.label}</span>
-                  </button>
-                );
-              })}
+                    <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                      {group.title}
+                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-400">
+                      {group.items.length}
+                    </span>
+                  </div>
+
+                  {/* Group Items */}
+                  <div className="space-y-1">
+                    {group.items.map((cat) => {
+                      const isActive = activeTab === cat.id;
+                      const theme = categoryThemes[cat.id];
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setActiveTab(cat.id)}
+                          className={cn(
+                            'w-full text-left p-2.5 sm:p-3 rounded-2xl transition-all cursor-pointer flex items-center gap-3 select-none border group',
+                            isActive
+                              ? cn(theme.sidebarBg, theme.sidebarText, theme.sidebarBorder, 'font-extrabold shadow-xs')
+                              : 'hover:bg-stone-100/80 dark:hover:bg-stone-800/60 text-stone-700 dark:text-stone-300 border-transparent font-bold'
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105',
+                              isActive
+                                ? theme.sidebarIconBg
+                                : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
+                            )}
+                          >
+                            {cat.icon}
+                          </div>
+                          <span className="text-xs truncate">{cat.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -812,6 +882,11 @@ export const SettingsView: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* =========================================================================
+              CATEGORY: POS & MENU CARD DISPLAY CONFIGURATIONS
+              ========================================================================= */}
+          {activeTab === 'pos' && <POSDisplaySettingsPanel />}
 
           {/* =========================================================================
               CATEGORY 2: TAX & BILLING CONFIGURATIONS

@@ -770,6 +770,26 @@ This document provides a concise, chronological log of all features, enhancement
 
 ---
 
+### 19. 2026-09-15 — Admin Settings Grouping & Category Organization
+- **Type**: UI Architecture & Information Architecture
+- **Summary**:
+  - Organized Admin Panel Settings sidebar into clean, semantic group headings:
+    - **General Settings**:
+      1. `Store Profile`: Cafe identity, logo, address, contact, and GSTIN.
+      2. `Tax & Billing`: Custom tax rates (CGST, SGST, VAT), reverse tax calculations, and global tax defaults.
+      3. `Printer Settings`: Thermal paper widths (80mm/58mm), KOT kitchen routing, auto-print, and receipts.
+    - **System Configuration**:
+      1. `POS & Menu Display`: Dish image visibility matrix (Desktop, Tablet, Mobile) × (QSR, Table, Digital Menu) and tap-to-add mode.
+      2. `Audio Chimes`: Order completion bells, chime tone previews, and volume sliders.
+      3. `Popup Alerts`: Cashier on-screen notification toasts and display duration.
+  - **Rules for Future Category Additions**:
+    - **General Settings Group**: Use for business identity, fiscal/tax configurations, physical store settings, printers, and store-wide policies.
+    - **System Configuration Group**: Use for terminal operational behaviors, UI/card presentation, audio/visual cues, hardware screen rules, and cashier workflows.
+    - **New Semantic Group**: If a newly added category does not logically belong to either (e.g. *User Management & Staff Roles*, *Third-Party Integrations / Aggregators*), instantiate a new distinct group header.
+- **Implementation**: [`SettingsView.tsx`](../frontend/src/components/settings/SettingsView.tsx)
+
+---
+
 ## 🔍 Quick Testing Checklist for QA
 
 | Feature Area | Key Testing Verification Steps | Reference Document |
