@@ -2,27 +2,27 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { TotalSummaryReport } from './TotalSummaryReport';
 import { OrderHistoryReport } from './OrderHistoryReport';
+import { InventoryReport } from './InventoryReport';
+import { MenuItemWiseReport } from './MenuItemWiseReport';
+import { ReportsCategorySidebar, type ReportType } from './ReportsCategorySidebar';
+import { CustomDateRangePicker } from './CustomDateRangePicker';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { printReportToPdf, exportReportToXls, type ReportColumn } from '../../lib/reportExportUtils';
 import { buildDailyOrderNumberMap, roundPOSAmount } from '../../lib/orderUtils';
 import type { Order } from '../../types/app.types';
 import {
-  BarChart3,
   Calendar,
   Download,
-  FileSpreadsheet,
-  History,
   Printer,
   RotateCw,
 } from 'lucide-react';
 
-type ReportTab = 'summary' | 'history';
 type DatePreset = 'TODAY' | 'YESTERDAY' | 'LAST_7' | 'LAST_30' | 'THIS_MONTH' | 'ALL' | 'CUSTOM';
 
 export const ReportsView: React.FC = () => {
   const { appData, refreshOrders, storeProfile } = useApp();
 
-  const [activeTab, setActiveTab] = useState<ReportTab>('summary');
+  const [activeReport, setActiveReport] = useState<ReportType>('summary');
   const [datePreset, setDatePreset] = useState<DatePreset>('TODAY');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -30,6 +30,7 @@ export const ReportsView: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<(Order & { dailySeq: number }) | null>(null);
 
   const allOrders = useMemo(() => appData.orders || [], [appData.orders]);
+  const inventory = useMemo(() => appData.inventory || [], [appData.inventory]);
 
   // Filter orders by chosen date range
   const filteredOrders = useMemo(() => {
@@ -102,19 +103,27 @@ export const ReportsView: React.FC = () => {
         return `Yesterday (${formatD(y)})`;
       }
       case 'LAST_7': {
-        const start = new Date(today);
-        start.setDate(start.getDate() - 6);
-        return `${formatD(start)} - ${formatD(today)}`;
+        const past = new Date(today);
+        past.setDate(past.getDate() - 6);
+        return `Past 7 Days (${formatD(past)} - ${formatD(today)})`;
       }
       case 'LAST_30': {
-        const start = new Date(today);
-        start.setDate(start.getDate() - 29);
-        return `${formatD(start)} - ${formatD(today)}`;
+        const past = new Date(today);
+        past.setDate(past.getDate() - 29);
+        return `Past 30 Days (${formatD(past)} - ${formatD(today)})`;
       }
-      case 'THIS_MONTH':
-        return today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      case 'CUSTOM':
-        return `${customFrom || 'Start'} to ${customTo || 'End'}`;
+      case 'THIS_MONTH': {
+        const monthName = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        return `This Month (${monthName})`;
+      }
+      case 'CUSTOM': {
+        if (customFrom && customTo) {
+          return `${customFrom} to ${customTo}`;
+        }
+        if (customFrom) return `From ${customFrom}`;
+        if (customTo) return `Up to ${customTo}`;
+        return 'Custom Range';
+      }
       case 'ALL':
       default:
         return 'All Time History';
@@ -122,18 +131,20 @@ export const ReportsView: React.FC = () => {
   }, [datePreset, customFrom, customTo]);
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
     try {
+      setIsRefreshing(true);
       await refreshOrders();
+    } catch (e) {
+      console.error('Failed to refresh orders:', e);
     } finally {
-      setIsRefreshing(false);
+      setTimeout(() => setIsRefreshing(false), 500);
     }
   };
 
-  // Build export payload for Total Summary Report
+  // Build export payload for Total Summary
   const getSummaryExportData = () => {
-    // Group by day
     const map = new Map<string, Order[]>();
+
     filteredOrders.forEach((o) => {
       const d = o.date ? new Date(o.date) : new Date();
       const dayKey = d.toLocaleDateString('en-CA');
@@ -143,6 +154,7 @@ export const ReportsView: React.FC = () => {
     });
 
     const sortedKeys = Array.from(map.keys()).sort((a, b) => b.localeCompare(a));
+
     let grandOrders = 0;
     let grandSubtotal = 0;
     let grandTax = 0;
@@ -162,26 +174,31 @@ export const ReportsView: React.FC = () => {
       let other = 0;
       let net = 0;
 
-      dayOrders.forEach((o) => {
+      const activeDayOrders = dayOrders.filter((o) => o.status !== 'Cancelled');
+
+      activeDayOrders.forEach((o) => {
+        const orderSub = o.subtotal || 0;
+        const orderTax = o.tax || 0;
         const orderTot = roundPOSAmount(o.total || 0);
-        sub += o.subtotal || 0;
-        tax += o.tax || 0;
+
+        sub += orderSub;
+        tax += orderTax;
         net += orderTot;
 
-        if (o.payments && o.payments.length > 0) {
-          o.payments.forEach((p) => {
+        if (o.payments && Array.isArray(o.payments) && o.payments.length > 0) {
+          o.payments.forEach((p: any) => {
             const m = (p.paymentMethod || '').toLowerCase();
-            const amt = p.amount || 0;
+            const amt = Number(p.amount) || 0;
             if (m.includes('cash')) cash += amt;
             else if (m.includes('card')) card += amt;
-            else if (m.includes('upi')) upi += amt;
+            else if (m.includes('upi') || m.includes('online') || m.includes('qr')) upi += amt;
             else other += amt;
           });
         } else {
           const m = (o.paymentMethod || '').toLowerCase();
           if (m.includes('cash')) cash += orderTot;
           else if (m.includes('card')) card += orderTot;
-          else if (m.includes('upi')) upi += orderTot;
+          else if (m.includes('upi') || m.includes('online') || m.includes('qr')) upi += orderTot;
           else other += orderTot;
         }
       });
@@ -243,59 +260,62 @@ export const ReportsView: React.FC = () => {
     return { columns, rows, summaryRow };
   };
 
-  // Build export payload for Order History Report
+  // Build export payload for Order History
   const getHistoryExportData = () => {
     const dailyNumMap = buildDailyOrderNumberMap(allOrders);
 
     let totSub = 0;
     let totTax = 0;
-    let totTotal = 0;
+    let totNet = 0;
 
     const rows = filteredOrders.map((o) => {
       const dailySeq = o.dailyOrderNumber || dailyNumMap.get(o.id) || o.id;
       const d = o.date ? new Date(o.date) : new Date();
-      const dtStr = `${d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}, ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+      const dateFormatted = d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+      const timeFormatted = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
       const itemsSummary = (o.items || [])
-        .map((it: any) => `${it.menuItem?.name || 'Dish'} x${it.quantity || 1}`)
+        .map((it: any) => `${it.menuItem?.name || 'Item'} (x${it.quantity || 1})`)
         .join('; ');
 
-      const orderTot = roundPOSAmount(o.total || 0);
-      totSub += o.subtotal || 0;
-      totTax += o.tax || 0;
-      totTotal += orderTot;
+      const sub = o.subtotal || 0;
+      const tax = o.tax || 0;
+      const total = roundPOSAmount(o.total || 0);
+
+      if (o.status !== 'Cancelled') {
+        totSub += sub;
+        totTax += tax;
+        totNet += total;
+      }
 
       return {
-        dailySeq: `#${dailySeq}`,
-        orderId: `#${o.id}`,
-        dateTime: dtStr,
-        items: itemsSummary || 'N/A',
-        paymentMethod: o.paymentMethod || 'Cash',
-        subtotal: `₹${(o.subtotal || 0).toFixed(2)}`,
-        tax: `₹${(o.tax || 0).toFixed(2)}`,
-        total: `₹${orderTot.toFixed(2)}`,
+        orderId: `#${dailySeq} (ID ${o.id})`,
+        dateTime: `${dateFormatted} ${timeFormatted}`,
+        items: itemsSummary || 'No items recorded',
+        tender: o.paymentMethod || 'Cash',
+        subtotal: `₹${sub.toFixed(2)}`,
+        tax: `₹${tax.toFixed(2)}`,
+        total: `₹${total.toFixed(2)}`,
         status: o.status || 'Completed',
       };
     });
 
     const summaryRow = {
-      dailySeq: 'TOTAL',
-      orderId: `${filteredOrders.length} Orders`,
+      orderId: `TOTAL (${filteredOrders.length} ORDERS)`,
       dateTime: '',
       items: '',
-      paymentMethod: '',
+      tender: '',
       subtotal: `₹${totSub.toFixed(2)}`,
       tax: `₹${totTax.toFixed(2)}`,
-      total: `₹${totTotal.toFixed(2)}`,
+      total: `₹${totNet.toFixed(2)}`,
       status: '',
     };
 
     const columns: ReportColumn[] = [
-      { header: 'Daily Order #', key: 'dailySeq', align: 'center' },
-      { header: 'System Ref ID', key: 'orderId', align: 'center' },
+      { header: 'Order #', key: 'orderId', align: 'left' },
       { header: 'Date & Time', key: 'dateTime', align: 'left' },
-      { header: 'Items Purchased', key: 'items', align: 'left' },
-      { header: 'Tender Mode', key: 'paymentMethod', align: 'center' },
+      { header: 'Items Ordered', key: 'items', align: 'left' },
+      { header: 'Payment Tender', key: 'tender', align: 'center' },
       { header: 'Subtotal', key: 'subtotal', align: 'right' },
       { header: 'Tax', key: 'tax', align: 'right' },
       { header: 'Total Amount', key: 'total', align: 'right' },
@@ -305,186 +325,282 @@ export const ReportsView: React.FC = () => {
     return { columns, rows, summaryRow };
   };
 
+  // Build export payload for Inventory Report
+  const getInventoryExportData = () => {
+    let grandValuation = 0;
+
+    const rows = inventory.map((item) => {
+      const stock = Number(item.stock) || 0;
+      const thresh = Number(item.threshold) || 0;
+      const cost = Number(item.costPerUnit || item.price || 0);
+      const val = stock * cost;
+      grandValuation += val;
+
+      const statusText = stock <= 0 ? 'Out of Stock' : stock <= thresh ? 'Low Stock' : 'Good Stock';
+
+      return {
+        name: item.item || item.name || 'Unnamed item',
+        category: item.category || 'General',
+        stock: `${stock} ${item.unit || 'units'}`,
+        threshold: `${thresh} ${item.unit || 'units'}`,
+        status: statusText,
+        unitCost: cost > 0 ? `₹${cost.toFixed(2)}` : '—',
+        valuation: val > 0 ? `₹${val.toFixed(2)}` : '—',
+      };
+    });
+
+    const summaryRow = {
+      name: `TOTAL (${inventory.length} ITEMS)`,
+      category: '',
+      stock: '',
+      threshold: '',
+      status: '',
+      unitCost: 'Total Valuation:',
+      valuation: `₹${grandValuation.toFixed(2)}`,
+    };
+
+    const columns: ReportColumn[] = [
+      { header: 'Item Name', key: 'name', align: 'left' },
+      { header: 'Category', key: 'category', align: 'left' },
+      { header: 'Current Stock', key: 'stock', align: 'right' },
+      { header: 'Threshold', key: 'threshold', align: 'right' },
+      { header: 'Health Status', key: 'status', align: 'center' },
+      { header: 'Unit Cost', key: 'unitCost', align: 'right' },
+      { header: 'Valuation', key: 'valuation', align: 'right' },
+    ];
+
+    return { columns, rows, summaryRow };
+  };
+
+  // Build export payload for Menu Item Wise Report
+  const getMenuItemsExportData = () => {
+    const aggregated = new Map<string, { name: string; category: string; qty: number; revenue: number }>();
+    const activeOrders = filteredOrders.filter((o) => o.status !== 'Cancelled');
+
+    activeOrders.forEach((o) => {
+      (o.items || []).forEach((it: any) => {
+        const name = it.menuItem?.name || it.name || `Dish #${it.menuItemId || it.id}`;
+        const cat = it.menuItem?.category || it.category || 'General';
+        const qty = Number(it.quantity) || 1;
+        const price = Number(it.price) || Number(it.menuItem?.price) || 0;
+        const lineTot = price * qty;
+        const key = name.toLowerCase().trim();
+
+        const existing = aggregated.get(key);
+        if (existing) {
+          existing.qty += qty;
+          existing.revenue += lineTot;
+        } else {
+          aggregated.set(key, { name, category: cat, qty, revenue: lineTot });
+        }
+      });
+    });
+
+    const items = Array.from(aggregated.values()).sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+    const grandQty = items.reduce((s, it) => s + it.qty, 0);
+    const grandRev = items.reduce((s, it) => s + it.revenue, 0);
+
+    const rows = items.map((it) => {
+      const avgPrice = it.qty > 0 ? it.revenue / it.qty : 0;
+      const share = grandRev > 0 ? (it.revenue / grandRev) * 100 : 0;
+
+      return {
+        name: it.name,
+        category: it.category,
+        qty: it.qty,
+        avgPrice: `₹${avgPrice.toFixed(2)}`,
+        revenue: `₹${it.revenue.toFixed(2)}`,
+        share: `${share.toFixed(1)}%`,
+      };
+    });
+
+    const summaryRow = {
+      name: `TOTAL (${items.length} DISHES)`,
+      category: '',
+      qty: grandQty,
+      avgPrice: '—',
+      revenue: `₹${grandRev.toFixed(2)}`,
+      share: '100%',
+    };
+
+    const columns: ReportColumn[] = [
+      { header: 'Dish / Item Name', key: 'name', align: 'left' },
+      { header: 'Category', key: 'category', align: 'left' },
+      { header: 'Units Sold', key: 'qty', align: 'right' },
+      { header: 'Avg Selling Price', key: 'avgPrice', align: 'right' },
+      { header: 'Total Revenue', key: 'revenue', align: 'right' },
+      { header: 'Revenue Share', key: 'share', align: 'right' },
+    ];
+
+    return { columns, rows, summaryRow };
+  };
+
+  const getActiveExportPayload = () => {
+    switch (activeReport) {
+      case 'history':
+        return {
+          title: 'Order History Detailed Report',
+          payload: getHistoryExportData(),
+          fileSuffix: 'Order_History',
+        };
+      case 'inventory':
+        return {
+          title: 'Stock & Inventory Detailed Report',
+          payload: getInventoryExportData(),
+          fileSuffix: 'Stock_Inventory',
+        };
+      case 'menuItems':
+        return {
+          title: 'Menu Item Sales & Performance Report',
+          payload: getMenuItemsExportData(),
+          fileSuffix: 'Menu_Item_Sales',
+        };
+      case 'summary':
+      default:
+        return {
+          title: 'Total Summary & Sales Report',
+          payload: getSummaryExportData(),
+          fileSuffix: 'Total_Summary',
+        };
+    }
+  };
+
   // Handler for Print PDF
   const handlePrintPdf = () => {
-    const isSummary = activeTab === 'summary';
-    const reportTitle = isSummary ? 'Total Summary & Sales Report' : 'Order History Detailed Report';
-    const { columns, rows, summaryRow } = isSummary ? getSummaryExportData() : getHistoryExportData();
+    const { title, payload } = getActiveExportPayload();
 
     printReportToPdf({
-      fileName: `${storeProfile?.businessName || 'Cafe'}_${activeTab}_${new Date().toISOString().slice(0, 10)}`,
-      reportTitle,
+      fileName: `${storeProfile?.businessName || 'Cafe'}_${activeReport}_${new Date().toISOString().slice(0, 10)}`,
+      reportTitle: title,
       dateRangeText,
       storeProfile,
-      columns,
-      rows,
-      summaryRow,
+      columns: payload.columns,
+      rows: payload.rows,
+      summaryRow: payload.summaryRow,
     });
   };
 
   // Handler for Export XLS
   const handleExportXls = () => {
-    const isSummary = activeTab === 'summary';
-    const reportTitle = isSummary ? 'Total Summary & Sales Report' : 'Order History Detailed Report';
-    const { columns, rows, summaryRow } = isSummary ? getSummaryExportData() : getHistoryExportData();
+    const { title, payload, fileSuffix } = getActiveExportPayload();
     const safeName = (storeProfile?.businessName || 'Cafe').replace(/[^a-zA-Z0-9_-]/g, '_');
 
     exportReportToXls({
-      fileName: `${safeName}_${isSummary ? 'Total_Summary' : 'Order_History'}_${new Date().toISOString().slice(0, 10)}.xls`,
-      reportTitle,
+      fileName: `${safeName}_${fileSuffix}_${new Date().toISOString().slice(0, 10)}.xls`,
+      reportTitle: title,
       dateRangeText,
       storeProfile,
-      columns,
-      rows,
-      summaryRow,
+      columns: payload.columns,
+      rows: payload.rows,
+      summaryRow: payload.summaryRow,
     });
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* 1. Top Header Card */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-amber-500" />
-            <span>Store Reports & Analytics</span>
-          </h2>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-            Audit daily sales revenue, tax breakdown, tender distributions, and complete order history.
-          </p>
+    <div className="p-4 sm:p-5 lg:p-6 flex flex-col h-full min-h-0 overflow-hidden w-full select-none gap-4">
+      {/* 1. Fixed Top Filter & Actions Card (Spacing matching uploaded image) */}
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3 sm:p-3.5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0">
+        {/* Left: Quick Date Presets & Custom Calendar Picker */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Calendar className="w-4 h-4 text-stone-400 mr-1 hidden sm:block" />
+          {[
+            { label: 'Today', value: 'TODAY' },
+            { label: 'Yesterday', value: 'YESTERDAY' },
+            { label: 'Last 7 Days', value: 'LAST_7' },
+            { label: 'Last 30 Days', value: 'LAST_30' },
+            { label: 'This Month', value: 'THIS_MONTH' },
+            { label: 'All Time', value: 'ALL' },
+            { label: 'Custom', value: 'CUSTOM' },
+          ].map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setDatePreset(p.value as DatePreset)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                datePreset === p.value
+                  ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-sm'
+                  : 'bg-stone-50 dark:bg-stone-850 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+
+          {/* Custom Date Range Picker Component */}
+          {datePreset === 'CUSTOM' && (
+            <CustomDateRangePicker
+              customFrom={customFrom}
+              customTo={customTo}
+              onChange={(from, to) => {
+                setCustomFrom(from);
+                setCustomTo(to);
+              }}
+              className="ml-1"
+            />
+          )}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Right: Actions (Refresh, Print PDF, Print XLS) in same row */}
+        <div className="flex items-center gap-2 self-end xl:self-auto shrink-0">
           <button
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-stone-200 dark:border-stone-750 bg-stone-50 dark:bg-stone-850 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl border border-stone-200 dark:border-stone-750 bg-stone-50 dark:bg-stone-850 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs transition-all cursor-pointer active:scale-95"
             title="Refresh latest orders"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-amber-500' : ''}`} />
             <span>Refresh</span>
           </button>
 
-          {/* Print PDF Button */}
           <button
             type="button"
             onClick={handlePrintPdf}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-stone-200 dark:border-stone-750 bg-white dark:bg-stone-850 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:border-amber-400 text-stone-800 dark:text-stone-200 font-bold text-xs transition-all shadow-sm cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl border border-stone-200 dark:border-stone-750 bg-white dark:bg-stone-850 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:border-amber-400 text-stone-800 dark:text-stone-200 font-bold text-xs transition-all shadow-xs cursor-pointer active:scale-95"
           >
-            <Printer className="w-4 h-4 text-amber-500" />
+            <Printer className="w-3.5 h-3.5 text-amber-500" />
             <span>Print PDF</span>
           </button>
 
-          {/* Export XLS Button */}
           <button
             type="button"
             onClick={handleExportXls}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500 text-stone-950 font-bold text-xs hover:bg-amber-400 active:scale-95 transition-all shadow-sm shadow-amber-500/20 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-amber-500 text-stone-950 font-bold text-xs hover:bg-amber-400 active:scale-95 transition-all shadow-xs shadow-amber-500/20 cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span>Print XLS</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Sub-Tabs & Date Filter Controls */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Sub-Tabs: Total Summary vs Order History */}
-          <div className="flex items-center bg-stone-100 dark:bg-stone-850 p-1.5 rounded-2xl border border-stone-200/80 dark:border-stone-800 self-start">
-            <button
-              type="button"
-              onClick={() => setActiveTab('summary')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                activeTab === 'summary'
-                  ? 'bg-amber-500 text-stone-950 shadow-sm shadow-amber-500/20'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-              }`}
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Total Summary</span>
-            </button>
+      {/* 2. Main Operational Area: Left Reports Module Sidebar (Fixed, fulfills height) + Right Report Details (Internal scroll only) */}
+      <div className="flex-1 flex flex-col md:flex-row items-stretch gap-4 min-h-0 overflow-hidden">
+        {/* Reports Module Sidebar */}
+        <ReportsCategorySidebar
+          activeReport={activeReport}
+          onSelectReport={setActiveReport}
+        />
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
-                activeTab === 'history'
-                  ? 'bg-amber-500 text-stone-950 shadow-sm shadow-amber-500/20'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-              }`}
-            >
-              <History className="w-4 h-4" />
-              <span>Order History</span>
-            </button>
-          </div>
+        {/* Right Side Report Details Card Container (Fixed main div, only internal details scroll) */}
+        <div className="flex-1 min-w-0 h-full overflow-y-auto min-h-0 pr-1 space-y-4">
+          {activeReport === 'summary' && (
+            <TotalSummaryReport orders={filteredOrders} dateRangeText={dateRangeText} />
+          )}
 
-          {/* Quick Date Presets */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Calendar className="w-4 h-4 text-stone-400 mr-1 hidden sm:block" />
-            {[
-              { label: 'Today', value: 'TODAY' },
-              { label: 'Yesterday', value: 'YESTERDAY' },
-              { label: 'Last 7 Days', value: 'LAST_7' },
-              { label: 'Last 30 Days', value: 'LAST_30' },
-              { label: 'This Month', value: 'THIS_MONTH' },
-              { label: 'All Time', value: 'ALL' },
-              { label: 'Custom', value: 'CUSTOM' },
-            ].map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => setDatePreset(p.value as DatePreset)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  datePreset === p.value
-                    ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 shadow-sm'
-                    : 'bg-stone-50 dark:bg-stone-850 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+          {activeReport === 'history' && (
+            <OrderHistoryReport
+              orders={filteredOrders}
+              onSelectOrder={(order) => setSelectedOrder(order)}
+            />
+          )}
+
+          {activeReport === 'inventory' && <InventoryReport />}
+
+          {activeReport === 'menuItems' && <MenuItemWiseReport orders={filteredOrders} />}
         </div>
-
-        {/* Custom Date Pickers (Shown if Custom preset selected) */}
-        {datePreset === 'CUSTOM' && (
-          <div className="flex items-center gap-3 pt-3 border-t border-stone-100 dark:border-stone-800 flex-wrap text-xs">
-            <span className="font-bold text-stone-500">Custom Date Range:</span>
-            <div className="flex items-center gap-2">
-              <label className="text-stone-400">From:</label>
-              <input
-                type="date"
-                value={customFrom}
-                onChange={(e) => setCustomFrom(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-750 bg-stone-50 dark:bg-stone-850 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-stone-400">To:</label>
-              <input
-                type="date"
-                value={customTo}
-                onChange={(e) => setCustomTo(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-750 bg-stone-50 dark:bg-stone-850 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* 3. Active Report Content */}
-      {activeTab === 'summary' ? (
-        <TotalSummaryReport orders={filteredOrders} dateRangeText={dateRangeText} />
-      ) : (
-        <OrderHistoryReport
-          orders={filteredOrders}
-          onSelectOrder={(order) => setSelectedOrder(order)}
-        />
-      )}
-
-      {/* 4. Complete Order Details Modal */}
+      {/* 3. Complete Order Details Modal */}
       <OrderDetailsModal
         isOpen={Boolean(selectedOrder)}
         onClose={() => setSelectedOrder(null)}

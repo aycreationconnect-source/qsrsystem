@@ -217,6 +217,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
         description: 'Restaurant sections, seating capacity & floor arrangement',
       };
     }
+    if (pathname.startsWith('/reports') || pathname.startsWith('/report')) {
+      return {
+        title: 'Reports & Analytics',
+        description: 'Sales summaries, order audits, inventory movements & item sales',
+      };
+    }
     if (pathname.startsWith('/settings')) {
       return {
         title: 'Store Settings',

@@ -83,6 +83,8 @@ export interface InventoryItem {
   status: string; // 'Good' | 'Low Stock' | 'Out of Stock'
   category?: string;
   categoryId?: number;
+  costPerUnit?: number;
+  price?: number;
   history?: InventoryHistory[];
 }
 

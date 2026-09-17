@@ -21,6 +21,7 @@ import {
   Search,
   FilterX,
   Plus,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { Table } from '../../types/app.types';
@@ -29,7 +30,16 @@ import { toast } from '../../context/ToastContext';
 type StatusFilterType = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING';
 
 export const POSTableTerminalView: React.FC = () => {
-  const { appData } = useApp();
+  const { appData, handleLogout } = useApp();
+
+  const handleSignOut = async () => {
+    try {
+      await handleLogout();
+      toast.success('Signed out successfully.');
+    } catch {
+      toast.error('Failed to sign out.');
+    }
+  };
   const {
     setCart,
     tableOrders,
@@ -375,56 +385,89 @@ export const POSTableTerminalView: React.FC = () => {
                 );
               })}
             </div>
+
+            {/* Footer: Signout Button & Build Version */}
+            <div className="p-2.5 border-t border-stone-200/70 dark:border-stone-800 shrink-0 bg-stone-50/50 dark:bg-stone-900/50 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-95 group"
+                title="Signout"
+              >
+                <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                <span>Signout</span>
+              </button>
+              <span className="text-[11px] font-mono font-bold text-stone-400 dark:text-stone-500 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800/80 border border-stone-200/60 dark:border-stone-750/50">
+                v1.0.0
+              </span>
+            </div>
           </aside>
         ) : (
           /* Collapsed Mini-Sidebar Rail (Maximum Space for Table Cards) */
-          <aside className="hidden md:flex flex-col w-12 lg:w-14 bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none py-3 items-center transition-all duration-200">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              className="p-2 rounded-xl text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors cursor-pointer mb-3"
-              title="Expand Areas & Sections"
-              aria-label="Expand areas sidebar"
-            >
-              <ChevronRight className="w-5 h-5 text-amber-500" />
-            </button>
-
-            <div className="flex-1 flex flex-col items-center gap-2 w-full px-1.5 overflow-y-auto no-scrollbar">
-              {/* Mini All Areas */}
+          <aside className="hidden md:flex flex-col w-12 lg:w-14 bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none py-3 items-center justify-between transition-all duration-200">
+            <div className="w-full flex flex-col items-center">
               <button
                 type="button"
-                onClick={() => setSelectedAreaId('ALL')}
-                title={`All Areas (${areaCounts.ALL || 0})`}
-                className={cn(
-                  'w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all cursor-pointer',
-                  selectedAreaId === 'ALL'
-                    ? 'bg-amber-500 text-stone-950 shadow-xs'
-                    : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800'
-                )}
+                onClick={toggleSidebar}
+                className="p-2 rounded-xl text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors cursor-pointer mb-3"
+                title="Expand Areas & Sections"
+                aria-label="Expand areas sidebar"
               >
-                <Map className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5 text-amber-500" />
               </button>
 
-              {areas.map((area) => {
-                const isSelected = String(selectedAreaId) === String(area.id);
-                const count = areaCounts[String(area.id)] || 0;
-                return (
-                  <button
-                    key={area.id}
-                    type="button"
-                    onClick={() => setSelectedAreaId(area.id)}
-                    title={`${area.name} (${count})`}
-                    className={cn(
-                      'w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all cursor-pointer',
-                      isSelected
-                        ? 'bg-amber-500 text-stone-950 shadow-xs'
-                        : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
-                    )}
-                  >
-                    {area.name.charAt(0).toUpperCase()}
-                  </button>
-                );
-              })}
+              <div className="flex flex-col items-center gap-2 w-full px-1.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-220px)]">
+                {/* Mini All Areas */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedAreaId('ALL')}
+                  title={`All Areas (${areaCounts.ALL || 0})`}
+                  className={cn(
+                    'w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all cursor-pointer',
+                    selectedAreaId === 'ALL'
+                      ? 'bg-amber-500 text-stone-950 shadow-xs'
+                      : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800'
+                  )}
+                >
+                  <Map className="w-4 h-4" />
+                </button>
+
+                {areas.map((area) => {
+                  const isSelected = String(selectedAreaId) === String(area.id);
+                  const count = areaCounts[String(area.id)] || 0;
+                  return (
+                    <button
+                      key={area.id}
+                      type="button"
+                      onClick={() => setSelectedAreaId(area.id)}
+                      title={`${area.name} (${count})`}
+                      className={cn(
+                        'w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all cursor-pointer',
+                        isSelected
+                          ? 'bg-amber-500 text-stone-950 shadow-xs'
+                          : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+                      )}
+                    >
+                      {area.name.charAt(0).toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Collapsed Mini Footer: Signout & Version */}
+            <div className="pt-2 border-t border-stone-200/70 dark:border-stone-800 w-full flex flex-col items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                title="Signout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+              <span className="text-[9px] font-mono font-bold text-stone-400 dark:text-stone-500 select-none">
+                v1.0.0
+              </span>
             </div>
           </aside>
         )}

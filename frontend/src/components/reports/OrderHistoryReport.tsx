@@ -1,13 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
 import { buildDailyOrderNumberMap, roundPOSAmount } from '../../lib/orderUtils';
-import { Search, Eye, Filter, CheckCircle2, Clock, CreditCard, XCircle } from 'lucide-react';
+import { ReportPagination } from './ReportPagination';
+import {
+  Search,
+  Eye,
+  Filter,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  XCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+} from 'lucide-react';
 
 interface OrderHistoryReportProps {
   orders: Order[];
   onSelectOrder: (order: Order & { dailySeq: number }) => void;
 }
+
+type OrderSortField = 'orderNo' | 'date' | 'subtotal' | 'tax' | 'total' | 'status';
+type OrderSortDirection = 'asc' | 'desc';
 
 export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
   orders,
@@ -20,18 +36,44 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
   const [paymentFilter, setPaymentFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  // Sorting state
+  const [sortField, setSortField] = useState<OrderSortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<OrderSortDirection>('desc');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
   // Compute daily sequential order numbers (#1, #2, #3...)
   const dailyNumMap = useMemo(() => {
     return buildDailyOrderNumberMap(appData.orders || orders);
   }, [appData.orders, orders]);
 
-  // Filter orders by query, payment, and status
-  const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
+  const handleSort = (field: OrderSortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortField(null);
+        setSortDirection('desc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const resetSort = () => {
+    setSortField(null);
+    setSortDirection('desc');
+  };
+
+  // Filter orders by query, payment, and status, and sort
+  const processedOrders = useMemo(() => {
+    const filtered = orders.filter((o) => {
       const dailySeq = o.dailyOrderNumber || dailyNumMap.get(o.id) || o.id;
       const q = searchQuery.toLowerCase().trim();
 
-      // Search match: daily #, system ID, payment method, or item names
       const matchesSearch =
         !q ||
         `order #${dailySeq}`.toLowerCase().includes(q) ||
@@ -43,7 +85,6 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
           (it.menuItem?.name || '').toLowerCase().includes(q)
         );
 
-      // Payment match
       const m = (o.paymentMethod || '').toUpperCase();
       const matchesPayment =
         paymentFilter === 'ALL' ||
@@ -52,7 +93,6 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
         (paymentFilter === 'UPI' && m.includes('UPI')) ||
         (paymentFilter === 'SPLIT' && (m.includes('SPLIT') || (o.payments && o.payments.length > 1)));
 
-      // Status match
       const s = (o.status || 'Completed').toUpperCase();
       const matchesStatus =
         statusFilter === 'ALL' ||
@@ -62,11 +102,47 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
 
       return matchesSearch && matchesPayment && matchesStatus;
     });
-  }, [orders, searchQuery, paymentFilter, statusFilter, dailyNumMap]);
+
+    return [...filtered].sort((a, b) => {
+      const aSeq = a.dailyOrderNumber || dailyNumMap.get(a.id) || a.id;
+      const bSeq = b.dailyOrderNumber || dailyNumMap.get(b.id) || b.id;
+      const aDate = new Date(a.date || 0).getTime();
+      const bDate = new Date(b.date || 0).getTime();
+
+      if (!sortField) {
+        // Default: newest orders first
+        return bDate - aDate;
+      }
+
+      let comparison = 0;
+      switch (sortField) {
+        case 'orderNo':
+          comparison = Number(aSeq) - Number(bSeq);
+          break;
+        case 'date':
+          comparison = aDate - bDate;
+          break;
+        case 'subtotal':
+          comparison = (a.subtotal || 0) - (b.subtotal || 0);
+          break;
+        case 'tax':
+          comparison = (a.tax || 0) - (b.tax || 0);
+          break;
+        case 'total':
+          comparison = (a.total || 0) - (b.total || 0);
+          break;
+        case 'status':
+          comparison = (a.status || '').localeCompare(b.status || '');
+          break;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [orders, searchQuery, paymentFilter, statusFilter, dailyNumMap, sortField, sortDirection]);
 
   // Filtered Totals
   const filteredTotals = useMemo(() => {
-    return filteredOrders.reduce(
+    return processedOrders.reduce(
       (acc, o) => {
         if (o.status !== 'Cancelled') {
           acc.subtotal += o.subtotal || 0;
@@ -77,7 +153,29 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
       },
       { subtotal: 0, tax: 0, total: 0 }
     );
-  }, [filteredOrders]);
+  }, [processedOrders]);
+
+  // Reset page to 1 when filters or sorting change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, paymentFilter, statusFilter, sortField, sortDirection]);
+
+  const totalPages = Math.max(1, Math.ceil(processedOrders.length / pageSize));
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return processedOrders.slice(start, start + pageSize);
+  }, [processedOrders, currentPage, pageSize]);
+
+  const renderSortIcon = (field: OrderSortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 text-stone-400 group-hover:text-stone-600 transition-colors" />;
+    }
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 text-amber-500 font-bold" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-amber-500 font-bold" />
+    );
+  };
 
   return (
     <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
@@ -132,53 +230,107 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Reset Sort Button */}
+          {sortField !== null && (
+            <button
+              type="button"
+              onClick={resetSort}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 transition-all cursor-pointer"
+              title="Reset sorting to default"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Sort</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Orders Count Summary Header */}
       <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 pt-1">
         <span>
-          Showing <strong className="text-stone-900 dark:text-stone-100">{filteredOrders.length}</strong> of {orders.length} orders
+          Showing <strong className="text-stone-900 dark:text-stone-100">{processedOrders.length}</strong> of {orders.length} orders
         </span>
-        <span>Click on any order row to inspect full itemized details.</span>
+        <span className="hidden sm:inline">Click on any order row to inspect full itemized details.</span>
       </div>
 
-      {/* Constrained Table Container (Horizontal scrollbar strictly inside table container) */}
+      {/* Constrained Table Container */}
       <div className="w-full overflow-x-auto rounded-2xl border border-stone-200/80 dark:border-stone-800">
         <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[800px]">
           <thead>
             <tr className="bg-stone-50 dark:bg-stone-850/70 border-b border-stone-200/80 dark:border-stone-800 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
-              <th className="py-3 px-4">Order #</th>
-              <th className="py-3 px-4">Date & Time</th>
-              <th className="py-3 px-4">Items Summary</th>
+              <th
+                onClick={() => handleSort('orderNo')}
+                className="py-3 px-4 cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Order #</span>
+                  {renderSortIcon('orderNo')}
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('date')}
+                className="py-3 px-4 cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Date & Time</span>
+                  {renderSortIcon('date')}
+                </div>
+              </th>
+
               <th className="py-3 px-4">Tender</th>
-              <th className="py-3 px-4 text-right">Subtotal</th>
-              <th className="py-3 px-4 text-right">Tax</th>
-              <th className="py-3 px-4 text-right">Total</th>
-              <th className="py-3 px-4 text-center">Status</th>
+
+              <th
+                onClick={() => handleSort('subtotal')}
+                className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+              >
+                <div className="flex items-center justify-end gap-1.5">
+                  <span>Subtotal</span>
+                  {renderSortIcon('subtotal')}
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('tax')}
+                className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+              >
+                <div className="flex items-center justify-end gap-1.5">
+                  <span>Tax</span>
+                  {renderSortIcon('tax')}
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('total')}
+                className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+              >
+                <div className="flex items-center justify-end gap-1.5">
+                  <span>Total</span>
+                  {renderSortIcon('total')}
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort('status')}
+                className="py-3 px-4 text-center cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+              >
+                <div className="flex items-center justify-center gap-1.5">
+                  <span>Status</span>
+                  {renderSortIcon('status')}
+                </div>
+              </th>
+
               <th className="py-3 px-4 text-center">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((o) => {
+            {processedOrders.length > 0 ? (
+              paginatedOrders.map((o) => {
                 const dailySeq = o.dailyOrderNumber || dailyNumMap.get(o.id) || o.id;
                 const d = o.date ? new Date(o.date) : new Date();
                 const dateStr = d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
                 const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-                const totalItemsCount = (o.items || []).reduce(
-                  (sum: number, it: any) => sum + (it.quantity || 1),
-                  0
-                );
-
-                const itemsPreview = (o.items || [])
-                  .slice(0, 2)
-                  .map((it: any) => `${it.menuItem?.name || 'Dish'} x${it.quantity || 1}`)
-                  .join(', ');
-                const itemsDisplayText = totalItemsCount > 2
-                  ? `${itemsPreview} (+${totalItemsCount - 2} more)`
-                  : itemsPreview || `${totalItemsCount} item(s)`;
 
                 const isPartiallyPaid = o.status === 'Partially Paid' || (o.balanceAmount || 0) > 0;
 
@@ -205,10 +357,6 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
                         <Clock className="w-3 h-3" />
                         {timeStr}
                       </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 max-w-xs truncate text-stone-600 dark:text-stone-300">
-                      <span className="font-medium">{itemsDisplayText}</span>
                     </td>
 
                     <td className="py-3.5 px-4 whitespace-nowrap">
@@ -267,7 +415,7 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
               })
             ) : (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-stone-400 text-xs">
+                <td colSpan={8} className="py-12 text-center text-stone-400 text-xs">
                   No orders match your filter criteria.
                 </td>
               </tr>
@@ -275,11 +423,11 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
           </tbody>
 
           {/* Table Footer with Filtered Totals */}
-          {filteredOrders.length > 0 && (
+          {processedOrders.length > 0 && (
             <tfoot>
               <tr className="bg-amber-500/10 dark:bg-amber-500/15 border-t-2 border-amber-500/30 font-black text-xs sm:text-sm text-stone-900 dark:text-stone-100">
-                <td colSpan={4} className="py-3.5 px-4 uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                  Total ({filteredOrders.length} Orders)
+                <td colSpan={3} className="py-3.5 px-4 uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                  Total ({processedOrders.length} Orders)
                 </td>
                 <td className="py-3.5 px-4 text-right font-mono">
                   {currency}{filteredTotals.subtotal.toFixed(2)}
@@ -296,6 +444,21 @@ export const OrderHistoryReport: React.FC<OrderHistoryReportProps> = ({
           )}
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      <ReportPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={processedOrders.length}
+        pageSize={pageSize}
+        pageSizeOptions={[10, 15, 25, 50]}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setCurrentPage(1);
+        }}
+        itemLabel="orders"
+      />
     </div>
   );
 };

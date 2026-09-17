@@ -2,12 +2,38 @@ import React from 'react';
 import type { Order } from '../../types/app.types';
 import { useApp } from '../../context/AppContext';
 import { roundPOSAmount } from '../../lib/orderUtils';
-import { DollarSign, ShoppingBag, Percent, Receipt, Wallet, CreditCard, QrCode } from 'lucide-react';
+import { ReportPagination } from './ReportPagination';
+import {
+  DollarSign,
+  ShoppingBag,
+  Percent,
+  Receipt,
+  Wallet,
+  CreditCard,
+  QrCode,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+} from 'lucide-react';
 
 interface TotalSummaryReportProps {
   orders: Order[];
   dateRangeText: string;
 }
+
+type SummarySortField =
+  | 'date'
+  | 'orders'
+  | 'subtotal'
+  | 'tax'
+  | 'cash'
+  | 'card'
+  | 'upi'
+  | 'other'
+  | 'net'
+  | 'aov';
+type SummarySortDirection = 'asc' | 'desc';
 
 export interface DaySummaryData {
   dateStr: string;
@@ -148,6 +174,95 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
     };
   }, [ordersByDay]);
 
+  // Sorting state for table
+  const [sortField, setSortField] = React.useState<SummarySortField | null>(null);
+  const [sortDirection, setSortDirection] = React.useState<SummarySortDirection>('desc');
+
+  const handleSort = (field: SummarySortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortField(null);
+        setSortDirection('desc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const resetSort = () => {
+    setSortField(null);
+    setSortDirection('desc');
+  };
+
+  const sortedDays = React.useMemo(() => {
+    if (!sortField) return ordersByDay;
+
+    return [...ordersByDay].sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'date':
+          comparison = a.dateStr.localeCompare(b.dateStr);
+          break;
+        case 'orders':
+          comparison = a.orderCount - b.orderCount;
+          break;
+        case 'subtotal':
+          comparison = a.subtotal - b.subtotal;
+          break;
+        case 'tax':
+          comparison = a.tax - b.tax;
+          break;
+        case 'cash':
+          comparison = a.cashTotal - b.cashTotal;
+          break;
+        case 'card':
+          comparison = a.cardTotal - b.cardTotal;
+          break;
+        case 'upi':
+          comparison = a.upiTotal - b.upiTotal;
+          break;
+        case 'other':
+          comparison = a.otherTotal - b.otherTotal;
+          break;
+        case 'net':
+          comparison = a.netTotal - b.netTotal;
+          break;
+        case 'aov':
+          comparison = a.aov - b.aov;
+          break;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [ordersByDay, sortField, sortDirection]);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(15);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [sortField, sortDirection, orders]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedDays.length / pageSize));
+  const paginatedDays = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedDays.slice(start, start + pageSize);
+  }, [sortedDays, currentPage, pageSize]);
+
+  const renderSortIcon = (field: SummarySortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 text-stone-400 group-hover:text-stone-600 transition-colors" />;
+    }
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 text-amber-500 font-bold" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-amber-500 font-bold" />
+    );
+  };
+
   // Tender Breakdown Metrics
   const tenderBreakdown = [
     {
@@ -268,42 +383,133 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
         })}
       </div>
 
-      {/* 3. Main Daily Aggregated Breakdown Table (Proper Table Format with Table-only Horizontal Scroll) */}
+      {/* 3. Main Daily Aggregated Breakdown Table */}
       <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
+          <div className="flex items-center gap-3">
             <h3 className="text-sm sm:text-base font-extrabold text-stone-900 dark:text-stone-100">
               Date-wise Sales & Tender Summary
             </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              Aggregated daily performance, tax records, and payment mode distributions.
-            </p>
+            <span className="text-xs font-bold text-stone-400">
+              ({sortedDays.length} {sortedDays.length === 1 ? 'day' : 'days'})
+            </span>
           </div>
-          <span className="text-xs font-bold text-stone-400">
-            {ordersByDay.length} {ordersByDay.length === 1 ? 'day recorded' : 'days recorded'}
-          </span>
+
+          <div className="flex items-center gap-2">
+            {sortField !== null && (
+              <button
+                type="button"
+                onClick={resetSort}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 transition-all cursor-pointer"
+                title="Reset sorting to default"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Sort</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Constrained Table Container (Horizontal scrollbar applies strictly to this table container) */}
+        {/* Constrained Table Container */}
         <div className="w-full overflow-x-auto rounded-2xl border border-stone-200/80 dark:border-stone-800">
           <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[760px]">
             <thead>
               <tr className="bg-stone-50 dark:bg-stone-850/70 border-b border-stone-200/80 dark:border-stone-800 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4 text-center">Orders</th>
-                <th className="py-3 px-4 text-right">Subtotal</th>
-                <th className="py-3 px-4 text-right">Tax</th>
-                <th className="py-3 px-4 text-right">Cash</th>
-                <th className="py-3 px-4 text-right">Card</th>
-                <th className="py-3 px-4 text-right">UPI</th>
-                <th className="py-3 px-4 text-right">Split/Other</th>
-                <th className="py-3 px-4 text-right">Net Sales</th>
-                <th className="py-3 px-4 text-right">AOV</th>
+                <th
+                  onClick={() => handleSort('date')}
+                  className="py-3 px-4 cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Date</span>
+                    {renderSortIcon('date')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('orders')}
+                  className="py-3 px-4 text-center cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span>Orders</span>
+                    {renderSortIcon('orders')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('subtotal')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Subtotal</span>
+                    {renderSortIcon('subtotal')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('tax')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Tax</span>
+                    {renderSortIcon('tax')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('cash')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Cash</span>
+                    {renderSortIcon('cash')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('card')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Card</span>
+                    {renderSortIcon('card')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('upi')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>UPI</span>
+                    {renderSortIcon('upi')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('other')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Split/Other</span>
+                    {renderSortIcon('other')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('net')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Net Sales</span>
+                    {renderSortIcon('net')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('aov')}
+                  className="py-3 px-4 text-right cursor-pointer hover:text-stone-700 dark:hover:text-stone-200 select-none group"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>AOV</span>
+                    {renderSortIcon('aov')}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-              {ordersByDay.length > 0 ? (
-                ordersByDay.map((row) => (
+              {sortedDays.length > 0 ? (
+                paginatedDays.map((row) => (
                   <tr
                     key={row.dateStr}
                     className="hover:bg-stone-50/70 dark:hover:bg-stone-800/40 transition-colors"
@@ -388,6 +594,21 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
             )}
           </table>
         </div>
+
+        {/* Table Pagination */}
+        <ReportPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={sortedDays.length}
+          pageSize={pageSize}
+          pageSizeOptions={[10, 15, 25, 50]}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemLabel="days"
+        />
       </div>
     </div>
   );

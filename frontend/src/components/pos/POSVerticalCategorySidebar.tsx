@@ -149,16 +149,16 @@ export const POSVerticalCategorySidebar: React.FC = () => {
         })}
       </div>
 
-      {/* 3. Footer: Logout Button & Build Version */}
+      {/* 3. Footer: Signout Button & Build Version */}
       <div className="p-2.5 border-t border-stone-200/70 dark:border-stone-800 shrink-0 bg-stone-50/50 dark:bg-stone-900/50 flex items-center justify-between">
         <button
           type="button"
           onClick={handleSignOut}
           className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-95 group"
-          title="Sign Out"
+          title="Signout"
         >
           <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-          <span>Logout</span>
+          <span>Signout</span>
         </button>
         <span className="text-[11px] font-mono font-bold text-stone-400 dark:text-stone-500 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800/80 border border-stone-200/60 dark:border-stone-750/50">
           v1.0.0

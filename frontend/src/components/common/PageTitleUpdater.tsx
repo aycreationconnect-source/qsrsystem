@@ -45,6 +45,13 @@ export const PageTitleUpdater: React.FC = () => {
           'Velora Floor & Table Setup - Manage dine-in sections, seating layouts, and live table status.',
         favicon: '/favicon.svg',
       };
+    } else if (pathname === '/reports' || pathname === '/report') {
+      meta = {
+        title: 'Velora | Reports & Analytics - Sales, Orders & Performance',
+        description:
+          'Velora Reports & Analytics - Comprehensive sales audit, daily totals, order history, inventory logs and menu analytics.',
+        favicon: '/favicon.svg',
+      };
     } else if (pathname === '/settings') {
       meta = {
         title: 'Velora | Settings - Store Identity & System Configuration',

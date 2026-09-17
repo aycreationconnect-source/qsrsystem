@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input } from '../ui';
 import { Store, Upload, Image, Phone, MapPin, Building, FileText } from 'lucide-react';
 import { settingsApi } from '../../api/settingsApi';
@@ -10,6 +10,60 @@ export interface StoreProfileModalProps {
   storeProfile: any;
   onProfileUpdated: (updated: any) => void;
 }
+
+// Compress and resize image client-side to ensure fast uploads and prevent payload limits
+const compressImage = (
+  file: File,
+  maxWidth = 512,
+  maxHeight = 512,
+  quality = 0.85
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve(canvas.toDataURL(mime, quality));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 export const StoreProfileModal: React.FC<StoreProfileModalProps> = ({
   isOpen,
@@ -32,22 +86,41 @@ export const StoreProfileModal: React.FC<StoreProfileModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Synchronize state when modal opens or storeProfile updates
+  useEffect(() => {
+    if (isOpen && storeProfile) {
+      setBusinessName(storeProfile.businessName || '');
+      setOwnerName(storeProfile.ownerName || '');
+      setPhone(storeProfile.phone || '');
+      setEmail(storeProfile.email || '');
+      setCity(storeProfile.city || 'Mumbai');
+      setState(storeProfile.state || 'Maharashtra');
+      setAddress(storeProfile.address || '');
+      setGstin(storeProfile.gstin || '');
+      setReceiptFooter(storeProfile.receiptFooter || 'Thank you for visiting! Please visit again.');
+      setLogoUrl(storeProfile.logoUrl || '');
+      setError(null);
+    }
+  }, [isOpen, storeProfile]);
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Max 2MB
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Logo image must be under 2MB.');
+    // Allow files up to 10MB because client-side compression will optimize to ~50KB
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Logo image must be under 10MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setLogoUrl(reader.result as string);
+    try {
       setError(null);
-    };
-    reader.readAsDataURL(file);
+      const compressed = await compressImage(file, 512, 512, 0.85);
+      setLogoUrl(compressed);
+    } catch (err: any) {
+      console.error('Image compression failed:', err);
+      setError('Failed to process image file. Please choose another image.');
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
