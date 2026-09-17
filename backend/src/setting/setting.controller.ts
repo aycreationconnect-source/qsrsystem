@@ -49,7 +49,7 @@ export class SettingController {
         address: body.address !== undefined ? body.address : existing.address,
         gstin: body.gstin !== undefined ? body.gstin : existing.gstin,
         receiptFooter: body.receiptFooter !== undefined ? body.receiptFooter : existing.receiptFooter,
-        logoUrl: body.logoUrl !== undefined ? body.logoUrl : existing.logoUrl,
+        logoUrl: body.logoUrl !== undefined ? (body.logoUrl || null) : existing.logoUrl,
       },
     });
     return { success: true, store: updated };

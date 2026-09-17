@@ -1071,8 +1071,8 @@ export const CheckoutModal: React.FC = () => {
           {/* RIGHT COLUMN: Payment & Settlement Controls */}
           {/* ======================================================== */}
           <div className="md:col-span-7 flex flex-col h-full overflow-hidden justify-between pl-0 md:pl-1">
-            {/* Top Fixed Area: Customer Info + Amount Card + Discount/Charges + Tabs */}
-            <div className="shrink-0 space-y-2 pb-1.5">
+            {/* Top Fixed Area: Customer Info + Discount/Charges + Payment Mode Tabs */}
+            <div className="shrink-0 space-y-3.5 sm:space-y-4 pb-2 sm:pb-2.5">
               {/* Customer Information Card (Referred Fig 2) */}
               <div className="p-2.5 sm:p-3 rounded-2xl bg-stone-50/80 dark:bg-stone-850/60 border border-stone-200/80 dark:border-stone-750/70 space-y-2">
                 <div className="flex items-center justify-between">

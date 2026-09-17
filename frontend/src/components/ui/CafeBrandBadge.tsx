@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 
 export interface CafeBrandBadgeProps {
@@ -10,6 +10,7 @@ export interface CafeBrandBadgeProps {
   showStatusDot?: boolean;
   showName?: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
@@ -21,7 +22,15 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
   showStatusDot = true,
   showName = true,
   className,
+  onClick,
 }) => {
+  const [hasError, setHasError] = useState(false);
+
+  // Reset error when logoUrl changes
+  useEffect(() => {
+    setHasError(false);
+  }, [logoUrl]);
+
   // Generate 2-letter monogram (e.g. "Mocha Bliss Cafe" => "MB", "The Urban Bistro" => "UB")
   const getInitials = (str: string): string => {
     if (!str) return 'CF';
@@ -39,7 +48,7 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
   const initials = getInitials(name || 'Velora Cafe');
 
   const avatarSizes = {
-    sm: 'w-7 h-7 text-xs rounded-lg',
+    sm: 'w-8 h-8 text-xs rounded-xl',
     md: 'w-10 h-10 text-sm rounded-xl',
     lg: 'w-12 h-12 text-base rounded-2xl',
   };
@@ -50,22 +59,28 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
     lg: 'text-base font-extrabold',
   };
 
+  const isImageValid = Boolean(logoUrl && !hasError);
+
   return (
-    <div className={cn('flex items-center gap-2.5 select-none', className)}>
+    <div
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-2.5 select-none',
+        onClick && 'cursor-pointer hover:opacity-95 active:scale-[0.98] transition-all',
+        className
+      )}
+    >
       {/* Logo Image OR Monogram Badge */}
       <div className="relative shrink-0">
-        {logoUrl ? (
+        {isImageValid ? (
           <img
-            src={logoUrl}
+            src={logoUrl!}
             alt={name}
             className={cn(
-              'object-cover border border-amber-500/30 shadow-sm',
+              'object-cover border border-amber-500/30 shadow-sm bg-white dark:bg-stone-900',
               avatarSizes[size]
             )}
-            onError={(e) => {
-              // fallback if image link fails
-              (e.target as HTMLElement).style.display = 'none';
-            }}
+            onError={() => setHasError(true)}
           />
         ) : (
           <div

@@ -6,7 +6,138 @@ This document provides a concise, chronological log of all features, enhancement
 
 ## 📅 Chronological Ledger
 
-### 1. 2026-09-15 — Feature: POS Menu Page Redesign — Ordering View & Visual Food Catalog ([`pos-menu-page-redesign.md`](file:///c:/Learning/projects/qsrsystem/docs/pos-menu-page-redesign.md), [`POSTableSubheader.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSubheader.tsx), [`POSVerticalCategorySidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSVerticalCategorySidebar.tsx), [`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), [`foodImageUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/foodImageUtils.ts), [`POSLayout.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/views/POSLayout.tsx), [`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx))
+### 1. 2026-09-17 — Feature: Comprehensive Reports Suite Architecture (Modules Sidebar, Inventory & Menu Item Sales Reports, Custom Calendar Picker & Pagination) ([`ReportsView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/ReportsView.tsx), [`ReportsCategorySidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/ReportsCategorySidebar.tsx), [`ReportCategoryDropdown.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/ReportCategoryDropdown.tsx), [`InventoryReport.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/InventoryReport.tsx), [`MenuItemWiseReport.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/MenuItemWiseReport.tsx), [`CustomDateRangePicker.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/CustomDateRangePicker.tsx), [`ReportPagination.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/ReportPagination.tsx), [`TotalSummaryReport.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/TotalSummaryReport.tsx), [`OrderHistoryReport.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/OrderHistoryReport.tsx))
+- **Type**: Reporting Engine Expansion, Data Visualization & Modular Analytics Architecture
+- **Summary**:
+  - **Reports Module Category Sidebar (`ReportsCategorySidebar.tsx` & `ReportCategoryDropdown.tsx`)**:
+    - Replaced the legacy horizontal sub-tabs with a dedicated vertical sidebar (`w-60 lg:w-64`) on desktop/tablet, providing instant 1-tap switching across 4 major reporting modules:
+      1. 📊 **Total Summary**: Sales KPIs, payment tender breakdown, sales velocity, and date-wise revenue.
+      2. 📜 **Order History**: Itemized order ledger with search, tender filters, and order inspection.
+      3. 📦 **Stock & Inventory**: Real-time ingredient tracking, low-stock alerts, safety thresholds, and valuation.
+      4. 🍽️ **Menu Item Wise**: Dish-level sales performance, quantity sold, revenue ranking, and diet types.
+    - Responsive Mobile Dropdown (`ReportCategoryDropdown.tsx`): On mobile displays, collapses into an intuitive category dropdown picker with live module icons.
+    - Fixed Viewport Containment: Encapsulated the main view in `flex-1 min-h-0 overflow-hidden` so the module sidebar remains fixed while only the right-hand report content scrolls internally (`overflow-y-auto`).
+  - **Stock & Inventory Report Module (`InventoryReport.tsx`)**:
+    - **Inventory Health KPIs**: Added live metric cards for Total Raw Items, Healthy In-Stock, Low Stock Alerts, Out of Stock warnings, and Total Inventory Asset Valuation (`stock * costPerUnit`).
+    - **Multi-Dimensional Filters**: Search by ingredient name, filter by Health Status (`ALL`, `GOOD`, `LOW`, `OUT`), and category filter pills with live item count chips.
+    - **Sortable Interactive Table**: Click-to-sort columns (Item Name, Category, Stock Level & Unit, Threshold, Status, Total Asset Value).
+  - **Menu Item-Wise Sales Performance Report (`MenuItemWiseReport.tsx`)**:
+    - **Item Analytics KPIs**: Displays Total Dishes Sold, Top Grossing Menu Item, Unique Items Ordered, and Total Dish Revenue.
+    - **Real-Time Catalog Aggregation**: Groups order lines by dish ID and calculates Quantity Sold, Total Revenue, Average Selling Price, and Revenue Share Percentage (% of overall food sales).
+    - **Dietary & Category Filtering**: Filter by Food Category and Dietary preference (`All`, `Veg`, `Non-Veg`, `Egg`, `Vegan`).
+    - **Sortable Columns**: Sort by dish name, category, quantity sold, total revenue, average price, or revenue share %.
+  - **Interactive Custom Date Range Picker (`CustomDateRangePicker.tsx`)**:
+    - Replaced basic HTML date inputs with a custom-styled interactive calendar popover.
+    - Features month-by-month navigation, quick presets (`Today`, `Past 7 Days`, `Past 30 Days`), visual range highlighting between `From` and `To` dates, and automatic enforcement preventing future date selection.
+    - Displays clean trigger pill: `From: dd-mm-yyyy → To: dd-mm-yyyy` with 1-click clear action.
+  - **Unified Reusable Report Pagination (`ReportPagination.tsx`)**:
+    - Built a standardized pagination component with configurable rows per page (`10`, `15`, `25`, `50`), current range indicator (e.g. `Showing 1–15 of 48 records`), first/previous/next/last stepping, and smart ellipsis page numbers.
+    - Integrated across `TotalSummaryReport`, `OrderHistoryReport`, `InventoryReport`, and `MenuItemWiseReport`.
+
+---
+
+### 2. 2026-09-17 — Enhancement: Client-Side Logo Compression, 10MB Payload Support & Brand Monogram Store Profile Quick Launch ([`StoreProfileModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/StoreProfileModal.tsx), [`CafeBrandBadge.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/ui/CafeBrandBadge.tsx), [`POSTopNav.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTopNav.tsx), [`main.ts`](file:///c:/Learning/projects/qsrsystem/backend/src/main.ts), [`setting.controller.ts`](file:///c:/Learning/projects/qsrsystem/backend/src/setting/setting.controller.ts))
+- **Type**: Image Optimization, Backend Payload Capacity & Store Profile Access
+- **Summary**:
+  - **Client-Side Canvas Image Compression (`StoreProfileModal.tsx`)**:
+    - Integrated a browser-side HTML Canvas image compressor (`compressImage`) that automatically downscales and compresses high-resolution logo uploads to a maximum 512×512 resolution at 85% JPEG/PNG quality.
+    - Expanded allowed file upload size from 2MB to 10MB, since large DSLR or phone photos are compressed down to lightweight ~50KB data URLs client-side before submission.
+    - Modal State Lifecycle: Added `useEffect` hook to synchronize form state whenever `isOpen` or `storeProfile` changes, preventing stale input values when reopening the modal.
+  - **Backend JSON Payload Limit Expansion (`main.ts` & `setting.controller.ts`)**:
+    - Configured NestJS body parser with `bodyParser.json({ limit: '10mb' })` and `bodyParser.urlencoded({ limit: '10mb' })`, allowing large image data URLs to save without triggering `413 Payload Too Large` HTTP errors.
+  - **Brand Badge Monogram Polish & Instant Profile Launch (`CafeBrandBadge.tsx` & `POSTopNav.tsx`)**:
+    - Enhanced `CafeBrandBadge` with an interactive `onClick` prop, hover opacity styling, and active touch feedback (`active:scale-[0.98]`).
+    - Enlarged small avatar size from `w-7 h-7` to `w-8 h-8 rounded-xl` for better monogram readability and visual balance.
+    - Added error handling state (`hasError` and `onError`) to gracefully fall back to the 2-letter text monogram if a custom logo image URL fails to load.
+    - In `POSTopNav.tsx`, wired `onClick={onOpenStoreProfile}` directly to the brand badge, allowing store managers to open Store Profile in 1 tap from anywhere in the POS.
+
+---
+
+### 3. 2026-09-17 — Enhancement: POS Top Navigation Cleanup & Floor Terminal Collapsed Controls ([`POSTopNav.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTopNav.tsx), [`POSTableTerminalView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableTerminalView.tsx), [`POSVerticalCategorySidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSVerticalCategorySidebar.tsx))
+- **Type**: POS Navigation Streamlining & Floor Layout Compactness
+- **Summary**:
+  - **Streamlined Staff Profile Dropdown (`POSTopNav.tsx`)**:
+    - Removed redundant "Store & Owner Profile", "Store Settings", and "Lock / Log Out" buttons from the staff avatar dropdown.
+    - Brand settings are now accessed directly via the top-left brand monogram badge, and logout is positioned directly in the POS left navigation rail.
+    - User avatar menu now functions as a clean staff identity card displaying cashier/waiter name, online status pulse, role, and cafe code without administrative clutter.
+  - **Floor Area Sidebar Collapsed Rail (`POSTableTerminalView.tsx`)**:
+    - Added compact collapsed rail support for dining sections when the area sidebar is toggled closed (`w-12 lg:w-14`).
+    - Renders square mini-buttons with the uppercase first letter of each dining zone (e.g. `M` for Main Dining, `R` for Rooftop, `A` for AC Hall) with active section color theme borders.
+    - Added collapsed mini footer in the floor view rail with 1-click `Signout` (`LogOut` icon) and app version badge (`v1.0.0`).
+
+---
+
+### 4. 2026-09-16 — Feature: Streamlined POS Product Cards, In-Cart Quantity Badges, Category View Transitions & Terminal Navigation Polish ([`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), [`POSVerticalCategorySidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSVerticalCategorySidebar.tsx), [`POSTableTerminalView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableTerminalView.tsx), [`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx), [`index.css`](file:///c:/Learning/projects/qsrsystem/frontend/src/index.css))
+- **Type**: High-Velocity POS Ordering UX, Smooth Animations & Terminal Navigation Polish
+- **Summary**:
+  - **Streamlined Product Card Controls (`POSProductGrid.tsx`)**:
+    - **Replaced Inline Stepper with Minimalist Count Badge**: Eliminated bulky `[- qty +]` stepper buttons directly on product cards that caused button clutter and mis-clicks during rapid order punch-in.
+    - **High-Visibility Quantity Badge**: When an item has `qty > 0` in cart, the card renders a vibrant amber pill badge `(x{qty})` (`bg-amber-500 text-stone-950 font-black text-xs font-mono shadow-2xs`) alongside an active card border ring (`border-amber-500 ring-2 ring-amber-500/50`).
+    - **Full-Card Touch Target & Subtle Touch Cue**: Clicking or tapping anywhere on the card instantly increments quantity in cart with subtle active tactile feedback (`active:scale-[0.98]`). Added a subtle square `+` touch cue icon button on card bottom-right that illuminates amber on card hover (`group-hover:bg-amber-500 group-hover:text-stone-950`).
+    - **Centralized Cart Adjustments**: Quantity decrementing, manual numeric entry, and removal remain cleanly consolidated in `POSCartSidebar`, keeping the product grid pure, fast, and uncluttered.
+  - **Smooth Category Switching Transitions & Scroll-to-Top**:
+    - Switching categories now automatically resets container scroll to top smoothly.
+    - Integrated native `document.startViewTransition` with fallback for seamless animated category switching.
+    - Added `@keyframes fadeInSlideUp` (`.animate-fade-in-up`) in `index.css` (`0.24s cubic-bezier(0.16, 1, 0.3, 1)`) for fluid upward fade-in animation of food cards and catalog sections.
+  - **Refined Badges & Metrics Ergonomics**:
+    - **Price & Dietary Symbols**: Enhanced typography with monospaced bold price (`₹{price}`) and standardized FSSAI dietary indicator badges (Veg, Non-Veg, Egg, Vegan).
+    - **Low Stock Tooltip Badge**: Extracted reusable `renderLowStockBadge` with detailed recipe raw material inventory inspection tooltip (`<AlertTriangle />`, ingredient names, units, and available stock).
+  - **POS Category Sidebar Navigation & Direct Staff Logout (`POSVerticalCategorySidebar.tsx`)**:
+    - Replaced the redundant "Manage Menu" button in the bottom rail with a direct staff **Logout** action (`LogOut` icon with rose hover feedback `text-rose-600 dark:text-rose-400 hover:bg-rose-50`), invoking `handleLogout()` and redirecting cashiers/waiters to `/login`.
+    - Added an official app build version badge (`v1.0.0`) in the sidebar footer.
+  - **Simplified "Temporary Extra Table" Card (`POSTableTerminalView.tsx`)**:
+    - Cleaned up the ad-hoc table creator card in the Floor Grid view.
+    - Centered the "Temporary" status badge pill at the top of the dashed table card.
+    - Removed duplicate `+` button from the card header and bottom "Add Table" button, achieving a balanced, distraction-free dashed card that opens `AddTablePOSModal` in 1 tap.
+  - **Tightened Current Ticket Header Spacing (`POSCartSidebar.tsx`)**:
+    - Reduced Current Ticket header container padding (`px-3 py-1.5` sm:`px-3.5 sm:py-2`) and column headers to maximize vertical viewport space for active ticket items, kitchen notes, and KOT batches.
+
+---
+
+### 5. 2026-09-16 — Refactor & UI Polish: Portal-Based Tooltip Architecture, Collapsed Sidebar Brand Preview & Settings Panels Polish ([`Tooltip.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/ui/Tooltip.tsx), [`Sidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/common/Sidebar.tsx), [`SettingsView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/SettingsView.tsx), [`PrinterSettingsPanel.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/PrinterSettingsPanel.tsx), [`POSDisplaySettingsPanel.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/POSDisplaySettingsPanel.tsx))
+- **Type**: Component Library Refactoring, Tooltip Portal Architecture & Settings UI Polish
+- **Summary**:
+  - **React Portal Tooltip Architecture (`Tooltip.tsx`)**:
+    - **Rendered to `document.body` via `createPortal`**: Upgraded the global `Tooltip` component to render into `document.body` via React Portal, completely breaking free from parent DOM hierarchy constraints.
+    - **Zero Overflow Clipping & Scrollbar Prevention**: Completely eliminated edge clipping and accidental scrollbar triggers inside `overflow-hidden` containers (e.g. collapsed `Sidebar`, scrollable tables, modal headers, POS drawers).
+    - **Dynamic Fixed Coordinate Positioning**: Computes exact viewport coordinates using `getBoundingClientRect()`, positioning tooltips fixed in window coordinates with custom configurable `offset` (default 8px) across all positions (`top`, `bottom`, `left`, `right`) and alignments (`start`, `center`, `end`).
+    - **Adaptive Viewport Listeners**: Automatically recalculates coordinates on window `resize` and scrolling (captured across all scrolling parent elements).
+    - **Smart Interaction Lifecycle**: Auto-dismisses on click or blur, with configurable hover delay (120ms), pointer-events prevention, and smooth scale-in transitions (`animate-in fade-in zoom-in-95`).
+  - **Collapsed Sidebar Brand Monogram Hover Tooltip (`Sidebar.tsx`)**:
+    - When the navigation sidebar is collapsed to icon rail (72px), hovering over the store brand monogram badge displays a rich, portal-rendered tooltip anchored to the right.
+    - Tooltip displays full Cafe Name, Cafe Code pill (`CF-MUM-001`), and "Store Operations" subtitle.
+    - Standardized navigation item link tooltips with offset spacing (`offset={12}`) and right positioning.
+  - **Settings Panels UI & Typography Polish**:
+    - **Store Profile & Identity (`SettingsView.tsx`)**: Redesigned into a unified, high-contrast container card featuring cafe monogram branding, contact details, GSTIN, and direct launcher to `StoreProfileModal`.
+    - **Printer Settings Header & Sub-Tabs (`PrinterSettingsPanel.tsx`)**: Reorganized default roll format card with instant 58mm Compact Mini vs 80mm Standard POS Thermal Roll toggle switch, refined sub-tabs for Bill/KOT/Item print configurations, and added sticky bottom bar with test print actions and save triggers.
+    - **POS Display Settings (`POSDisplaySettingsPanel.tsx`)**: Standardized terminal labels to "QSR (Quick POS)" and "Table POS", refined table borders, and added sticky bottom action footer.
+
+---
+
+### 6. 2026-09-16 — Feature: Per-Device & Per-Terminal POS Dish Image Visibility Matrix & High-Velocity Text-Only Mode ([`POSDisplaySettingsPanel.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/POSDisplaySettingsPanel.tsx), [`imageVisibilityUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/imageVisibilityUtils.ts), [`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), [`SettingsView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/SettingsView.tsx), [`app.types.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/types/app.types.ts))
+- **Type**: New Configuration Module, Terminal Performance Optimization & Adaptive Display Matrix
+- **Summary**:
+  - **Per-Device & Per-Terminal Visibility Matrix Architecture (`app.types.ts` & `imageVisibilityUtils.ts`)**:
+    - Created a 3×3 adaptive configuration matrix (`ItemImageVisibilityMatrix`) controlling dish photo visibility independently across:
+      - **Terminal Modes**: `QSR (Quick POS)`, `Table POS`, and `Digital Menu`
+      - **Device Form Factors**: `Desktop` ($\ge$ 1024px), `Tablet` (768px – 1023px), and `Mobile` ($<$ 768px)
+    - **Default-Off Performance Policy**: All matrix cells default strictly to `false` (Text-Only Mode) to optimize cashier punch-in throughput, save device bandwidth, and maximize screen real estate.
+    - Built `useDeviceType()` hook with dynamic resize listener to detect device category in real time.
+    - Built `isItemImageVisible(settings, mode, device)` resolution engine with fallback to legacy `showItemImages` boolean.
+  - **Admin POS & Menu Display Settings Panel (`POSDisplaySettingsPanel.tsx`)**:
+    - Added a dedicated configuration view under System Configuration ("POS & Menu Display") with `<LayoutGrid />` icon.
+    - **Interactive Matrix Toggle Grid**: Individual cell toggles with checkmark badges, row-level quick toggles ("All ON / All OFF"), and column-level device toggles ("All ON / OFF").
+    - **Interactive Live Preview Sandbox**: Embedded interactive card preview allowing managers to test display output before saving. Allows toggling terminal mode, device view, and simulated cart quantity, previewing the live dish card in either Photo Mode or Text-Only Mode.
+    - **Persistence**: Persists JSON-serialized matrix (`itemImageVisibility`) and global flag (`showItemImages`) to backend settings with real-time `AppContext` synchronization.
+  - **High-Velocity Text-Only Card Mode in POS (`POSProductGrid.tsx`)**:
+    - When dish images are disabled for the active terminal and device:
+      - Eliminates dish photo containers, significantly reducing card height and doubling visible items per screen.
+      - Removes explicit `+ Add` button: the entire text-only card functions as a high-speed tap target that instantly adds or increments items in cart.
+      - Displays dish title, Indian dietary symbol (Veg/Non-Veg/Egg/Vegan), subcategory or description, price in Indian Rupees, and in-cart quantity indicator `(x{qty})`.
+
+---
+
+### 7. 2026-09-15 — Feature: POS Menu Page Redesign — Ordering View & Visual Food Catalog ([`pos-menu-page-redesign.md`](file:///c:/Learning/projects/qsrsystem/docs/pos-menu-page-redesign.md), [`POSTableSubheader.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableSubheader.tsx), [`POSVerticalCategorySidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSVerticalCategorySidebar.tsx), [`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx), [`foodImageUtils.ts`](file:///c:/Learning/projects/qsrsystem/frontend/src/lib/foodImageUtils.ts), [`POSLayout.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/views/POSLayout.tsx), [`POSCartSidebar.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSCartSidebar.tsx))
 - **Type**: UI/UX & High-Velocity POS Ordering Redesign (Matching Image 2 / Figure 2)
 - **Summary**:
   - **Active Table Subheader**:
@@ -808,3 +939,10 @@ This document provides a concise, chronological log of all features, enhancement
 | **Sound Notification** | Complete an order on POS -> listen for chime and check floating toast alert. | [Order Notification Spec](order-notification-and-sound-feature.md) |
 | **Partial Payments** | Split payment into Cash + UPI -> verify order is marked `Partially Paid` until fully settled. | [Partial Payment Spec](partial-payment-feature.md) |
 | **Offline Licensing** | Access `/activate` -> verify offline token activation and expiry checks. | [Local POS Onboarding](local-pos-onboarding.md) |
+| **POS Dish Image Visibility Matrix** | Admin Settings $\rightarrow$ POS & Menu Display. Verify 3×3 matrix toggles across QSR (Quick POS), Table POS, Digital Menu and Desktop, Tablet, Mobile devices. Verify live card preview sandbox updates in real time. Switch to POS terminal and confirm text-only vs photo mode matching the matrix. | [`POSDisplaySettingsPanel.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/POSDisplaySettingsPanel.tsx) |
+| **Portal-Based Tooltips** | Hover over collapsed sidebar monogram logo, navigation links, table card buttons, and low-stock warning indicators. Verify tooltips render via React Portal in `document.body` without clipping by `overflow-hidden` containers and without triggering scrollbars. | [`Tooltip.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/ui/Tooltip.tsx) |
+| **Streamlined Product Cards & Category Transitions** | Open POS terminal (Quick or Table). Tap any product card to add to cart and observe the amber `(x{qty})` count badge and border glow. Switch categories and verify smooth scroll-to-top with fade-in transition (`animate-fade-in-up`). In Floor Terminal, verify simplified Temporary Extra Table card. In POS Category Sidebar, verify direct staff Logout button and `v1.0.0` version badge. | [`POSProductGrid.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSProductGrid.tsx) |
+| **Reports Suite (Inventory & Item Sales)** | Management $\rightarrow$ Reports. Click "Stock & Inventory" in sidebar; test search, health status filters, column sorting, and valuation totals. Click "Menu Item Wise"; test dietary chips, dish search, revenue share %, and item volume sorting. | [`ReportsView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/ReportsView.tsx) |
+| **Custom Calendar Date Picker & Pagination** | Open Reports. Click custom date range button to open calendar popover; verify future dates are blocked, test "Today", "Past 7 Days", and "Past 30 Days" presets. Test rows per page dropdown (10, 15, 25, 50) and page navigation buttons. | [`CustomDateRangePicker.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/reports/CustomDateRangePicker.tsx) |
+| **Store Profile Logo Compression & Quick Launch** | In POS Terminal top-nav, click the cafe monogram badge to open Store Profile directly. Upload a high-resolution image (>2MB up to 10MB) and verify client-side canvas compression saves successfully without 413 error. Verify brand badge displays logo with fallback monogram on load failure. | [`StoreProfileModal.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/settings/StoreProfileModal.tsx) |
+| **Floor Terminal Collapsed Area Rail** | Open Table POS Floor View. Toggle area sidebar closed; verify mini icon buttons show first letter of area name and highlight with area theme color. Click Signout in collapsed rail footer. | [`POSTableTerminalView.tsx`](file:///c:/Learning/projects/qsrsystem/frontend/src/components/pos/POSTableTerminalView.tsx) |

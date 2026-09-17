@@ -311,34 +311,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* 3. Bottom User Logout Section */}
-      <div className="p-2 border-t border-stone-200/80 dark:border-stone-800 shrink-0">
-        <Tooltip
-          content={isCollapsed ? 'Sign Out' : null}
-          position="right"
-          offset={10}
-          wrapperClassName="w-full block"
-        >
+      {/* 3. Bottom User Signout Section & Build Version */}
+      {!isCollapsed ? (
+        <div className="p-2.5 border-t border-stone-200/70 dark:border-stone-800 shrink-0 bg-stone-50/50 dark:bg-stone-900/50 flex items-center justify-between">
           <button
             type="button"
             onClick={onSignOut}
-            className="group w-full h-11 flex items-center rounded-2xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer overflow-hidden"
-            aria-label="Sign Out"
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-95 group"
+            title="Signout"
           >
-            <div className="w-[56px] shrink-0 flex items-center justify-center">
-              <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-            </div>
-            <div
-              className={cn(
-                'flex-1 min-w-0 pr-3 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-left',
-                isCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
-              )}
-            >
-              <span className="text-xs font-bold truncate">Sign Out</span>
-            </div>
+            <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            <span>Signout</span>
           </button>
-        </Tooltip>
-      </div>
+          <span className="text-[11px] font-mono font-bold text-stone-400 dark:text-stone-500 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800/80 border border-stone-200/60 dark:border-stone-750/50 select-none">
+            v1.0.0
+          </span>
+        </div>
+      ) : (
+        <div className="py-2.5 border-t border-stone-200/70 dark:border-stone-800 w-full flex flex-col items-center gap-1.5 shrink-0 bg-stone-50/50 dark:bg-stone-900/50">
+          <Tooltip content="Signout" position="right" offset={10}>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer active:scale-95 group"
+              aria-label="Signout"
+            >
+              <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            </button>
+          </Tooltip>
+          <span className="text-[9px] font-mono font-bold text-stone-400 dark:text-stone-500 select-none">
+            v1.0.0
+          </span>
+        </div>
+      )}
     </aside>
   );
 };

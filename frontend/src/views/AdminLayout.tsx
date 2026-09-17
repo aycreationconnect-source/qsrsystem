@@ -63,7 +63,7 @@ export const AdminLayout: React.FC = () => {
           onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
         />
 
-        <main className="flex-1 overflow-y-auto min-h-0 flex flex-col relative z-0">
+        <main className="flex-1 overflow-y-auto min-h-0 flex flex-col relative z-0 scroll-smooth">
           <Outlet />
         </main>
       </div>
