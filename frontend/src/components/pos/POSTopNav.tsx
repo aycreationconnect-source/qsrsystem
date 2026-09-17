@@ -246,27 +246,20 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
         <div className="hidden sm:flex flex-col min-w-0 pl-3 border-l border-stone-200 dark:border-stone-800">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 leading-tight">
-              {posMode === 'table' ? 'POS - Table Service' : 'POS - Quick Order'}
+              {posMode === 'table' ? 'Table Order' : 'POS - Quick Order'}
             </h2>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#fff5ea] dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-800/60">
-              {posMode === 'table' ? (
-                <>
-                  <Utensils className="w-3 h-3 text-amber-600" />
-                  Table Mode
-                </>
-              ) : (
-                <>
-                  <Zap className="w-3 h-3 text-amber-600" />
-                  Quick Mode
-                </>
-              )}
-            </span>
+            {posMode !== 'table' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#fff5ea] dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-800/60">
+                <Zap className="w-3 h-3 text-amber-600" />
+                Quick Mode
+              </span>
+            )}
           </div>
-          <p className="hidden xl:block text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
-            {posMode === 'table'
-              ? 'Dine-in floor orders, table booking & live billing'
-              : 'Fast counter sales, express checkout & takeaway billing'}
-          </p>
+          {posMode !== 'table' && (
+            <p className="hidden xl:block text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">
+              Fast counter sales, express checkout & takeaway billing
+            </p>
+          )}
         </div>
       </div>
 
@@ -348,7 +341,7 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
         </Tooltip>
 
         {/* License Status Pill (Added as explicitly requested by user) */}
-        {licenseStatus && (
+        {licenseStatus && posMode !== 'table' && (
           <Tooltip
             content={`Station Licensed • ${licenseStatus.daysRemaining} days remaining. Click for package details.`}
             position="bottom"
@@ -366,117 +359,119 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
         )}
 
         {/* Notifications Popover Bell (Figure 2 with red indicator) */}
-        <div className="relative" ref={notificationRef}>
-          <Tooltip content="Live Alerts & Notifications" position="bottom">
-            <button
-              type="button"
-              onClick={() => setIsNotificationsOpen((prev) => !prev)}
-              className={cn(
-                'relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition-all cursor-pointer select-none',
-                isNotificationsOpen
-                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/30'
-                  : 'bg-stone-100 hover:bg-stone-200/80 dark:bg-stone-800 dark:hover:bg-stone-750 text-stone-600 dark:text-stone-300'
-              )}
-              aria-label="Notifications"
-            >
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-stone-700 dark:text-stone-200" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white shadow-sm ring-2 ring-white dark:ring-stone-900 pointer-events-none animate-in zoom-in-50 duration-150">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-          </Tooltip>
+        {posMode !== 'table' && (
+          <div className="relative" ref={notificationRef}>
+            <Tooltip content="Live Alerts & Notifications" position="bottom">
+              <button
+                type="button"
+                onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                className={cn(
+                  'relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition-all cursor-pointer select-none',
+                  isNotificationsOpen
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/30'
+                    : 'bg-stone-100 hover:bg-stone-200/80 dark:bg-stone-800 dark:hover:bg-stone-750 text-stone-600 dark:text-stone-300'
+                )}
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-stone-700 dark:text-stone-200" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white shadow-sm ring-2 ring-white dark:ring-stone-900 pointer-events-none animate-in zoom-in-50 duration-150">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            </Tooltip>
 
-          {/* Notifications Dropdown Panel */}
-          {isNotificationsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-              {/* Header */}
-              <div className="p-3.5 bg-stone-50/80 dark:bg-stone-850/80 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100">
-                    Notifications
-                  </h3>
-                  {unreadCount > 0 ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                      {unreadCount} unread
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      Caught up
-                    </span>
+            {/* Notifications Dropdown Panel */}
+            {isNotificationsOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                {/* Header */}
+                <div className="p-3.5 bg-stone-50/80 dark:bg-stone-850/80 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100">
+                      Notifications
+                    </h3>
+                    {unreadCount > 0 ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                        {unreadCount} unread
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        Caught up
+                      </span>
+                    )}
+                  </div>
+
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={markAllAsRead}
+                      className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      <span>Mark all read</span>
+                    </button>
                   )}
                 </div>
 
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={markAllAsRead}
-                    className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <CheckCheck className="w-3.5 h-3.5" />
-                    <span>Mark all read</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Notification List */}
-              <div className="max-h-80 overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800">
-                {activeNotifications.length === 0 ? (
-                  <div className="py-8 px-4 text-center">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2.5">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                      All caught up!
-                    </p>
-                    <p className="text-[11px] text-stone-400 mt-0.5">
-                      No pending order alerts or stock warnings.
-                    </p>
-                  </div>
-                ) : (
-                  activeNotifications.map((n) => (
-                    <div
-                      key={n.id}
-                      onClick={() => markSingleAsRead(n.id)}
-                      className="p-3 flex items-start gap-2.5 hover:bg-stone-50 dark:hover:bg-stone-800/60 transition-colors cursor-pointer group bg-amber-50/20 dark:bg-amber-950/10"
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {n.type === 'inventory' ? (
-                          <div className="w-7 h-7 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
-                            <Boxes className="w-3.5 h-3.5" />
-                          </div>
-                        ) : n.type === 'license' ? (
-                          <div className="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
-                            <ShieldAlert className="w-3.5 h-3.5" />
-                          </div>
-                        ) : (
-                          <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
-                            <Receipt className="w-3.5 h-3.5" />
-                          </div>
-                        )}
+                {/* Notification List */}
+                <div className="max-h-80 overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800">
+                  {activeNotifications.length === 0 ? (
+                    <div className="py-8 px-4 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2.5">
+                        <Sparkles className="w-6 h-6" />
                       </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-extrabold text-stone-900 dark:text-stone-100 truncate">
-                            {n.title}
-                          </h4>
-                          <span className="text-[10px] font-mono text-stone-400 shrink-0">
-                            {n.timeAgo}
-                          </span>
+                      <p className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                        All caught up!
+                      </p>
+                      <p className="text-[11px] text-stone-400 mt-0.5">
+                        No pending order alerts or stock warnings.
+                      </p>
+                    </div>
+                  ) : (
+                    activeNotifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => markSingleAsRead(n.id)}
+                        className="p-3 flex items-start gap-2.5 hover:bg-stone-50 dark:hover:bg-stone-800/60 transition-colors cursor-pointer group bg-amber-50/20 dark:bg-amber-950/10"
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {n.type === 'inventory' ? (
+                            <div className="w-7 h-7 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
+                              <Boxes className="w-3.5 h-3.5" />
+                            </div>
+                          ) : n.type === 'license' ? (
+                            <div className="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
+                              <ShieldAlert className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
+                              <Receipt className="w-3.5 h-3.5" />
+                            </div>
+                          )}
                         </div>
-                        <p className="text-[11px] text-stone-600 dark:text-stone-300 mt-0.5 leading-snug line-clamp-2">
-                          {n.description}
-                        </p>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-extrabold text-stone-900 dark:text-stone-100 truncate">
+                              {n.title}
+                            </h4>
+                            <span className="text-[10px] font-mono text-stone-400 shrink-0">
+                              {n.timeAgo}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-stone-600 dark:text-stone-300 mt-0.5 leading-snug line-clamp-2">
+                            {n.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Staff User Avatar & Dropdown (Figure 2 "SK" with chevron) */}
         <div className="relative" ref={userMenuRef}>

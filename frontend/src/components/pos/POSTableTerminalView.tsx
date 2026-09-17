@@ -386,21 +386,6 @@ export const POSTableTerminalView: React.FC = () => {
               })}
             </div>
 
-            {/* Footer: Signout Button & Build Version */}
-            <div className="p-2.5 border-t border-stone-200/70 dark:border-stone-800 shrink-0 bg-stone-50/50 dark:bg-stone-900/50 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-95 group"
-                title="Signout"
-              >
-                <LogOut className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-                <span>Signout</span>
-              </button>
-              <span className="text-[11px] font-mono font-bold text-stone-400 dark:text-stone-500 px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800/80 border border-stone-200/60 dark:border-stone-750/50">
-                v1.0.0
-              </span>
-            </div>
           </aside>
         ) : (
           /* Collapsed Mini-Sidebar Rail (Maximum Space for Table Cards) */
@@ -455,20 +440,6 @@ export const POSTableTerminalView: React.FC = () => {
               </div>
             </div>
 
-            {/* Collapsed Mini Footer: Signout & Version */}
-            <div className="pt-2 border-t border-stone-200/70 dark:border-stone-800 w-full flex flex-col items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
-                title="Signout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-              <span className="text-[9px] font-mono font-bold text-stone-400 dark:text-stone-500 select-none">
-                v1.0.0
-              </span>
-            </div>
           </aside>
         )}
 
@@ -595,7 +566,7 @@ export const POSTableTerminalView: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-3 sm:gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-3 sm:gap-3.5">
                 {filteredTables.map((table) => {
                   const status = getEffectiveTableStatus(table);
                   const key = String(table.id);
@@ -880,7 +851,7 @@ export const POSTableTerminalView: React.FC = () => {
         </main>
 
         {/* Right Column: "Select a Table" Guide Panel & Quick Tips (Desktop Only, Figure 2) */}
-        <aside className="hidden lg:flex flex-col w-72 xl:w-80 bg-white dark:bg-stone-900 border-l border-stone-200/80 dark:border-stone-800 shrink-0 p-6 select-none justify-center">
+        <aside className="hidden xl:flex flex-col w-72 xl:w-80 bg-white dark:bg-stone-900 border-l border-stone-200/80 dark:border-stone-800 shrink-0 p-6 select-none justify-center">
           <div className="flex flex-col items-center text-center">
             {/* Warm fork & knife emblem */}
             <div className="w-20 h-20 rounded-3xl bg-[#fff4e5] dark:bg-amber-950/30 text-amber-500 flex items-center justify-center mb-5 border border-amber-200/80 dark:border-amber-800/50 shadow-xs">
@@ -928,39 +899,7 @@ export const POSTableTerminalView: React.FC = () => {
         </aside>
       </div>
 
-      {/* Fixed Bottom Status & Summary Bar (Figure 2 Bottom Bar) */}
-      <footer className="h-11 px-4 sm:px-6 bg-white dark:bg-stone-900 border-t border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-4 shrink-0 text-xs text-stone-500 dark:text-stone-400 z-20">
-        {/* Left Legend Indicators */}
-        <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar font-bold text-[11px] sm:text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Available</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>Occupied</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span>Reserved</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-sky-500" />
-            <span>Cleaning</span>
-          </div>
-        </div>
 
-        {/* Right Statistics Telemetry */}
-        <div className="hidden sm:flex items-center gap-2 font-medium text-[11px] sm:text-xs shrink-0 font-mono">
-          <span>Total Tables: <strong className="text-stone-900 dark:text-stone-100">{stats.total}</strong></span>
-          <span className="text-stone-300 dark:text-stone-700">|</span>
-          <span>Occupied: <strong className="text-amber-600 dark:text-amber-400">{stats.occupied}</strong></span>
-          <span className="text-stone-300 dark:text-stone-700">|</span>
-          <span>Available: <strong className="text-emerald-600 dark:text-emerald-400">{stats.available}</strong></span>
-          <span className="text-stone-300 dark:text-stone-700">|</span>
-          <span>Reserved: <strong className="text-rose-600 dark:text-rose-400">{stats.reserved}</strong></span>
-        </div>
-      </footer>
 
       {/* Table Reservation Modal */}
       <POSReserveTableModal

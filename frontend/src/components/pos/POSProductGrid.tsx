@@ -263,8 +263,8 @@ export const POSProductGrid: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile/Small Tablet Horizontal Category Rail (hidden on md and above) */}
-      <div className="md:hidden px-3 py-2 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-200/60 dark:border-stone-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
+      {/* Mobile/Small Tablet Horizontal Category Rail (hidden on xl and above) */}
+      <div className="xl:hidden px-3 py-2 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-200/60 dark:border-stone-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
         <button
           type="button"
           onClick={() => setPosCategory('All Items')}
