@@ -11,6 +11,7 @@ export interface CafeBrandBadgeProps {
   showName?: boolean;
   className?: string;
   onClick?: () => void;
+  subtext?: React.ReactNode;
 }
 
 export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
@@ -23,6 +24,7 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
   showName = true,
   className,
   onClick,
+  subtext,
 }) => {
   const [hasError, setHasError] = useState(false);
 
@@ -114,11 +116,12 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
             </span>
           </div>
 
-          {showCode && cafeCode && (
+          {showCode && cafeCode && !subtext && (
             <span className="text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400/90 tracking-wide mt-0.5">
               {cafeCode}
             </span>
           )}
+          {subtext}
         </div>
       )}
     </div>

@@ -17,6 +17,8 @@ interface POSContextType {
   setPosSearchQuery: (query: string) => void;
   dietFilter: DietFilterType;
   setDietFilter: (filter: DietFilterType) => void;
+  viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
   showCheckoutModal: boolean;
   setShowCheckoutModal: (show: boolean) => void;
   showOrderHistoryModal: boolean;
@@ -105,6 +107,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [posCategory, setPosCategory] = useState<string>('All Items');
   const [posSearchQuery, setPosSearchQuery] = useState('');
   const [dietFilter, setDietFilter] = useState<DietFilterType>('ALL');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
   const [paymentType, setPaymentType] = useState('Cash');
@@ -1095,6 +1098,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setPosSearchQuery,
         dietFilter,
         setDietFilter,
+        viewMode,
+        setViewMode,
         showCheckoutModal,
         setShowCheckoutModal,
         showOrderHistoryModal,

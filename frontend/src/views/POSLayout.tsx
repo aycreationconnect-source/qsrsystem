@@ -36,14 +36,12 @@ export const POSLayout: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#faf8f5] dark:bg-[#0c0f17] text-stone-900 dark:text-stone-100 select-none">
-      {/* 1. Station Top Navigation Bar (Hidden in Table Order mode to maximize space for terminal) */}
-      {!(posMode === 'table' && selectedTableId) && (
-        <POSTopNav
-          onOpenMobileCart={() => setIsMobileCartOpen(true)}
-          onOpenPackageDetails={() => setIsPackageModalOpen(true)}
-          onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
-        />
-      )}
+      {/* 1. Station Top Navigation Bar */}
+      <POSTopNav
+        onOpenMobileCart={() => setIsMobileCartOpen(true)}
+        onOpenPackageDetails={() => setIsPackageModalOpen(true)}
+        onOpenStoreProfile={() => setIsStoreProfileModalOpen(true)}
+      />
 
       {/* 2. Main Operational Area */}
       <div className="flex-1 flex overflow-hidden relative">
@@ -63,7 +61,7 @@ export const POSLayout: React.FC = () => {
               {/* Menu Operational Canvas */}
               <div className="flex-1 flex overflow-hidden relative">
                 {/* Left Column: Dedicated Vertical Categories Sidebar */}
-                <div className="hidden xl:flex h-full shrink-0">
+                <div className="hidden 2xl:flex h-full shrink-0">
                   <POSVerticalCategorySidebar />
                 </div>
 

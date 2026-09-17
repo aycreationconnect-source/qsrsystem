@@ -46,6 +46,7 @@ export const POSTableTerminalView: React.FC = () => {
     setTableOrders,
     tableStartTimes,
     setTableStartTimes,
+    tablePrinted,
     setTablePrinted,
     tableReservations,
     tableCleaningStatus,
@@ -577,6 +578,7 @@ export const POSTableTerminalView: React.FC = () => {
 
                   const duration = isOccupied ? getTableDuration(table.id) : null;
                   const reservation = isReserved ? tableReservations[key] : null;
+                  const isPrinted = !!(tablePrinted[key] || tablePrinted[Number(key)]);
                   const isMenuOpen = activeDropdownTableId === table.id;
 
                   return (
@@ -595,11 +597,17 @@ export const POSTableTerminalView: React.FC = () => {
                       )}
                     >
                       {/* 1. Card Top Header: Table Name & 3-Dots Action Menu */}
-                      <div className="flex items-center justify-between gap-2 shrink-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex items-start justify-between gap-2 shrink-0">
+                        <div className="flex flex-col gap-1 min-w-0">
                           <h4 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate tracking-tight">
                             {table.name}
                           </h4>
+                          {isPrinted && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 w-max mt-0.5">
+                              <CheckCircle2 className="w-2.5 h-2.5 text-blue-500" />
+                              Bill Printed
+                            </span>
+                          )}
                         </div>
 
                         {/* Three Dots Action Dropdown */}
