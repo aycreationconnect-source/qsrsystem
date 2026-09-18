@@ -234,7 +234,7 @@ export const DashboardView: React.FC = () => {
   }, [appData.orders]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full min-w-0 max-w-[1540px] mx-auto">
       {/* 1. Core Stat Summary Cards (Orders Today, Today's Gross, Avg Bill Value, Occupied Tables) */}
       <StatCards
         ordersTodayCount={ordersTodayCount}
@@ -247,21 +247,21 @@ export const DashboardView: React.FC = () => {
       />
 
       {/* 2. Revenue Velocity & Payment Collection Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-7 flex flex-col">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch w-full min-w-0">
+        <div className="xl:col-span-7 flex flex-col min-w-0">
           <RevenueChart last7Days={last7Days} revenueByDay={revenueByDay} maxRev={maxRev} />
         </div>
-        <div className="lg:col-span-5 flex flex-col">
+        <div className="xl:col-span-5 flex flex-col min-w-0">
           <PaymentBreakdownCard data={paymentBreakdown} />
         </div>
       </div>
 
       {/* 3. Operational Insights: Best Sellers & Kitchen Pantry Stock Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-6 flex flex-col">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch w-full min-w-0">
+        <div className="xl:col-span-6 flex flex-col min-w-0">
           <TopSellingCard items={topSellingDishes} />
         </div>
-        <div className="lg:col-span-6 flex flex-col">
+        <div className="xl:col-span-6 flex flex-col min-w-0">
           <InventoryAlertCard
             lowStockItems={lowStockItems}
             totalInventoryCount={appData.inventory?.length || 0}

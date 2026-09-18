@@ -388,11 +388,11 @@ export const PrinterSettingsPanel: React.FC = () => {
       </div>
 
       {/* 3. Main Split Configuration & Live Preview Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full min-w-0">
         {/* =========================================================================
-            LEFT COLUMN: CONFIGURATION CONTROLS (lg:col-span-7)
+            LEFT COLUMN: CONFIGURATION CONTROLS (xl:col-span-7)
             ========================================================================= */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="xl:col-span-7 space-y-6 min-w-0">
           {/* TAB 1: BILL PRINT CONFIGURATION */}
           {activeSubTab === 'bill' && (
             <div className="bg-stone-50/60 dark:bg-stone-850/40 border border-stone-200/70 dark:border-stone-800 rounded-2xl p-5 sm:p-6 space-y-5">
@@ -1017,9 +1017,9 @@ export const PrinterSettingsPanel: React.FC = () => {
         </div>
 
         {/* =========================================================================
-            RIGHT COLUMN: INTERACTIVE LIVE THERMAL PREVIEW (lg:col-span-5)
+            RIGHT COLUMN: INTERACTIVE LIVE THERMAL PREVIEW (xl:col-span-5)
             ========================================================================= */}
-        <div className="lg:col-span-5 sticky top-6 space-y-4">
+        <div className="xl:col-span-5 xl:sticky xl:top-6 space-y-4 min-w-0 w-full">
           <div className="bg-stone-900 dark:bg-stone-950 rounded-3xl p-5 border border-stone-800 shadow-xl text-stone-200 space-y-4">
             {/* Header with Test Print Action */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-800">

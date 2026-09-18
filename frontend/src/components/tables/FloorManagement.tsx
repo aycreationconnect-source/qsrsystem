@@ -123,7 +123,7 @@ export const FloorManagement: React.FC = () => {
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Summary KPI Strip */}
       {totalAreas > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3.5">
           {/* Total Sections */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -421,7 +421,7 @@ export const FloorManagement: React.FC = () => {
                       <span>No tables matching "{searchQuery}" in {area.name}.</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                       {filteredAreaTables.map((t: any) => {
                         const statusInfo = getStatusBadge(t.status || 'Available');
                         return (

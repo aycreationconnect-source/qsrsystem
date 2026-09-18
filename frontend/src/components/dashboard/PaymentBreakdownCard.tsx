@@ -21,7 +21,7 @@ export const PaymentBreakdownCard: React.FC<PaymentBreakdownCardProps> = ({ data
   const { cash, upi, card, other, total, cashPercent, upiPercent, cardPercent, otherPercent } = data;
 
   return (
-    <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col justify-between transition-all">
+    <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col justify-between transition-all w-full min-w-0 overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-2">
         <div className="flex items-center gap-2.5">
