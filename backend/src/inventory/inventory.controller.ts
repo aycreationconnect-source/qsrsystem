@@ -54,4 +54,18 @@ export class InventoryController {
   remove(@Param('id') id: string) {
     return this.inventoryService.remove(+id);
   }
+
+  @Post('deduct-stock')
+  deductStock(
+    @Body() body: { items: Array<{ menuItemId: number; quantity: number }>; reason?: string }
+  ) {
+    return this.inventoryService.deductStockForItems(body.items, body.reason);
+  }
+
+  @Post('revert-stock')
+  revertStock(
+    @Body() body: { items: Array<{ menuItemId: number; quantity: number }>; reason?: string }
+  ) {
+    return this.inventoryService.revertStockForItems(body.items, body.reason);
+  }
 }

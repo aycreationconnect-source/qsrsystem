@@ -186,10 +186,17 @@ export interface CartItem extends MenuItem {
   selectedAddons?: SelectedAddon[];
   basePrice?: number;
   cartKey?: string;
+  kotDeducted?: boolean;
 }
 
 export interface TableOrderState {
-  savedOrders: { items: CartItem[]; time: number; note?: string; updatedAt?: number }[];
+  savedOrders: {
+    items: CartItem[];
+    time: number;
+    note?: string;
+    updatedAt?: number;
+    kotDeducted?: boolean;
+  }[];
   activeCart: CartItem[];
   payments?: OrderPayment[];
 }

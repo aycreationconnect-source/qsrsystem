@@ -18,4 +18,17 @@ export const inventoryApi = {
     apiFetch<InventoryCategory>(`/inventory/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteCategory: (id: number) =>
     apiFetch<{ success: boolean }>(`/inventory/categories/${id}`, { method: 'DELETE' }),
+
+  // KOT Stock Deduction & Reversal
+  deductStock: (items: Array<{ menuItemId: number; quantity: number }>, reason?: string) =>
+    apiFetch<{ success: boolean; count: number }>('/inventory/deduct-stock', {
+      method: 'POST',
+      body: JSON.stringify({ items, reason }),
+    }),
+
+  revertStock: (items: Array<{ menuItemId: number; quantity: number }>, reason?: string) =>
+    apiFetch<{ success: boolean; count: number }>('/inventory/revert-stock', {
+      method: 'POST',
+      body: JSON.stringify({ items, reason }),
+    }),
 };
