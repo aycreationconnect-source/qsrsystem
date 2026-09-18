@@ -70,9 +70,24 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
           onClick={onOpenStoreProfile}
           className={onOpenStoreProfile ? 'cursor-pointer hover:opacity-90 transition-opacity' : undefined}
           subtext={
-            <span className="text-[11px] font-extrabold text-stone-600 dark:text-stone-300 uppercase tracking-wider mt-0.5">
-              {posMode === 'table' ? 'Table Order' : 'Quick Order'}
-            </span>
+            <div className="mt-1 flex items-center">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-2xs',
+                  posMode === 'table'
+                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'w-1.5 h-1.5 rounded-full',
+                    posMode === 'table' ? 'bg-amber-500' : 'bg-emerald-500'
+                  )}
+                />
+                {posMode === 'table' ? 'Table Order' : 'Quick Order'}
+              </span>
+            </div>
           }
         />
       </div>

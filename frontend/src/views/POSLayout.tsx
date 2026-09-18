@@ -61,7 +61,7 @@ export const POSLayout: React.FC = () => {
               {/* Menu Operational Canvas */}
               <div className="flex-1 flex overflow-hidden relative">
                 {/* Left Column: Dedicated Vertical Categories Sidebar */}
-                <div className="hidden 2xl:flex h-full shrink-0">
+                <div className="hidden md:flex h-full shrink-0">
                   <POSVerticalCategorySidebar />
                 </div>
 
