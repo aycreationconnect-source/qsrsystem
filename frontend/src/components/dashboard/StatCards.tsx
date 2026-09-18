@@ -25,9 +25,9 @@ export const StatCards: React.FC<StatCardsProps> = ({
   const availableTables = Math.max(0, totalTables - activeTablesCount);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
       {/* 1. Total Orders */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all min-w-0">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
@@ -68,7 +68,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* 2. Total Revenue */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all min-w-0">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
@@ -109,7 +109,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* 3. Average Bill Value */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all min-w-0">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
@@ -138,7 +138,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* 4. Active Floor Tables */}
-      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all">
+      <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 shadow-xs flex flex-col justify-between group transition-all min-w-0">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">

@@ -433,9 +433,9 @@ export const SettingsView: React.FC = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-7 max-w-[1540px] mx-auto w-full lg:h-full lg:flex lg:flex-col lg:overflow-hidden min-h-0">
-      {/* Mobile Category Pill Selector (visible only on small screens < lg) */}
-      <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 shrink-0">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-[1540px] mx-auto w-full xl:h-full xl:flex xl:flex-col xl:overflow-hidden min-h-0">
+      {/* Category Pill Selector (visible on mobile and tablet screens < xl) */}
+      <div className="xl:hidden flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 shrink-0">
         {settingGroups.map((group, gIdx) => (
           <React.Fragment key={group.id}>
             <span
@@ -470,10 +470,10 @@ export const SettingsView: React.FC = () => {
         ))}
       </div>
 
-      {/* Main 2-Column Responsive Layout (Desktop & Tablet) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:flex-1 lg:min-h-0">
-        {/* Left Column: Fixed Category Navigation (Stationary on screen, does not scroll) */}
-        <div className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col lg:h-full shrink-0">
+      {/* Main 2-Column Responsive Layout (Desktop >= xl) */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start xl:flex-1 xl:min-h-0">
+        {/* Left Column: Fixed Category Navigation (Desktop only >= xl) */}
+        <div className="hidden xl:flex xl:col-span-3 flex-col xl:h-full shrink-0">
           {/* Category Menu Card */}
           <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-3.5 shadow-sm h-full flex flex-col justify-between overflow-y-auto">
             <div className="space-y-4">
@@ -535,7 +535,7 @@ export const SettingsView: React.FC = () => {
         {/* Right Column: Scrollable Category Details Panel */}
         <div
           ref={contentPanelRef}
-          className="lg:col-span-8 xl:col-span-9 min-w-0 space-y-6 lg:h-full lg:overflow-y-auto lg:pr-3 pb-8"
+          className="col-span-12 xl:col-span-9 min-w-0 space-y-6 xl:h-full xl:overflow-y-auto xl:pr-3 pb-8"
         >
           {/* =========================================================================
               CATEGORY 1: STORE PROFILE & IDENTITY (COMPREHENSIVE REDESIGN)

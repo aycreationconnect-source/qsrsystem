@@ -30,7 +30,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
   });
 
   return (
-    <div className="w-full md:w-72 lg:w-80 h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none">
+    <div className="w-full md:w-64 lg:w-72 xl:w-80 h-full flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none">
       {/* Top Header */}
       <div className="px-4 py-3 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-1.5 min-w-0">

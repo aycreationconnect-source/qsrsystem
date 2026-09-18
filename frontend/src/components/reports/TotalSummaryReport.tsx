@@ -301,54 +301,54 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
   return (
     <div className="space-y-6">
       {/* 1. KPI Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 dark:text-stone-400">Total Revenue</span>
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono">
+          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono truncate">
             {currency}{overall.net.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Gross sales including taxes</p>
         </div>
 
-        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 dark:text-stone-400">Total Orders</span>
             <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center">
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono">
+          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono truncate">
             {overall.ordersCount}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Processed orders in period</p>
         </div>
 
-        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 dark:text-stone-400">Total Tax / GST</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
               <Percent className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono">
+          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono truncate">
             {currency}{overall.tax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Accumulated tax collections</p>
         </div>
 
-        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-sm min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 dark:text-stone-400">Avg Order Value</span>
             <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono">
+          <div className="mt-2 text-lg sm:text-2xl font-black text-stone-900 dark:text-stone-100 font-mono truncate">
             {currency}{overall.aov.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Average ticket size per order</p>
@@ -356,7 +356,7 @@ export const TotalSummaryReport: React.FC<TotalSummaryReportProps> = ({
       </div>
 
       {/* 2. Tender Mode Breakdown Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {tenderBreakdown.map((t) => {
           const Icon = t.icon;
           const percentage = overall.net > 0 ? ((t.amount / overall.net) * 100).toFixed(1) : '0.0';

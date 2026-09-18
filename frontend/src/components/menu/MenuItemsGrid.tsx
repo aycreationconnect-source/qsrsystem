@@ -382,8 +382,9 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
           </div>
         ) : (
           <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-              <thead>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[560px]">
+                <thead>
                 <tr className="border-b border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-850/60 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12">#</th>
                   <th className="py-3 px-4">Item Name</th>
@@ -543,6 +544,7 @@ export const MenuItemsGrid: React.FC<MenuItemsGridProps> = ({
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

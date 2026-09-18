@@ -15,7 +15,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
   const totalWeeklyRevenue = revenueByDay.reduce((sum, v) => sum + v, 0);
 
   return (
-    <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col justify-between transition-all">
+    <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 hover:border-amber-400/80 dark:hover:border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col justify-between transition-all w-full min-w-0 overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-2">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -40,13 +40,13 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
       </div>
 
       {/* Bar Chart Area */}
-      <div className="h-48 sm:h-56 flex items-end justify-between gap-2 sm:gap-4 pt-8 pb-3 px-2">
+      <div className="h-48 sm:h-56 flex items-end justify-between gap-2 sm:gap-4 pt-10 pb-3 px-2 w-full min-w-0">
         {revenueByDay.map((val, i) => {
           const heightPercent = Math.max(8, (val / maxRev) * 100);
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-              {/* Tooltip on hover */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 whitespace-nowrap mb-1 shadow-md pointer-events-none">
+            <div key={i} className="relative min-w-0 flex-1 flex flex-col items-center h-full justify-end group">
+              {/* Tooltip on hover (absolutely positioned above bar so it does not inflate bar width) */}
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 whitespace-nowrap shadow-md pointer-events-none z-10">
                 ₹{val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </div>
 
