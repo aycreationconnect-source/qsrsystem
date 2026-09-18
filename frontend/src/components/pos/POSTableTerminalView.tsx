@@ -1,19 +1,17 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { TablePaxIcon, type TableStatus } from './TablePaxIcon';
 import { POSReserveTableModal } from './POSReserveTableModal';
-import { Button } from '../ui';
+import { Button, Tooltip } from '../ui';
 import {
   Map,
-  ChevronLeft,
-  ChevronRight,
   MoreHorizontal,
   Clock,
   Calendar,
   Sparkles,
   Utensils,
-  Lightbulb,
   ArrowRightLeft,
   Trash2,
   Edit2,
@@ -21,7 +19,8 @@ import {
   Search,
   FilterX,
   Plus,
-  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { Table } from '../../types/app.types';
@@ -30,16 +29,7 @@ import { toast } from '../../context/ToastContext';
 type StatusFilterType = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING';
 
 export const POSTableTerminalView: React.FC = () => {
-  const { appData, handleLogout } = useApp();
-
-  const handleSignOut = async () => {
-    try {
-      await handleLogout();
-      toast.success('Signed out successfully.');
-    } catch {
-      toast.error('Failed to sign out.');
-    }
-  };
+  const { appData } = useApp();
   const {
     setCart,
     tableOrders,
@@ -84,24 +74,46 @@ export const POSTableTerminalView: React.FC = () => {
 
   // Table card action dropdown state
   const [activeDropdownTableId, setActiveDropdownTableId] = useState<string | number | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Reservation modal state
   const [reservingTable, setReservingTable] = useState<Table | null>(null);
   const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click, scroll, resize or Escape
   useEffect(() => {
+    if (!activeDropdownTableId) return;
+
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setActiveDropdownTableId(null);
+        setDropdownPosition(null);
       }
     };
-    if (activeDropdownTableId) {
-      document.addEventListener('mousedown', handleOutsideClick);
-    }
+
+    const handleScrollOrResize = () => {
+      setActiveDropdownTableId(null);
+      setDropdownPosition(null);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveDropdownTableId(null);
+        setDropdownPosition(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [activeDropdownTableId]);
 
@@ -133,6 +145,16 @@ export const POSTableTerminalView: React.FC = () => {
     // 4. Default to available
     return 'AVAILABLE';
   };
+
+  const activeDropdownTable = useMemo(() => {
+    if (!activeDropdownTableId) return null;
+    return tables.find((t) => t.id === activeDropdownTableId) || null;
+  }, [tables, activeDropdownTableId]);
+
+  const activeTableStatus = useMemo(() => {
+    if (!activeDropdownTable) return null;
+    return getEffectiveTableStatus(activeDropdownTable);
+  }, [activeDropdownTable, tableOrders, tableReservations, tableCleaningStatus]);
 
   // Helper: get elapsed dining time formatted
   const getTableDuration = (tableId: string | number): string => {
@@ -305,144 +327,169 @@ export const POSTableTerminalView: React.FC = () => {
       {/* Main Floor Body */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Column: Areas / Sections Navigation Sidebar (Desktop & Tablet) */}
-        {!isSidebarCollapsed ? (
-          <aside className="hidden md:flex flex-col w-56 lg:w-64 bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none transition-all duration-200">
-            {/* Areas Header with Collapse Button */}
-            <div className="p-3.5 sm:p-4 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Map className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 truncate">
+        <aside
+          className={cn(
+            'hidden md:flex flex-col bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none transition-all duration-300 ease-in-out relative z-10 overflow-hidden',
+            isSidebarCollapsed ? 'w-16' : 'w-56 lg:w-64'
+          )}
+        >
+          {/* Areas Header with Collapse Button */}
+          <div className="h-14 px-3 border-b border-stone-200/80 dark:border-stone-800 flex items-center justify-between shrink-0 overflow-hidden">
+            <div
+              className={cn(
+                'flex items-center gap-2.5 min-w-0 transition-all duration-300 ease-in-out overflow-hidden',
+                isSidebarCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
+              )}
+            >
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <Map className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <h3 className="text-xs font-extrabold text-stone-900 dark:text-stone-100 truncate tracking-tight">
                   Areas / Sections
                 </h3>
+                <span className="text-[10px] text-stone-400 font-medium truncate">
+                  {areas.length} {areas.length === 1 ? 'section' : 'sections'}
+                </span>
               </div>
+            </div>
+
+            <Tooltip
+              content={isSidebarCollapsed ? 'Expand Areas' : 'Collapse Areas'}
+              position="right"
+              offset={12}
+            >
               <button
                 type="button"
                 onClick={toggleSidebar}
-                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-                title="Collapse sidebar (more space for tables)"
-                aria-label="Collapse areas sidebar"
+                className={cn(
+                  'w-9 h-9 rounded-xl flex items-center justify-center text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 dark:hover:text-amber-400 border border-stone-200/70 dark:border-stone-800 transition-all duration-200 cursor-pointer click-bubble active:scale-90 active:ring-4 active:ring-amber-400/30 group shrink-0',
+                  isSidebarCollapsed && 'mx-auto'
+                )}
+                aria-label={isSidebarCollapsed ? 'Expand areas sidebar' : 'Collapse areas sidebar'}
               >
-                <ChevronLeft className="w-4 h-4" />
+                {isSidebarCollapsed ? (
+                  <PanelLeftOpen className="w-4.5 h-4.5 text-amber-500 transition-transform duration-200 group-hover:scale-110" />
+                ) : (
+                  <PanelLeftClose className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-110" />
+                )}
               </button>
-            </div>
+            </Tooltip>
+          </div>
 
-            {/* Areas List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-              {/* All Areas Option */}
+          {/* Areas List */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
+            {/* All Areas Option */}
+            <Tooltip
+              content={isSidebarCollapsed ? `All Areas (${areaCounts.ALL || 0})` : null}
+              position="right"
+              offset={12}
+              wrapperClassName="w-full block"
+            >
               <button
                 type="button"
                 onClick={() => setSelectedAreaId('ALL')}
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-2xl text-xs font-extrabold flex items-center justify-between transition-all cursor-pointer select-none group',
+                  'w-full h-11 rounded-xl font-bold text-xs flex items-center transition-all cursor-pointer select-none group overflow-hidden click-bubble active:scale-95',
                   selectedAreaId === 'ALL'
-                    ? 'bg-[#fff5ea] dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border border-amber-300/80 dark:border-amber-800/80 shadow-2xs'
-                    : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100/80 dark:hover:bg-stone-800/60 hover:text-stone-900 dark:hover:text-stone-100'
+                    ? 'bg-[#fff5ea] dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 shadow-2xs border border-amber-300/70 dark:border-amber-800/80 font-extrabold'
+                    : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100/80 dark:hover:bg-stone-850 hover:text-stone-900 dark:hover:text-stone-100 border border-transparent'
                 )}
               >
-                <span className="truncate">All Areas</span>
-                <span
+                <div className="w-12 shrink-0 flex items-center justify-center">
+                  <span
+                    className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
+                      selectedAreaId === 'ALL'
+                        ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+                        : 'text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300 group-hover:bg-stone-200/50 dark:group-hover:bg-stone-800'
+                    )}
+                  >
+                    <Map className="w-4 h-4" />
+                  </span>
+                </div>
+
+                <div
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[11px] font-mono font-black transition-colors',
-                    selectedAreaId === 'ALL'
-                      ? 'bg-amber-500 text-stone-950'
-                      : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 group-hover:bg-stone-200 dark:group-hover:bg-stone-700'
+                    'flex-1 flex items-center justify-between min-w-0 pr-2.5 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-left',
+                    isSidebarCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
                   )}
                 >
-                  {areaCounts.ALL || 0}
-                </span>
+                  <span className="truncate">All Areas</span>
+                  <span
+                    className={cn(
+                      'px-2 py-0.5 rounded-full text-[11px] font-mono font-black shrink-0 transition-colors',
+                      selectedAreaId === 'ALL'
+                        ? 'bg-amber-500 text-stone-950'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 group-hover:bg-stone-200 dark:group-hover:bg-stone-700'
+                    )}
+                  >
+                    {areaCounts.ALL || 0}
+                  </span>
+                </div>
               </button>
+            </Tooltip>
 
-              {/* Dynamic Areas */}
-              {areas.map((area) => {
-                const isSelected = String(selectedAreaId) === String(area.id);
-                const count = areaCounts[String(area.id)] || 0;
+            {/* Dynamic Areas */}
+            {areas.map((area) => {
+              const isSelected = String(selectedAreaId) === String(area.id);
+              const count = areaCounts[String(area.id)] || 0;
 
-                return (
+              return (
+                <Tooltip
+                  key={area.id}
+                  content={isSidebarCollapsed ? `${area.name} (${count})` : null}
+                  position="right"
+                  offset={12}
+                  wrapperClassName="w-full block"
+                >
                   <button
-                    key={area.id}
                     type="button"
                     onClick={() => setSelectedAreaId(area.id)}
                     className={cn(
-                      'w-full px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer select-none group',
+                      'w-full h-11 rounded-xl font-bold text-xs flex items-center transition-all cursor-pointer select-none group overflow-hidden click-bubble active:scale-95',
                       isSelected
-                        ? 'bg-[#fff5ea] dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 border border-amber-300/80 dark:border-amber-800/80 shadow-2xs font-extrabold'
-                        : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100/80 dark:hover:bg-stone-800/60 hover:text-stone-900 dark:hover:text-stone-100'
+                        ? 'bg-[#fff5ea] dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 shadow-2xs border border-amber-300/70 dark:border-amber-800/80 font-extrabold'
+                        : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100/80 dark:hover:bg-stone-850 hover:text-stone-900 dark:hover:text-stone-100 border border-transparent'
                     )}
                   >
-                    <span className="truncate pr-2">{area.name}</span>
-                    <span
+                    <div className="w-12 shrink-0 flex items-center justify-center">
+                      <span
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-colors',
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950 shadow-xs'
+                            : 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 group-hover:bg-stone-200 dark:group-hover:bg-stone-750'
+                        )}
+                      >
+                        {area.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div
                       className={cn(
-                        'px-2 py-0.5 rounded-full text-[11px] font-mono font-black transition-colors',
-                        isSelected
-                          ? 'bg-amber-500 text-stone-950'
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 group-hover:bg-stone-200 dark:group-hover:bg-stone-700'
+                        'flex-1 flex items-center justify-between min-w-0 pr-2.5 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-left',
+                        isSidebarCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
                       )}
                     >
-                      {count}
-                    </span>
+                      <span className="truncate pr-2">{area.name}</span>
+                      <span
+                        className={cn(
+                          'px-2 py-0.5 rounded-full text-[11px] font-mono font-black shrink-0 transition-colors',
+                          isSelected
+                            ? 'bg-amber-500 text-stone-950'
+                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 group-hover:bg-stone-200 dark:group-hover:bg-stone-700'
+                        )}
+                      >
+                        {count}
+                      </span>
+                    </div>
                   </button>
-                );
-              })}
-            </div>
-
-          </aside>
-        ) : (
-          /* Collapsed Mini-Sidebar Rail (Maximum Space for Table Cards) */
-          <aside className="hidden md:flex flex-col w-12 lg:w-14 bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 shrink-0 select-none py-3 items-center justify-between transition-all duration-200">
-            <div className="w-full flex flex-col items-center">
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="p-2 rounded-xl text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors cursor-pointer mb-3"
-                title="Expand Areas & Sections"
-                aria-label="Expand areas sidebar"
-              >
-                <ChevronRight className="w-5 h-5 text-amber-500" />
-              </button>
-
-              <div className="flex flex-col items-center gap-2 w-full px-1.5 overflow-y-auto no-scrollbar max-h-[calc(100vh-220px)]">
-                {/* Mini All Areas */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedAreaId('ALL')}
-                  title={`All Areas (${areaCounts.ALL || 0})`}
-                  className={cn(
-                    'w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all cursor-pointer',
-                    selectedAreaId === 'ALL'
-                      ? 'bg-amber-500 text-stone-950 shadow-xs'
-                      : 'text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800'
-                  )}
-                >
-                  <Map className="w-4 h-4" />
-                </button>
-
-                {areas.map((area) => {
-                  const isSelected = String(selectedAreaId) === String(area.id);
-                  const count = areaCounts[String(area.id)] || 0;
-                  return (
-                    <button
-                      key={area.id}
-                      type="button"
-                      onClick={() => setSelectedAreaId(area.id)}
-                      title={`${area.name} (${count})`}
-                      className={cn(
-                        'w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs transition-all cursor-pointer',
-                        isSelected
-                          ? 'bg-amber-500 text-stone-950 shadow-xs'
-                          : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
-                      )}
-                    >
-                      {area.name.charAt(0).toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-          </aside>
-        )}
+                </Tooltip>
+              );
+            })}
+          </div>
+        </aside>
 
         {/* Center Column: Top Filter Pills + Table Cards Grid */}
         <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
@@ -610,145 +657,47 @@ export const POSTableTerminalView: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Three Dots Action Dropdown */}
-                        <div className="relative" ref={isMenuOpen ? dropdownRef : undefined}>
+                        {/* Three Dots Action Dropdown Trigger */}
+                        <div className="relative">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveDropdownTableId((prev) => (prev === table.id ? null : table.id));
+                              if (activeDropdownTableId === table.id) {
+                                setActiveDropdownTableId(null);
+                                setDropdownPosition(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const menuWidth = 196;
+                                const menuHeight = 220;
+                                const minLeft = 16;
+                                let left = rect.right - menuWidth;
+                                if (left < minLeft) {
+                                  left = Math.max(minLeft, rect.left);
+                                }
+                                if (left + menuWidth > window.innerWidth - 16) {
+                                  left = window.innerWidth - menuWidth - 16;
+                                }
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                const spaceAbove = rect.top;
+                                let top = rect.bottom + 6;
+                                if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                                  top = Math.max(16, rect.top - menuHeight - 6);
+                                }
+                                setActiveDropdownTableId(table.id);
+                                setDropdownPosition({ top, left });
+                              }
                             }}
-                            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-700/60 transition-colors cursor-pointer"
+                            className={cn(
+                              'p-1.5 rounded-xl transition-colors cursor-pointer',
+                              isMenuOpen
+                                ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200'
+                                : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-700/60'
+                            )}
                             aria-label={`Actions for ${table.name}`}
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
-
-                          {/* Dropdown Menu */}
-                          {isMenuOpen && (
-                            <div
-                              onClick={(e) => e.stopPropagation()}
-                              className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-40 animate-in fade-in zoom-in-95 duration-100 text-xs font-semibold"
-                            >
-                              {/* Option 1: Take Order / Open Table */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveDropdownTableId(null);
-                                  handleSelectTable(table);
-                                }}
-                                className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 flex items-center gap-2 cursor-pointer transition-colors"
-                              >
-                                <Utensils className="w-3.5 h-3.5 text-amber-500" />
-                                <span>{isOccupied ? 'Open Order' : 'Take Order'}</span>
-                              </button>
-
-                              {/* Option 2: Reserve Table */}
-                              {isAvailable && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveDropdownTableId(null);
-                                    setReservingTable(table);
-                                    setIsReserveModalOpen(true);
-                                  }}
-                                  className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <Calendar className="w-3.5 h-3.5 text-rose-500" />
-                                  <span>Reserve Table</span>
-                                </button>
-                              )}
-
-                              {/* Option: If Reserved, Edit or Cancel */}
-                              {isReserved && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveDropdownTableId(null);
-                                      setReservingTable(table);
-                                      setIsReserveModalOpen(true);
-                                    }}
-                                    className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 flex items-center gap-2 cursor-pointer transition-colors"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5 text-rose-500" />
-                                    <span>Manage Booking</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveDropdownTableId(null);
-                                      cancelReservation(table.id);
-                                      toast.info(`Reservation cancelled for ${table.name}`);
-                                    }}
-                                    className="w-full px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-colors"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                                    <span>Cancel Reservation</span>
-                                  </button>
-                                </>
-                              )}
-
-                              {/* Option: Shift Table if Occupied */}
-                              {isOccupied && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveDropdownTableId(null);
-                                    setSelectedTableId(key);
-                                    setShowShiftTableModal(true);
-                                  }}
-                                  className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
-                                  <span>Shift Table</span>
-                                </button>
-                              )}
-
-                              {/* Option: Mark as Cleaning / Mark as Cleaned */}
-                              {!isCleaning && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveDropdownTableId(null);
-                                    markTableCleaning(table.id, true);
-                                    toast.info(`Table "${table.name}" marked as cleaning.`);
-                                  }}
-                                  className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-sky-50 dark:hover:bg-sky-950/30 hover:text-sky-600 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-                                  <span>Mark as Cleaning</span>
-                                </button>
-                              )}
-
-                              {isCleaning && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveDropdownTableId(null);
-                                    markTableCleaning(table.id, false);
-                                    toast.success(`Table "${table.name}" marked as ready.`);
-                                  }}
-                                  className="w-full px-3 py-2 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                  <span>Mark Clean / Ready</span>
-                                </button>
-                              )}
-
-                              {/* Option: Clear Table if Occupied */}
-                              {isOccupied && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleClearTable(table.id, table.name)}
-                                  className="w-full px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-colors border-t border-stone-100 dark:border-stone-800"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span>Clear / Reset Table</span>
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -857,57 +806,160 @@ export const POSTableTerminalView: React.FC = () => {
             )}
           </div>
         </main>
-
-        {/* Right Column: "Select a Table" Guide Panel & Quick Tips (Desktop Only, Figure 2) */}
-        <aside className="hidden xl:flex flex-col w-72 xl:w-80 bg-white dark:bg-stone-900 border-l border-stone-200/80 dark:border-stone-800 shrink-0 p-6 select-none justify-center">
-          <div className="flex flex-col items-center text-center">
-            {/* Warm fork & knife emblem */}
-            <div className="w-20 h-20 rounded-3xl bg-[#fff4e5] dark:bg-amber-950/30 text-amber-500 flex items-center justify-center mb-5 border border-amber-200/80 dark:border-amber-800/50 shadow-xs">
-              <Utensils className="w-10 h-10 stroke-[1.5]" />
-            </div>
-
-            <h3 className="text-base font-extrabold text-stone-900 dark:text-stone-100 leading-snug">
-              Select a Table
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 max-w-[220px] leading-relaxed">
-              Choose an available table to start taking an order.
-            </p>
-
-            {/* Quick Tips Box (Matching Figure 2) */}
-            <div className="w-full mt-6 p-4 rounded-2xl bg-[#faf7f2] dark:bg-stone-850 border border-stone-200/70 dark:border-stone-800 text-left">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-amber-600 dark:text-amber-400 mb-3">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                <span>Quick Tips</span>
-              </div>
-
-              <div className="space-y-2.5 text-xs text-stone-600 dark:text-stone-300 font-medium">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-stone-200/80 dark:bg-stone-750 text-stone-800 dark:text-stone-200 font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                    1
-                  </span>
-                  <span className="leading-tight pt-0.5">Select an area (optional)</span>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-stone-200/80 dark:bg-stone-750 text-stone-800 dark:text-stone-200 font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                    2
-                  </span>
-                  <span className="leading-tight pt-0.5">Tap on an available table</span>
-                </div>
-
-                <div className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-stone-200/80 dark:bg-stone-750 text-stone-800 dark:text-stone-200 font-extrabold text-[10px] flex items-center justify-center shrink-0">
-                    3
-                  </span>
-                  <span className="leading-tight pt-0.5">Start adding items from menu</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
 
+      {/* Portaled Table Actions Dropdown (Positioned cleanly in viewport, immune to parent clipping) */}
+      {activeDropdownTable && dropdownPosition && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            zIndex: 99999,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-48 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 animate-in fade-in zoom-in-95 duration-100 text-xs font-semibold select-none"
+        >
+          {/* Option 1: Take Order / Open Table */}
+          <button
+            type="button"
+            onClick={() => {
+              const tbl = activeDropdownTable;
+              setActiveDropdownTableId(null);
+              setDropdownPosition(null);
+              handleSelectTable(tbl);
+            }}
+            className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 flex items-center gap-2 cursor-pointer transition-colors"
+          >
+            <Utensils className="w-3.5 h-3.5 text-amber-500" />
+            <span>{activeTableStatus === 'OCCUPIED' ? 'Open Order' : 'Take Order'}</span>
+          </button>
 
+          {/* Option 2: Reserve Table */}
+          {activeTableStatus === 'AVAILABLE' && (
+            <button
+              type="button"
+              onClick={() => {
+                const tbl = activeDropdownTable;
+                setActiveDropdownTableId(null);
+                setDropdownPosition(null);
+                setReservingTable(tbl);
+                setIsReserveModalOpen(true);
+              }}
+              className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5 text-rose-500" />
+              <span>Reserve Table</span>
+            </button>
+          )}
+
+          {/* Option: If Reserved, Edit or Cancel */}
+          {activeTableStatus === 'RESERVED' && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  const tbl = activeDropdownTable;
+                  setActiveDropdownTableId(null);
+                  setDropdownPosition(null);
+                  setReservingTable(tbl);
+                  setIsReserveModalOpen(true);
+                }}
+                className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Manage Booking</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const tbl = activeDropdownTable;
+                  setActiveDropdownTableId(null);
+                  setDropdownPosition(null);
+                  cancelReservation(tbl.id);
+                  toast.info(`Reservation cancelled for ${tbl.name}`);
+                }}
+                className="w-full px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Cancel Reservation</span>
+              </button>
+            </>
+          )}
+
+          {/* Option: Shift Table if Occupied */}
+          {activeTableStatus === 'OCCUPIED' && (
+            <button
+              type="button"
+              onClick={() => {
+                const tbl = activeDropdownTable;
+                setActiveDropdownTableId(null);
+                setDropdownPosition(null);
+                setSelectedTableId(String(tbl.id));
+                setShowShiftTableModal(true);
+              }}
+              className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 hover:text-amber-600 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
+              <span>Shift Table</span>
+            </button>
+          )}
+
+          {/* Option: Mark as Cleaning / Mark as Cleaned */}
+          {activeTableStatus !== 'CLEANING' && (
+            <button
+              type="button"
+              onClick={() => {
+                const tbl = activeDropdownTable;
+                setActiveDropdownTableId(null);
+                setDropdownPosition(null);
+                markTableCleaning(tbl.id, true);
+                toast.info(`Table "${tbl.name}" marked as cleaning.`);
+              }}
+              className="w-full px-3 py-2 text-left text-stone-700 dark:text-stone-300 hover:bg-sky-50 dark:hover:bg-sky-950/30 hover:text-sky-600 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+              <span>Mark as Cleaning</span>
+            </button>
+          )}
+
+          {activeTableStatus === 'CLEANING' && (
+            <button
+              type="button"
+              onClick={() => {
+                const tbl = activeDropdownTable;
+                setActiveDropdownTableId(null);
+                setDropdownPosition(null);
+                markTableCleaning(tbl.id, false);
+                toast.success(`Table "${tbl.name}" marked as ready.`);
+              }}
+              className="w-full px-3 py-2 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Mark Clean / Ready</span>
+            </button>
+          )}
+
+          {/* Option: Clear Table if Occupied */}
+          {activeTableStatus === 'OCCUPIED' && (
+            <button
+              type="button"
+              onClick={() => {
+                const tbl = activeDropdownTable;
+                setActiveDropdownTableId(null);
+                setDropdownPosition(null);
+                handleClearTable(tbl.id, tbl.name);
+              }}
+              className="w-full px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer transition-colors border-t border-stone-100 dark:border-stone-800"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear / Reset Table</span>
+            </button>
+          )}
+        </div>,
+        document.body
+      )}
 
       {/* Table Reservation Modal */}
       <POSReserveTableModal

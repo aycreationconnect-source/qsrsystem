@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
+import { Tooltip } from '../ui';
 import {
   LayoutGrid,
   Flame,
@@ -12,10 +12,11 @@ import {
   Cake,
   Pizza,
   Sandwich,
-  LogOut,
   Sparkles,
   CupSoda,
   CookingPot,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -42,14 +43,14 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ name, className = 'w-4 h-4'
 };
 
 export const POSVerticalCategorySidebar: React.FC = () => {
-  const { appData, handleLogout } = useApp();
-  const { posCategory, setPosCategory, dietFilter } = usePOS();
-  const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    await handleLogout();
-    navigate('/login');
-  };
+  const { appData } = useApp();
+  const {
+    posCategory,
+    setPosCategory,
+    dietFilter,
+    isCategorySidebarCollapsed: isCollapsed,
+    toggleCategorySidebar: toggleCollapse,
+  } = usePOS();
 
   // Filter out Inactive categories
   const activeCategories = useMemo(() => {
@@ -89,66 +90,115 @@ export const POSVerticalCategorySidebar: React.FC = () => {
   }, [activeCategories, categoryDishCounts]);
 
   return (
-    <aside className="w-56 xl:w-64 bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 flex flex-col h-full shrink-0 select-none z-10 transition-all">
-      {/* 1. Sidebar Header */}
-      <div className="h-13 px-4 flex items-center justify-between border-b border-stone-200/70 dark:border-stone-800 shrink-0">
-        <div className="flex items-center gap-2 text-stone-900 dark:text-stone-100 font-extrabold text-sm tracking-tight">
-          <LayoutGrid className="w-4 h-4 text-amber-500" />
-          <span>Categories</span>
+    <aside
+      className={cn(
+        'bg-white dark:bg-stone-900 border-r border-stone-200/80 dark:border-stone-800 flex flex-col h-full shrink-0 select-none z-10 transition-all duration-300 ease-in-out relative overflow-hidden',
+        isCollapsed ? 'w-16' : 'w-56 xl:w-64'
+      )}
+    >
+      {/* 1. Sidebar Header with Collapse Button */}
+      <div className="h-14 px-3 border-b border-stone-200/70 dark:border-stone-800 flex items-center justify-between shrink-0 overflow-hidden">
+        <div
+          className={cn(
+            'flex items-center gap-2.5 text-stone-900 dark:text-stone-100 font-extrabold text-sm tracking-tight transition-all duration-300 ease-in-out overflow-hidden',
+            isCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
+          )}
+        >
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <LayoutGrid className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-black truncate">Categories</span>
+            <span className="text-[10px] text-stone-400 font-medium truncate">
+              {activeCategories.length} categories
+            </span>
+          </div>
         </div>
-        <span className="text-[11px] font-bold text-stone-400 dark:text-stone-500 font-mono">
-          {activeCategories.length}
-        </span>
+
+        <Tooltip
+          content={isCollapsed ? 'Expand Categories' : 'Collapse Categories'}
+          position="right"
+          offset={12}
+        >
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            className={cn(
+              'w-9 h-9 rounded-xl flex items-center justify-center text-stone-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 dark:hover:text-amber-400 border border-stone-200/70 dark:border-stone-800 transition-all duration-200 cursor-pointer click-bubble active:scale-90 active:ring-4 active:ring-amber-400/30 group shrink-0',
+              isCollapsed && 'mx-auto'
+            )}
+            aria-label={isCollapsed ? 'Expand categories sidebar' : 'Collapse categories sidebar'}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="w-4.5 h-4.5 text-amber-500 transition-transform duration-200 group-hover:scale-110" />
+            ) : (
+              <PanelLeftClose className="w-4.5 h-4.5 transition-transform duration-200 group-hover:scale-110" />
+            )}
+          </button>
+        </Tooltip>
       </div>
 
       {/* 2. Scrollable Categories List */}
-      <div className="flex-1 overflow-y-auto p-2.5 space-y-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
         {categories.map((cat) => {
           const isSelected = posCategory === cat.name;
 
           return (
-            <button
+            <Tooltip
               key={cat.name}
-              type="button"
-              onClick={() => setPosCategory(cat.name)}
-              className={cn(
-                'w-full px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-between gap-2 transition-all cursor-pointer select-none group',
-                isSelected
-                  ? 'bg-[#fff5ea] dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 shadow-2xs'
-                  : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100/80 dark:hover:bg-stone-850 hover:text-stone-900 dark:hover:text-stone-100'
-              )}
+              content={isCollapsed ? `${cat.name} (${cat.count})` : null}
+              position="right"
+              offset={12}
+              wrapperClassName="w-full block"
             >
-              {/* Left: Icon + Name */}
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span
-                  className={cn(
-                    'transition-colors shrink-0',
-                    isSelected
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300'
-                  )}
-                >
-                  <CategoryIcon name={cat.name} className="w-4 h-4" />
-                </span>
-                <span className="truncate text-left">{cat.name}</span>
-              </div>
-
-              {/* Right: Dish Count Badge */}
-              <span
+              <button
+                type="button"
+                onClick={() => setPosCategory(cat.name)}
                 className={cn(
-                  'text-[11px] font-mono px-2 py-0.5 rounded-full font-bold transition-all shrink-0',
+                  'w-full h-11 rounded-xl font-bold text-xs flex items-center transition-all cursor-pointer select-none group overflow-hidden click-bubble active:scale-95',
                   isSelected
-                    ? 'bg-amber-200/70 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200'
-                    : 'bg-stone-100 dark:bg-stone-800 text-stone-500 group-hover:bg-stone-200 dark:group-hover:bg-stone-750'
+                    ? 'bg-[#fff5ea] dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 shadow-2xs border border-amber-300/70 dark:border-amber-800/80 font-extrabold'
+                    : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100/80 dark:hover:bg-stone-850 hover:text-stone-900 dark:hover:text-stone-100 border border-transparent'
                 )}
               >
-                {cat.count}
-              </span>
-            </button>
+                {/* Left: Icon Slot */}
+                <div className="w-12 shrink-0 flex items-center justify-center">
+                  <span
+                    className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',
+                      isSelected
+                        ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+                        : 'text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-300 group-hover:bg-stone-200/50 dark:group-hover:bg-stone-800'
+                    )}
+                  >
+                    <CategoryIcon name={cat.name} className="w-4 h-4" />
+                  </span>
+                </div>
+
+                {/* Right: Category Name + Dish Count Badge */}
+                <div
+                  className={cn(
+                    'flex-1 flex items-center justify-between min-w-0 pr-2.5 whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out text-left',
+                    isCollapsed ? 'opacity-0 max-w-0 pointer-events-none' : 'opacity-100 max-w-[180px]'
+                  )}
+                >
+                  <span className="truncate">{cat.name}</span>
+                  <span
+                    className={cn(
+                      'text-[11px] font-mono px-2 py-0.5 rounded-full font-bold transition-all shrink-0',
+                      isSelected
+                        ? 'bg-amber-500 text-stone-950'
+                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 group-hover:bg-stone-200 dark:group-hover:bg-stone-700'
+                    )}
+                  >
+                    {cat.count}
+                  </span>
+                </div>
+              </button>
+            </Tooltip>
           );
         })}
       </div>
-
     </aside>
   );
 };

@@ -56,6 +56,10 @@ interface POSContextType {
   cancelReservation: (tableId: string | number) => void;
   markTableCleaning: (tableId: string | number, isCleaning: boolean) => void;
 
+  isCategorySidebarCollapsed: boolean;
+  setIsCategorySidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleCategorySidebar: () => void;
+
   showAddTableModal: boolean;
   setShowAddTableModal: (show: boolean) => void;
   newTableName: string;
@@ -108,6 +112,25 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [posSearchQuery, setPosSearchQuery] = useState('');
   const [dietFilter, setDietFilter] = useState<DietFilterType>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  const [isCategorySidebarCollapsed, setIsCategorySidebarCollapsed] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('pos_category_sidebar_collapsed');
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCategorySidebar = () => {
+    setIsCategorySidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('pos_category_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showOrderHistoryModal, setShowOrderHistoryModal] = useState(false);
   const [paymentType, setPaymentType] = useState('Cash');
@@ -1134,6 +1157,9 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         now,
         showAddTableModal,
         setShowAddTableModal,
+        isCategorySidebarCollapsed,
+        setIsCategorySidebarCollapsed,
+        toggleCategorySidebar,
         newTableName,
         setNewTableName,
         showShiftTableModal,
