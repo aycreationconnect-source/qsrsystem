@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title QSR POS System - Setup & Initialization
+title QSR POS System - Setup and Initialization
 
 echo =======================================================
 echo          QSR POS SYSTEM - FIRST TIME SETUP
@@ -11,32 +11,54 @@ echo.
 where node >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] Node.js is not installed or not found in system PATH!
-    echo Please install Node.js (v18 or higher) from https://nodejs.org
+    echo Please install Node.js v18 or higher from https://nodejs.org
     echo.
     pause
     exit /b 1
 )
 
-:: 2. Optional Cafe Database Name prompt
-echo Specify the database name for this cafe (e.g. mocha_bliss, central_cafe).
-echo Or press [ENTER] without typing to use the name defined in configuration:
-set /p CAFE_DB="Cafe Database Name: "
+:: 2. Auto-check and install runtime dependencies if missing
+if not exist "%~dp0backend\node_modules\@prisma\client" (
+    echo -------------------------------------------------------
+    echo [1/3] First-Time Setup: Installing production packages...
+    echo Please wait, this takes about 30 to 45 seconds on first run...
+    echo -------------------------------------------------------
+    cd /d "%~dp0backend"
+    call npm install --omit=dev --no-audit --no-fund
+    call npx prisma generate
+    cd /d "%~dp0"
+    echo [OK] Runtime dependencies ready.
+    echo.
+)
+
+:: 3. Native Windows GUI Popup Box asking for Cafe Database Name
+echo Opening Database Configuration Dialog...
+set "CAFE_DB="
+if exist "%~dp0backend\scripts\prompt-db.vbs" (
+    for /f "usebackq delims=" %%I in (`cscript //nologo "%~dp0backend\scripts\prompt-db.vbs" 2^>nul`) do set "CAFE_DB=%%I"
+)
+
+if "!CAFE_DB!"=="" (
+    echo [INFO] No custom database entered. Using default database from .env
+) else (
+    echo [INFO] Selected Cafe Database: !CAFE_DB!
+)
 
 echo.
 echo -------------------------------------------------------
-echo [1/2] Initializing Cafe Database in MySQL...
+echo [2/3] Creating and verifying cafe database in MySQL...
 echo -------------------------------------------------------
 cd /d "%~dp0backend"
 
-if "%CAFE_DB%"=="" (
+if "!CAFE_DB!"=="" (
     call node scripts/init-db.js
 ) else (
-    call node scripts/init-db.js %CAFE_DB%
+    call node scripts/init-db.js !CAFE_DB!
 )
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Database creation failed!
+    echo [ERROR] Database initialization failed!
     echo Please verify that MySQL Server is running and credentials in backend\.env are correct.
     cd /d "%~dp0"
     pause
@@ -45,7 +67,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo -------------------------------------------------------
-echo [2/2] Synchronizing Database Models & Tables...
+echo [3/3] Synchronizing database tables and models...
 echo -------------------------------------------------------
 call npx prisma db push --skip-generate
 
@@ -67,4 +89,7 @@ echo.
 echo You can now start the POS system anytime by launching:
 echo   --^> start.bat
 echo.
+
+if exist "%~dp0backend\scripts\setup-complete.vbs" cscript //nologo "%~dp0backend\scripts\setup-complete.vbs" >nul 2>&1
+
 pause

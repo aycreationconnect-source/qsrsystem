@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const rootDir = path.resolve(__dirname, '..');
 const releaseDir = path.join(rootDir, 'Build Release', 'qsr-pos-v1.0.0-windows');
@@ -67,6 +68,14 @@ fs.copyFileSync(
   path.join(rootDir, 'backend', 'scripts', 'backup-db.js'),
   path.join(backendDest, 'scripts', 'backup-db.js')
 );
+fs.copyFileSync(
+  path.join(rootDir, 'backend', 'scripts', 'prompt-db.vbs'),
+  path.join(backendDest, 'scripts', 'prompt-db.vbs')
+);
+fs.copyFileSync(
+  path.join(rootDir, 'backend', 'scripts', 'setup-complete.vbs'),
+  path.join(backendDest, 'scripts', 'setup-complete.vbs')
+);
 
 console.log('Copying backend package.json...');
 fs.copyFileSync(
@@ -112,17 +121,21 @@ if (fs.existsSync(localEnvPath)) {
   fs.writeFileSync(path.join(backendDest, '.env'), envExampleContent, 'utf8');
 }
 
-// 4. Copy frontend distribution bundle
+// 4. Note: node_modules is intentionally omitted from the release distribution
+// to keep package size tiny (~3 MB). setup.bat automatically installs dependencies on first run.
+console.log('Skipping node_modules (handled automatically by setup.bat on first run)...');
+
+// 5. Copy frontend distribution bundle
 console.log('Copying frontend dist...');
 copyDirSync(path.join(rootDir, 'frontend', 'dist'), path.join(frontendDest, 'dist'));
 
-// 5. Copy launcher batch scripts to release root
+// 6. Copy launcher batch scripts to release root
 console.log('Copying launcher scripts...');
 fs.copyFileSync(path.join(rootDir, 'setup.bat'), path.join(releaseDir, 'setup.bat'));
 fs.copyFileSync(path.join(rootDir, 'start.bat'), path.join(releaseDir, 'start.bat'));
 fs.copyFileSync(path.join(rootDir, 'backup-now.bat'), path.join(releaseDir, 'backup-now.bat'));
 
-// 6. Generate README-INSTALL.txt
+// 7. Generate README-INSTALL.txt
 const readmeContent = `================================================================================
                     QSR POS SYSTEM - RELEASE v1.0.0 (WINDOWS)
 ================================================================================
@@ -149,23 +162,16 @@ Step 1: Check Database Credentials
       DATABASE_PASSWORD=your_mysql_password
   - Save and close the file.
 
-Step 2: Install Production Dependencies (if node_modules not bundled)
-  - Open Command Prompt in the "backend" folder:
-      cd backend
-      npm install --omit=dev
-      npx prisma generate
-      cd ..
-
-Step 3: Run Database Setup
+Step 2: Run Database Setup
   - Double-click "setup.bat".
-  - When prompted:
-      Enter cafe database name (e.g. mocha_bliss)
-      Or press [ENTER] to use default configuration.
+  - A popup dialog will appear on screen asking:
+      "Enter the unique Database Name for this cafe:"
+  - Type your cafe name (e.g. mocha_bliss) and click OK.
   - The script will automatically:
       1. Create the dedicated database in MySQL.
       2. Configure backend\\.env with the database name.
       3. Push all database tables and schema relationships.
-  - Once finished, you will see "SETUP COMPLETE!".
+  - Once finished, you will see a confirmation popup: "Setup Complete!".
 
 --------------------------------------------------------------------------------
 DAILY STORE USAGE
@@ -212,6 +218,13 @@ Documentation: docs/build-release-and-onboarding-guide.md
 `;
 
 fs.writeFileSync(path.join(releaseDir, 'README-INSTALL.txt'), readmeContent, 'utf8');
+
+// 8. Copy RELEASE_NOTES.md
+const releaseNotesPath = path.join(rootDir, 'RELEASE_NOTES.md');
+if (fs.existsSync(releaseNotesPath)) {
+  fs.copyFileSync(releaseNotesPath, path.join(releaseDir, 'RELEASE_NOTES.md'));
+  console.log('Copied RELEASE_NOTES.md into release package.');
+}
 
 console.log('====================================================');
 console.log('  PACKAGE RELEASE ASSEMBLED SUCCESSFULLY!');

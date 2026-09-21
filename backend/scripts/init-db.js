@@ -1,7 +1,5 @@
-const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
-const dotenv = require('dotenv');
 
 // 1. Locate .env (check backend/.env or current directory .env)
 const envCandidates = [
@@ -12,7 +10,6 @@ const envCandidates = [
 
 let envPath = envCandidates.find((p) => fs.existsSync(p));
 if (!envPath) {
-  // If .env doesn't exist, try copying from .env.example
   const exampleCandidates = [
     path.resolve(__dirname, '../.env.example'),
     path.resolve(process.cwd(), '.env.example'),
@@ -26,11 +23,43 @@ if (!envPath) {
   }
 }
 
-if (fs.existsSync(envPath)) {
-  dotenv.config({ path: envPath });
+// Fallback .env parser if dotenv is not yet installed
+function loadEnvFallback(filepath) {
+  if (!fs.existsSync(filepath)) return;
+  const content = fs.readFileSync(filepath, 'utf8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)?$/);
+    if (match) {
+      const key = match[1];
+      let value = match[2] || '';
+      if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+      if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
+      if (!process.env[key]) process.env[key] = value.trim();
+    }
+  }
+}
+
+if (envPath && fs.existsSync(envPath)) {
+  try {
+    const dotenv = require('dotenv');
+    dotenv.config({ path: envPath });
+  } catch {
+    loadEnvFallback(envPath);
+  }
 }
 
 async function initializeDatabase() {
+  let mysql;
+  try {
+    mysql = require('mysql2/promise');
+  } catch (err) {
+    console.error('\n[ERROR] mysql2 package is missing in node_modules!');
+    console.error('Please run "npm install" inside the backend folder first.');
+    process.exit(1);
+  }
+
   const host = process.env.DATABASE_HOST || 'localhost';
   const port = Number(process.env.DATABASE_PORT) || 3306;
   const user = process.env.DATABASE_USER || 'root';
