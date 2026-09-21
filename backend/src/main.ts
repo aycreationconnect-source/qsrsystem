@@ -33,7 +33,7 @@ async function bootstrap() {
   if (frontendDist) {
     const indexPath = path.join(frontendDist, 'index.html');
 
-    // 1. Direct browser HTML navigation handler (e.g. /menu, /tables, /pos, /dashboard)
+    // 1. Direct browser HTML navigation handler (SPA fallback)
     app.use((req: any, res: any, next: any) => {
       if (
         req.method === 'GET' &&
@@ -67,7 +67,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`\n🚀 QSR POS Server running on http://localhost:${port}`);
   if (frontendDist) {
-    console.log(`📦 Serving static frontend from: ${frontendDist}`);
+    console.log(`📦 Serving static frontend bundle from: ${frontendDist}`);
   }
 }
 void bootstrap();

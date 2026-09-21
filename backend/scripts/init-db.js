@@ -3,8 +3,29 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// 1. Load existing .env
-const envPath = path.resolve(__dirname, '../.env');
+// 1. Locate .env (check backend/.env or current directory .env)
+const envCandidates = [
+  path.resolve(__dirname, '../.env'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'backend/.env'),
+];
+
+let envPath = envCandidates.find((p) => fs.existsSync(p));
+if (!envPath) {
+  // If .env doesn't exist, try copying from .env.example
+  const exampleCandidates = [
+    path.resolve(__dirname, '../.env.example'),
+    path.resolve(process.cwd(), '.env.example'),
+    path.resolve(process.cwd(), 'backend/.env.example'),
+  ];
+  const examplePath = exampleCandidates.find((p) => fs.existsSync(p));
+  envPath = path.resolve(__dirname, '../.env');
+  if (examplePath) {
+    fs.copyFileSync(examplePath, envPath);
+    console.log(`Copied environment template from ${examplePath} to ${envPath}`);
+  }
+}
+
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
@@ -26,7 +47,7 @@ async function initializeDatabase() {
 
   try {
     // 2. Connect to MySQL server instance (without specifying database)
-    console.log(`Connecting to MySQL at ${host}:${port} as ${user}...`);
+    console.log(`Connecting to MySQL at ${host}:${port} as user '${user}'...`);
     const connection = await mysql.createConnection({
       host,
       port,
@@ -40,9 +61,9 @@ async function initializeDatabase() {
       `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
     );
     await connection.end();
-    console.log(`Database \`${dbName}\` is ready!`);
+    console.log(`Database \`${dbName}\` is verified and ready!`);
 
-    // 4. Update backend/.env with the chosen database name & connection URL
+    // 4. Update .env with the chosen database name & connection URL
     const encodedPassword = encodeURIComponent(password);
     const databaseUrl = `mysql://${user}:${encodedPassword}@${host}:${port}/${dbName}`;
 
@@ -65,8 +86,8 @@ async function initializeDatabase() {
     }
 
     fs.writeFileSync(envPath, envContent, 'utf8');
-    console.log(`Updated backend/.env with DATABASE_NAME=${dbName}`);
-    console.log('Initialization step complete.');
+    console.log(`Updated ${envPath} with DATABASE_NAME=${dbName}`);
+    console.log('Database initialization successful.');
     process.exit(0);
   } catch (error) {
     console.error('Database initialization failed:', error.message);

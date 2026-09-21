@@ -49,7 +49,9 @@ tsconfig.build.tsbuildinfo
 # Ignore build output folders
 dist/
 backend/dist/
+Build Release/
+"Build Release"/
 
-# Database dumps & backups
+# Database dumps & local backups
 backups/
 *.sql

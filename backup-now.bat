@@ -1,15 +1,15 @@
 @echo off
 setlocal enabledelayedexpansion
-title QSR POS System - Database Backup
+title QSR POS System - Instant Database Backup
 
 echo =======================================================
-echo          QSR POS SYSTEM - INSTANT BACKUP
+echo          QSR POS - INSTANT DATABASE BACKUP
 echo =======================================================
 echo.
 
-cd backend
+cd /d "%~dp0backend"
 call node scripts/backup-db.js
-cd ..
 
+cd /d "%~dp0"
 echo.
 pause

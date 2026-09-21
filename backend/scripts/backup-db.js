@@ -1,21 +1,26 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync, spawnSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const dotenv = require('dotenv');
 
-// 1. Load backend/.env
-const envPath = path.resolve(__dirname, '../.env');
-if (fs.existsSync(envPath)) {
+// 1. Locate .env
+const envCandidates = [
+  path.resolve(__dirname, '../.env'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'backend/.env'),
+];
+const envPath = envCandidates.find((p) => fs.existsSync(p));
+if (envPath) {
   dotenv.config({ path: envPath });
 }
 
 function findMysqldumpBinary() {
-  // Check if mysqldump is directly accessible in PATH
+  // Check if mysqldump is directly accessible in system PATH
   try {
     const test = spawnSync('mysqldump', ['--version'], { stdio: 'ignore' });
     if (test.status === 0) return 'mysqldump';
   } catch {
-    // Continue searching known Windows locations
+    // Continue searching standard Windows installation directories
   }
 
   const commonWindowsPaths = [
@@ -61,22 +66,28 @@ async function runBackup() {
   const dbName = process.env.DATABASE_NAME || 'qsr_db';
 
   console.log('====================================================');
-  console.log('  QSR POS Automated Database Backup');
+  console.log('  QSR POS Automated Database Backup Engine');
   console.log(`  Database Target: [${dbName}]`);
   console.log('====================================================');
 
-  // Locate mysqldump
+  // Locate mysqldump binary
   const mysqldumpBin = findMysqldumpBinary();
   if (!mysqldumpBin) {
-    console.error('Error: mysqldump binary not found in PATH or standard MySQL directories.');
-    console.error('Please ensure MySQL Server or mysqldump is installed.');
+    console.error('[ERROR] mysqldump binary not found in PATH or standard MySQL directories.');
+    console.error('Please ensure MySQL Server is installed and mysqldump is accessible.');
     process.exit(1);
   }
   console.log(`Using mysqldump binary: ${mysqldumpBin}`);
 
-  // Create backups directory at project root
-  const rootBackupDir = path.resolve(__dirname, '../../backups');
-  if (!fs.existsSync(rootBackupDir)) {
+  // Resolve backups directory (checks project root or cwd)
+  const candidateBackupDirs = [
+    path.resolve(__dirname, '../../backups'),
+    path.resolve(__dirname, '../backups'),
+    path.resolve(process.cwd(), 'backups'),
+  ];
+  let rootBackupDir = candidateBackupDirs.find((d) => fs.existsSync(d));
+  if (!rootBackupDir) {
+    rootBackupDir = path.resolve(__dirname, '../../backups');
     fs.mkdirSync(rootBackupDir, { recursive: true });
   }
 
@@ -87,7 +98,7 @@ async function runBackup() {
 
   console.log(`Dumping database to: ${backupFilePath} ...`);
 
-  // Build command arguments
+  // Build command arguments (crash-safe flags: --single-transaction --quick --routines --triggers --hex-blob)
   const args = [
     `--host=${host}`,
     `--port=${port}`,
@@ -119,7 +130,6 @@ async function runBackup() {
     if (result.status !== 0) {
       const stderr = result.stderr ? result.stderr.trim() : 'Unknown error';
       console.error(`mysqldump failed with exit code ${result.status}: ${stderr}`);
-      // Clean up incomplete backup file
       if (fs.existsSync(backupFilePath)) {
         fs.unlinkSync(backupFilePath);
       }
@@ -146,11 +156,11 @@ async function runBackup() {
       }
     } else {
       console.log('\n[Tip] To auto-sync backups to Google Drive:');
-      console.log('  1. Install Google Drive for Desktop (creates a G:\\ drive or sync folder).');
-      console.log('  2. Add to backend/.env: GOOGLE_DRIVE_BACKUP_PATH="G:\\My Drive\\QSR_Backups"');
+      console.log('  1. Install Google Drive for Desktop (creates virtual drive G:\\ or sync folder).');
+      console.log('  2. Add to .env: GOOGLE_DRIVE_BACKUP_PATH="G:\\My Drive\\QSR_Backups"');
     }
 
-    // Retention cleanup: purge backups older than 30 days
+    // Retention cleanup: purge backups older than retention period (default 30 days)
     const retentionDays = Number(process.env.BACKUP_RETENTION_DAYS) || 30;
     const now = Date.now();
     const maxAgeMs = retentionDays * 24 * 60 * 60 * 1000;
