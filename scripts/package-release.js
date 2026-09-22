@@ -57,6 +57,10 @@ fs.copyFileSync(
   path.join(rootDir, 'backend', 'prisma', 'schema.prisma'),
   path.join(backendDest, 'prisma', 'schema.prisma')
 );
+const prismaConfigSrc = path.join(rootDir, 'backend', 'prisma.config.ts');
+if (fs.existsSync(prismaConfigSrc)) {
+  fs.copyFileSync(prismaConfigSrc, path.join(backendDest, 'prisma.config.ts'));
+}
 
 console.log('Copying backend scripts...');
 fs.mkdirSync(path.join(backendDest, 'scripts'), { recursive: true });
@@ -67,14 +71,6 @@ fs.copyFileSync(
 fs.copyFileSync(
   path.join(rootDir, 'backend', 'scripts', 'backup-db.js'),
   path.join(backendDest, 'scripts', 'backup-db.js')
-);
-fs.copyFileSync(
-  path.join(rootDir, 'backend', 'scripts', 'prompt-db.vbs'),
-  path.join(backendDest, 'scripts', 'prompt-db.vbs')
-);
-fs.copyFileSync(
-  path.join(rootDir, 'backend', 'scripts', 'setup-complete.vbs'),
-  path.join(backendDest, 'scripts', 'setup-complete.vbs')
 );
 
 console.log('Copying backend package.json...');

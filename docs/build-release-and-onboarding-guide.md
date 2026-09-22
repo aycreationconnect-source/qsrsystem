@@ -120,7 +120,7 @@ If the database named in `DATABASE_URL` does not exist in MySQL prior to boot, N
      ```
 3. `setup.bat` immediately runs Prisma push:
    ```cmd
-   npx prisma db push --skip-generate
+   npx prisma db push --accept-data-loss
    ```
    This synchronizes all models (categories, products, orders, order items, inventory items, tables, and settings) into empty tables within the new database.
 4. When `start.bat` is executed, NestJS connects cleanly to the newly created database with zero boot errors.

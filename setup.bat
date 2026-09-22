@@ -20,7 +20,7 @@ if %errorlevel% neq 0 (
 :: 2. Auto-check and install runtime dependencies if missing
 if not exist "%~dp0backend\node_modules\@prisma\client" (
     echo -------------------------------------------------------
-    echo [1/3] First-Time Setup: Installing production packages...
+    echo [1/2] First-Time Setup: Installing production packages...
     echo Please wait, this takes about 30 to 45 seconds on first run...
     echo -------------------------------------------------------
     cd /d "%~dp0backend"
@@ -31,30 +31,13 @@ if not exist "%~dp0backend\node_modules\@prisma\client" (
     echo.
 )
 
-:: 3. Native Windows GUI Popup Box asking for Cafe Database Name
-echo Opening Database Configuration Dialog...
-set "CAFE_DB="
-if exist "%~dp0backend\scripts\prompt-db.vbs" (
-    for /f "usebackq delims=" %%I in (`cscript //nologo "%~dp0backend\scripts\prompt-db.vbs" 2^>nul`) do set "CAFE_DB=%%I"
-)
-
-if "!CAFE_DB!"=="" (
-    echo [INFO] No custom database entered. Using default database from .env
-) else (
-    echo [INFO] Selected Cafe Database: !CAFE_DB!
-)
-
-echo.
+:: 3. Initialize database from backend\.env configuration
 echo -------------------------------------------------------
-echo [2/3] Creating and verifying cafe database in MySQL...
+echo [1/2] Initializing Cafe Database from backend\.env ...
 echo -------------------------------------------------------
 cd /d "%~dp0backend"
 
-if "!CAFE_DB!"=="" (
-    call node scripts/init-db.js
-) else (
-    call node scripts/init-db.js !CAFE_DB!
-)
+call node scripts/init-db.js
 
 if %errorlevel% neq 0 (
     echo.
@@ -67,9 +50,9 @@ if %errorlevel% neq 0 (
 
 echo.
 echo -------------------------------------------------------
-echo [3/3] Synchronizing database tables and models...
+echo [2/2] Synchronizing database tables and models...
 echo -------------------------------------------------------
-call npx prisma db push --skip-generate
+call npx prisma db push --accept-data-loss
 
 if %errorlevel% neq 0 (
     echo.
@@ -89,7 +72,5 @@ echo.
 echo You can now start the POS system anytime by launching:
 echo   --^> start.bat
 echo.
-
-if exist "%~dp0backend\scripts\setup-complete.vbs" cscript //nologo "%~dp0backend\scripts\setup-complete.vbs" >nul 2>&1
 
 pause

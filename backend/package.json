@@ -12,7 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main.js",
-    "db:init": "node scripts/init-db.js && npx prisma db push --skip-generate",
+    "db:init": "node scripts/init-db.js && npx prisma db push --accept-data-loss",
     "db:backup": "node scripts/backup-db.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",

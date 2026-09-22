@@ -12,7 +12,7 @@ import {
   Utensils,
   LogOut,
   FileBarChart2,
-  ExternalLink,
+  ArrowRight,
   ChevronLeft,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -260,11 +260,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               offset={10}
               wrapperClassName="w-full block"
             >
-              <a
-                href="/pos?mode=quick"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group w-full h-11 flex items-center rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-all cursor-pointer overflow-hidden"
+              <NavLink
+                to="/pos?mode=quick"
+                onClick={() => {
+                  if (isMobileDrawer && onCloseMobileNav) onCloseMobileNav();
+                }}
+                className={({ isActive }) =>
+                  cn(
+                    'group w-full h-11 flex items-center rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border border-amber-200/80 dark:border-amber-900/50 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-all cursor-pointer overflow-hidden',
+                    isActive && 'ring-2 ring-amber-500 font-extrabold'
+                  )
+                }
               >
                 <div className="w-[56px] shrink-0 flex items-center justify-center">
                   <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 transition-transform duration-200 group-hover:scale-110" />
@@ -276,9 +282,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   )}
                 >
                   <span className="text-xs font-bold truncate">Quick POS Terminal</span>
-                  <ExternalLink className="w-3.5 h-3.5 opacity-60 ml-2 shrink-0" />
+                  <ArrowRight className="w-3.5 h-3.5 opacity-60 ml-2 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-              </a>
+              </NavLink>
             </Tooltip>
 
             <Tooltip
@@ -287,11 +293,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               offset={10}
               wrapperClassName="w-full block"
             >
-              <a
-                href="/pos?mode=table"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group w-full h-11 flex items-center rounded-2xl bg-stone-50 dark:bg-stone-850 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-750 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer overflow-hidden"
+              <NavLink
+                to="/pos?mode=table"
+                onClick={() => {
+                  if (isMobileDrawer && onCloseMobileNav) onCloseMobileNav();
+                }}
+                className={({ isActive }) =>
+                  cn(
+                    'group w-full h-11 flex items-center rounded-2xl bg-stone-50 dark:bg-stone-850 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-750 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer overflow-hidden',
+                    isActive && 'ring-2 ring-amber-500 font-extrabold'
+                  )
+                }
               >
                 <div className="w-[56px] shrink-0 flex items-center justify-center">
                   <Utensils className="w-4 h-4 text-amber-500 shrink-0 transition-transform duration-200 group-hover:scale-110" />
@@ -303,9 +315,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   )}
                 >
                   <span className="text-xs font-bold truncate">Table POS Terminal</span>
-                  <ExternalLink className="w-3.5 h-3.5 opacity-60 ml-2 shrink-0" />
+                  <ArrowRight className="w-3.5 h-3.5 opacity-60 ml-2 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-              </a>
+              </NavLink>
             </Tooltip>
           </div>
         </div>
