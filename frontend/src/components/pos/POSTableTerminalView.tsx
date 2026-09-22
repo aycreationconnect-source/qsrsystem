@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
+import { inventoryApi } from '../../api/inventoryApi';
 import { TablePaxIcon, type TableStatus } from './TablePaxIcon';
 import { POSReserveTableModal } from './POSReserveTableModal';
 import { Button, Tooltip } from '../ui';
@@ -29,7 +30,7 @@ import { toast } from '../../context/ToastContext';
 type StatusFilterType = 'ALL' | 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'CLEANING';
 
 export const POSTableTerminalView: React.FC = () => {
-  const { appData } = useApp();
+  const { appData, refreshInventory } = useApp();
   const {
     setCart,
     tableOrders,
@@ -263,8 +264,37 @@ export const POSTableTerminalView: React.FC = () => {
   };
 
   // Action: Clear running table session
-  const handleClearTable = (tableId: string | number, tableName: string) => {
+  const handleClearTable = async (tableId: string | number, tableName: string) => {
     const key = String(tableId);
+    const orderData = tableOrders[key] || tableOrders[tableId];
+
+    if (orderData?.savedOrders) {
+      const itemsToRevert: Array<{ menuItemId: number; quantity: number }> = [];
+      orderData.savedOrders.forEach((o: any) => {
+        if (o.kotDeducted !== false) {
+          const items = o.items || (Array.isArray(o) ? o : []);
+          items.forEach((it: any) => {
+            itemsToRevert.push({
+              menuItemId: Number(it.id || it.menuItemId),
+              quantity: Number(it.quantity) || 1,
+            });
+          });
+        }
+      });
+
+      if (itemsToRevert.length > 0) {
+        try {
+          await inventoryApi.revertStock(
+            itemsToRevert,
+            `Table Cleared: ${tableName}`
+          );
+          await refreshInventory();
+        } catch (err) {
+          console.error('Failed to revert inventory on table clear:', err);
+        }
+      }
+    }
+
     setTableOrders((prev) => {
       const copy = { ...prev };
       delete copy[key];

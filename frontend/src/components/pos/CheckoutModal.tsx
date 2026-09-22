@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import type { OrderPayment } from '../../types/app.types';
@@ -42,17 +43,41 @@ const UnitDropdown: React.FC<{
 }> = ({ value, onChange, percentLabel }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const updatePosition = () => {
+    if (!dropdownRef.current) return;
+    const rect = dropdownRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(124, rect.width),
+    });
+  };
 
   useEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+
     const handleDocClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleDocClick);
-    }
-    return () => document.removeEventListener('mousedown', handleDocClick);
+
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    document.addEventListener('mousedown', handleDocClick);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocClick);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
   }, [isOpen]);
 
   const currentLabel = value === 'fixed' ? 'Fixed (₹)' : percentLabel;
@@ -62,7 +87,7 @@ const UnitDropdown: React.FC<{
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 dark:bg-stone-800 dark:hover:bg-stone-750 text-stone-800 dark:text-stone-200 px-2 py-1.5 text-xs font-bold border-r border-stone-200 dark:border-stone-700 outline-none cursor-pointer transition-colors select-none"
+        className="flex items-center gap-1 bg-stone-100 hover:bg-stone-200/80 dark:bg-stone-800 dark:hover:bg-stone-750 text-stone-800 dark:text-stone-200 px-2 py-1.5 text-xs font-bold border-r border-stone-200 dark:border-stone-700 outline-none cursor-pointer transition-colors select-none rounded-l-xl"
       >
         <span>{currentLabel}</span>
         <ChevronDown
@@ -73,8 +98,17 @@ const UnitDropdown: React.FC<{
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-32 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl shadow-xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+      {isOpen && dropdownPos && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: `${dropdownPos.top}px`,
+            left: `${dropdownPos.left}px`,
+            minWidth: `${dropdownPos.width}px`,
+          }}
+          className="w-32 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl shadow-2xl z-[150] py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             onClick={() => {
@@ -107,7 +141,8 @@ const UnitDropdown: React.FC<{
             <span>{percentLabel}</span>
             {value === 'percent' && <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -1171,7 +1206,7 @@ export const CheckoutModal: React.FC = () => {
                     <Tag className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>Offer / Discount</span>
                   </label>
-                  <div className="flex items-center rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 overflow-hidden focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/20">
+                  <div className="flex items-center rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/20">
                     <UnitDropdown
                       value={discountType}
                       onChange={setDiscountType}
@@ -1183,7 +1218,7 @@ export const CheckoutModal: React.FC = () => {
                       value={discountValue}
                       onChange={(e) => setDiscountValue(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder-stone-400 min-w-0"
+                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder-stone-400 min-w-0 rounded-r-xl"
                     />
                   </div>
                 </div>
@@ -1193,7 +1228,7 @@ export const CheckoutModal: React.FC = () => {
                     <Layers className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                     <span>Extra Charges</span>
                   </label>
-                  <div className="flex items-center rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 overflow-hidden focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/20">
+                  <div className="flex items-center rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/20">
                     <UnitDropdown
                       value={extraChargeType}
                       onChange={setExtraChargeType}
@@ -1205,7 +1240,7 @@ export const CheckoutModal: React.FC = () => {
                       value={extraChargeValue}
                       onChange={(e) => setExtraChargeValue(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder-stone-400 min-w-0"
+                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder-stone-400 min-w-0 rounded-r-xl"
                     />
                   </div>
                 </div>

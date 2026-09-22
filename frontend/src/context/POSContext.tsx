@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import type { CartItem, TableOrderState, OrderPayment } from '../types/app.types';
 import { useApp } from './AppContext';
 import { orderApi } from '../api/orderApi';
+import { inventoryApi } from '../api/inventoryApi';
 import { roundPOSAmount, getStoreGlobalTaxRate, getItemTaxRate, mergeOrAddPayment } from '../lib/orderUtils';
 import { toast } from './ToastContext';
 import type { ReservationData } from '../components/pos/POSReserveTableModal';
@@ -341,21 +342,45 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, []);
 
-  const saveTableOrder = useCallback(() => {
+  const saveTableOrder = useCallback(async () => {
     if (posMode !== 'table' || !selectedTableId || cart.length === 0) return;
     const key = String(selectedTableId);
+    const tableObj = appData.tables.find((t: any) => String(t.id) === key);
+    const tableName = tableObj ? tableObj.name : `Table ${key}`;
+
+    const itemsToDeduct = cart.map((item) => ({
+      menuItemId: Number(item.id || (item as any).menuItemId),
+      quantity: Number(item.quantity) || 1,
+    }));
+    const itemsWithFlag = cart.map((i) => ({ ...i, kotDeducted: true }));
+
     setTableOrders((prev) => {
       const existing = prev[key] || prev[selectedTableId] || { savedOrders: [], activeCart: [] };
       return {
         ...prev,
         [key]: {
-          savedOrders: [...existing.savedOrders, { items: existing.activeCart, time: Date.now() }],
+          savedOrders: [
+            ...existing.savedOrders,
+            { items: itemsWithFlag, time: Date.now(), kotDeducted: true },
+          ],
           activeCart: [],
         },
       };
     });
     setCart([]);
-  }, [posMode, selectedTableId, cart]);
+
+    try {
+      await inventoryApi.deductStock(
+        itemsToDeduct,
+        `KOT: ${tableName} - ${cart.map((c) => `${c.name} x${c.quantity}`).join(', ')}`
+      );
+      await refreshInventory();
+      toast.success('KOT sent to kitchen & inventory stock deducted!');
+    } catch (err) {
+      console.error('Failed to deduct inventory for KOT:', err);
+      toast.error('KOT sent, but failed to sync inventory deduction with server.');
+    }
+  }, [posMode, selectedTableId, cart, appData.tables, refreshInventory]);
 
   const handleAddToCart = useCallback(
     (item: any, skipAddonCheck = false) => {
@@ -467,31 +492,58 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   );
 
   const cancelKOTItem = useCallback(
-    (tableId: string | number, orderIdx: number, itemIdx: number) => {
+    async (tableId: string | number, orderIdx: number, itemIdx: number) => {
       const key = String(tableId);
+      const existing = tableOrders[key] || tableOrders[tableId];
+      if (!existing || !existing.savedOrders || !existing.savedOrders[orderIdx]) {
+        return;
+      }
+
+      const targetOrder = existing.savedOrders[orderIdx];
+      const rawItems = targetOrder.items || (Array.isArray(targetOrder) ? targetOrder : []);
+      const itemToRevert = rawItems[itemIdx];
+
+      // Revert inventory stock if this item/batch was KOT-deducted
+      if (itemToRevert && (itemToRevert.kotDeducted !== false || targetOrder.kotDeducted !== false)) {
+        const tableObj = appData.tables.find((t: any) => String(t.id) === key);
+        const tableName = tableObj ? tableObj.name : `Table ${key}`;
+        try {
+          await inventoryApi.revertStock(
+            [
+              {
+                menuItemId: Number(itemToRevert.id || (itemToRevert as any).menuItemId),
+                quantity: Number(itemToRevert.quantity) || 1,
+              },
+            ],
+            `KOT Item Cancelled: ${tableName} - ${itemToRevert.name} x${itemToRevert.quantity}`
+          );
+          await refreshInventory();
+        } catch (err) {
+          console.error('Failed to revert inventory for cancelled KOT item:', err);
+        }
+      }
+
       setTableOrders((prev) => {
-        const existing = prev[key] || prev[tableId];
-        if (!existing || !existing.savedOrders || !existing.savedOrders[orderIdx]) {
+        const curExisting = prev[key] || prev[tableId];
+        if (!curExisting || !curExisting.savedOrders || !curExisting.savedOrders[orderIdx]) {
           return prev;
         }
 
-        const savedOrders = [...existing.savedOrders];
-        const targetOrder = { ...savedOrders[orderIdx] };
-        const rawItems = targetOrder.items || (Array.isArray(targetOrder) ? targetOrder : []);
-        const updatedItems = rawItems.filter((_: any, idx: number) => idx !== itemIdx);
+        const savedOrders = [...curExisting.savedOrders];
+        const curTargetOrder = { ...savedOrders[orderIdx] };
+        const curRawItems = curTargetOrder.items || (Array.isArray(curTargetOrder) ? curTargetOrder : []);
+        const updatedItems = curRawItems.filter((_: any, idx: number) => idx !== itemIdx);
 
         if (updatedItems.length === 0) {
           savedOrders.splice(orderIdx, 1);
         } else {
-          savedOrders[orderIdx] = { ...targetOrder, items: updatedItems };
+          savedOrders[orderIdx] = { ...curTargetOrder, items: updatedItems };
         }
 
-        // Check if there are any remaining items in savedOrders or activeCart
         const hasRemainingItems =
-          savedOrders.length > 0 || (existing.activeCart && existing.activeCart.length > 0);
+          savedOrders.length > 0 || (curExisting.activeCart && curExisting.activeCart.length > 0);
 
         if (!hasRemainingItems) {
-          // Free table completely
           const nextState = { ...prev };
           delete nextState[key];
           delete nextState[tableId];
@@ -519,31 +571,57 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           return nextState;
         }
 
-        toast.info('Item removed from KOT.');
+        toast.info('Item removed from KOT & stock reverted.');
         return {
           ...prev,
           [key]: {
-            ...existing,
+            ...curExisting,
             savedOrders,
           },
         };
       });
     },
-    []
+    [tableOrders, appData.tables, refreshInventory]
   );
 
   const cancelKOTBatch = useCallback(
-    (tableId: string | number, batchIdx: number) => {
+    async (tableId: string | number, batchIdx: number) => {
       const key = String(tableId);
+      const existing = tableOrders[key] || tableOrders[tableId];
+      if (!existing || !existing.savedOrders || !existing.savedOrders[batchIdx]) {
+        return;
+      }
+
+      const batchToCancel = existing.savedOrders[batchIdx];
+      const isDeducted = batchToCancel.kotDeducted !== false;
+      const itemsToRevert = (batchToCancel.items || []).map((item) => ({
+        menuItemId: Number(item.id || (item as any).menuItemId),
+        quantity: Number(item.quantity) || 1,
+      }));
+
+      if (itemsToRevert.length > 0 && isDeducted) {
+        const tableObj = appData.tables.find((t: any) => String(t.id) === key);
+        const tableName = tableObj ? tableObj.name : `Table ${key}`;
+        try {
+          await inventoryApi.revertStock(
+            itemsToRevert,
+            `KOT Batch #${batchIdx + 1} Cancelled: ${tableName}`
+          );
+          await refreshInventory();
+        } catch (err) {
+          console.error('Failed to revert inventory for cancelled KOT batch:', err);
+        }
+      }
+
       setTableOrders((prev) => {
-        const existing = prev[key] || prev[tableId];
-        if (!existing || !existing.savedOrders || !existing.savedOrders[batchIdx]) {
+        const curExisting = prev[key] || prev[tableId];
+        if (!curExisting || !curExisting.savedOrders || !curExisting.savedOrders[batchIdx]) {
           return prev;
         }
 
-        const savedOrders = existing.savedOrders.filter((_, idx) => idx !== batchIdx);
+        const savedOrders = curExisting.savedOrders.filter((_, idx) => idx !== batchIdx);
         const hasRemainingItems =
-          savedOrders.length > 0 || (existing.activeCart && existing.activeCart.length > 0);
+          savedOrders.length > 0 || (curExisting.activeCart && curExisting.activeCart.length > 0);
 
         if (!hasRemainingItems) {
           const nextState = { ...prev };
@@ -569,35 +647,103 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return ntp;
           });
 
-          toast.info(`KOT Batch #${batchIdx + 1} cancelled. Table is now available.`);
+          toast.info(`KOT Batch #${batchIdx + 1} cancelled & stock reverted. Table is now available.`);
           return nextState;
         }
 
-        toast.info(`KOT Batch #${batchIdx + 1} cancelled.`);
+        toast.info(`KOT Batch #${batchIdx + 1} cancelled & stock reverted.`);
         return {
           ...prev,
           [key]: {
-            ...existing,
+            ...curExisting,
             savedOrders,
           },
         };
       });
     },
-    []
+    [tableOrders, appData.tables, refreshInventory]
   );
 
   const updateKOTBatch = useCallback(
-    (tableId: string | number, batchIdx: number, updatedItems: CartItem[], kitchenNote?: string) => {
+    async (tableId: string | number, batchIdx: number, updatedItems: CartItem[], kitchenNote?: string) => {
       const key = String(tableId);
+      const existing = tableOrders[key] || tableOrders[tableId];
+      if (!existing || !existing.savedOrders || !existing.savedOrders[batchIdx]) {
+        return;
+      }
+
+      const currentBatch = existing.savedOrders[batchIdx];
+      const prevItems = currentBatch.items || [];
+      const validItems = updatedItems.filter((i) => i.quantity > 0).map((i) => ({ ...i, kotDeducted: true }));
+
+      // Calculate inventory differences between previous batch and updated batch
+      if (currentBatch.kotDeducted !== false) {
+        const prevQtyMap = new Map<number, { name: string; qty: number }>();
+        prevItems.forEach((it) => {
+          const mid = Number(it.id || (it as any).menuItemId);
+          const cur = prevQtyMap.get(mid) || { name: it.name, qty: 0 };
+          cur.qty += Number(it.quantity) || 0;
+          prevQtyMap.set(mid, cur);
+        });
+
+        const newQtyMap = new Map<number, { name: string; qty: number }>();
+        validItems.forEach((it) => {
+          const mid = Number(it.id || (it as any).menuItemId);
+          const cur = newQtyMap.get(mid) || { name: it.name, qty: 0 };
+          cur.qty += Number(it.quantity) || 0;
+          newQtyMap.set(mid, cur);
+        });
+
+        const itemsToRevert: Array<{ menuItemId: number; quantity: number }> = [];
+        const itemsToDeduct: Array<{ menuItemId: number; quantity: number }> = [];
+
+        // Check items that were reduced or removed
+        prevQtyMap.forEach((prevVal, mid) => {
+          const newVal = newQtyMap.get(mid)?.qty || 0;
+          if (newVal < prevVal.qty) {
+            itemsToRevert.push({ menuItemId: mid, quantity: prevVal.qty - newVal });
+          }
+        });
+
+        // Check items that were increased or newly added
+        newQtyMap.forEach((newVal, mid) => {
+          const prevVal = prevQtyMap.get(mid)?.qty || 0;
+          if (newVal.qty > prevVal) {
+            itemsToDeduct.push({ menuItemId: mid, quantity: newVal.qty - prevVal });
+          }
+        });
+
+        const tableObj = appData.tables.find((t: any) => String(t.id) === key);
+        const tableName = tableObj ? tableObj.name : `Table ${key}`;
+
+        try {
+          if (itemsToRevert.length > 0) {
+            await inventoryApi.revertStock(
+              itemsToRevert,
+              `KOT Batch #${batchIdx + 1} Edited (Reduced): ${tableName}`
+            );
+          }
+          if (itemsToDeduct.length > 0) {
+            await inventoryApi.deductStock(
+              itemsToDeduct,
+              `KOT Batch #${batchIdx + 1} Edited (Added): ${tableName}`
+            );
+          }
+          if (itemsToRevert.length > 0 || itemsToDeduct.length > 0) {
+            await refreshInventory();
+          }
+        } catch (err) {
+          console.error('Failed to sync inventory on KOT batch edit:', err);
+        }
+      }
+
       setTableOrders((prev) => {
-        const existing = prev[key] || prev[tableId];
-        if (!existing || !existing.savedOrders || !existing.savedOrders[batchIdx]) {
+        const curExisting = prev[key] || prev[tableId];
+        if (!curExisting || !curExisting.savedOrders || !curExisting.savedOrders[batchIdx]) {
           return prev;
         }
 
-        const savedOrders = [...existing.savedOrders];
-        const validItems = updatedItems.filter((i) => i.quantity > 0);
-
+        const savedOrders = [...curExisting.savedOrders];
         if (validItems.length === 0) {
           savedOrders.splice(batchIdx, 1);
         } else {
@@ -606,11 +752,12 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             items: validItems,
             note: kitchenNote?.trim() || savedOrders[batchIdx].note,
             updatedAt: Date.now(),
+            kotDeducted: true,
           };
         }
 
         const hasRemainingItems =
-          savedOrders.length > 0 || (existing.activeCart && existing.activeCart.length > 0);
+          savedOrders.length > 0 || (curExisting.activeCart && curExisting.activeCart.length > 0);
 
         if (!hasRemainingItems) {
           const nextState = { ...prev };
@@ -636,21 +783,21 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return ntp;
           });
 
-          toast.info('All items removed from KOT. Table is now available.');
+          toast.info('All items removed from KOT & stock adjusted. Table is now available.');
           return nextState;
         }
 
-        toast.success(`KOT Batch #${batchIdx + 1} updated and sent to kitchen!`);
+        toast.success(`KOT Batch #${batchIdx + 1} updated & stock synchronized!`);
         return {
           ...prev,
           [key]: {
-            ...existing,
+            ...curExisting,
             savedOrders,
           },
         };
       });
     },
-    []
+    [tableOrders, appData.tables, refreshInventory]
   );
 
   const shiftKOTBatch = useCallback(
@@ -747,15 +894,37 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const tableName = tableObj ? tableObj.name : `Table ${key}`;
 
       let combinedItems: CartItem[] = [];
+      const itemsToRevert: Array<{ menuItemId: number; quantity: number }> = [];
+
       if (orderData) {
         if (orderData.savedOrders) {
           orderData.savedOrders.forEach((o: any) => {
             const items = o.items || (Array.isArray(o) ? o : []);
             combinedItems = [...combinedItems, ...items];
+            if (o.kotDeducted !== false) {
+              items.forEach((it: any) => {
+                itemsToRevert.push({
+                  menuItemId: Number(it.id || it.menuItemId),
+                  quantity: Number(it.quantity) || 1,
+                });
+              });
+            }
           });
         }
         if (orderData.activeCart) {
           combinedItems = [...combinedItems, ...orderData.activeCart];
+        }
+      }
+
+      // Revert any previously deducted KOT stocks
+      if (itemsToRevert.length > 0) {
+        try {
+          await inventoryApi.revertStock(
+            itemsToRevert,
+            `Table Order Cancelled: ${tableName}${reason ? ` | Reason: ${reason}` : ''}`
+          );
+        } catch (err) {
+          console.error('Failed to revert inventory on table order cancellation:', err);
         }
       }
 
@@ -965,10 +1134,19 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const confirmPaymentAndOrder = useCallback(
     async (splitPayments?: OrderPayment[], description?: string) => {
       let combinedItems: CartItem[] = [...cart];
-      if (posMode === 'table' && selectedTableId && tableOrders[selectedTableId]) {
-        tableOrders[selectedTableId].savedOrders.forEach((order) => {
-          combinedItems = [...combinedItems, ...(order.items || (order as any))];
-        });
+      if (posMode === 'table' && selectedTableId) {
+        const tableKey = String(selectedTableId);
+        const orderData = tableOrders[tableKey] || tableOrders[selectedTableId];
+        if (orderData?.savedOrders) {
+          orderData.savedOrders.forEach((order) => {
+            const isDeducted = order.kotDeducted !== false;
+            const items = (order.items || (order as any)).map((it: any) => ({
+              ...it,
+              kotDeducted: isDeducted,
+            }));
+            combinedItems = [...combinedItems, ...items];
+          });
+        }
       }
 
       if (combinedItems.length === 0) return;
@@ -1030,6 +1208,7 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           menuItemId: c.id,
           quantity: c.quantity,
           price: parseFloat(c.price.toString().replace(/[^0-9.]/g, '')) || 0,
+          skipInventoryDeduction: Boolean(c.kotDeducted),
         })),
         subtotal,
         tax,

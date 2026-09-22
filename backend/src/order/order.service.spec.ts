@@ -55,6 +55,12 @@ describe('OrderService (Automation Testing)', () => {
     const txMock = {
       order: {
         create: jest.fn().mockResolvedValue(mockOrder),
+        count: jest.fn().mockResolvedValue(1),
+      },
+      customer: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: 1 }),
+        update: jest.fn().mockResolvedValue({ id: 1 }),
       },
       recipeIngredient: {
         findMany: jest.fn().mockResolvedValue(mockRecipe),
@@ -94,10 +100,54 @@ describe('OrderService (Automation Testing)', () => {
     });
   });
 
-  it('should list all orders sorted by date desc', async () => {
+  it('should skip inventory deduction when skipInventoryDeduction is true on items', async () => {
+    const mockOrder = {
+      id: 502,
+      date: new Date('2026-03-30T10:00:00Z'),
+      total: 315,
+      items: [{ id: 1, menuItemId: 10, quantity: 2, price: 150 }],
+    };
+
+    const txMock = {
+      order: {
+        create: jest.fn().mockResolvedValue(mockOrder),
+        count: jest.fn().mockResolvedValue(2),
+      },
+      customer: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: 1 }),
+        update: jest.fn().mockResolvedValue({ id: 1 }),
+      },
+      recipeIngredient: {
+        findMany: jest.fn(),
+      },
+      inventoryItem: {
+        update: jest.fn(),
+      },
+      inventoryHistory: {
+        create: jest.fn(),
+      },
+    };
+
+    prisma.$transaction.mockImplementation(async (cb: any) => cb(txMock));
+
+    const result = await service.create({
+      items: [{ id: 10, menuItemId: 10, quantity: 2, price: 150, skipInventoryDeduction: true }],
+      paymentMethod: 'Cash',
+      subtotal: 300,
+      tax: 15,
+      total: 315,
+    });
+
+    expect(result.id).toBe(502);
+    expect(txMock.inventoryItem.update).not.toHaveBeenCalled();
+    expect(txMock.inventoryHistory.create).not.toHaveBeenCalled();
+  });
+
+  it('should list all orders sorted by date asc for daily sequence', async () => {
     prisma.order.findMany.mockResolvedValue([
-      { id: 2, total: 200 },
-      { id: 1, total: 150 },
+      { id: 1, total: 150, date: new Date('2026-03-30T10:00:00Z') },
+      { id: 2, total: 200, date: new Date('2026-03-30T11:00:00Z') },
     ]);
 
     const list = await service.findAll();
@@ -107,7 +157,7 @@ describe('OrderService (Automation Testing)', () => {
         items: { include: { menuItem: true } },
         payments: true,
       },
-      orderBy: { date: 'desc' },
+      orderBy: { date: 'asc' },
     });
   });
 });

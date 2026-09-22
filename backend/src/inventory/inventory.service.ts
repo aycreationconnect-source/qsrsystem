@@ -197,4 +197,112 @@ export class InventoryService {
     }
     return { success: true };
   }
+
+  // --- KOT Stock Deduction & Reversal Engine ---
+
+  async deductStockForItems(items: Array<{ menuItemId: number; quantity: number }>, reason?: string) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      let deductedCount = 0;
+
+      for (const item of items) {
+        const menuItemId = Number(item.menuItemId);
+        const quantity = Number(item.quantity) || 0;
+        if (!menuItemId || quantity <= 0) continue;
+
+        const recipeIngredients = await tx.recipeIngredient.findMany({
+          where: { menuItemId },
+          include: { inventory: true },
+        });
+
+        for (const recipe of recipeIngredients) {
+          if (!recipe.inventory) continue;
+          const deductionAmount = parseFloat((recipe.quantity * quantity).toFixed(4));
+          const newStock = parseFloat((recipe.inventory.stock - deductionAmount).toFixed(4));
+          const newStatus =
+            newStock <= recipe.inventory.threshold
+              ? newStock <= 0
+                ? 'Out of Stock'
+                : 'Low Stock'
+              : 'Good';
+
+          await tx.inventoryItem.update({
+            where: { id: recipe.inventoryId },
+            data: {
+              stock: newStock,
+              status: newStatus,
+            },
+          });
+
+          await tx.inventoryHistory.create({
+            data: {
+              inventoryId: recipe.inventoryId,
+              change: `-${deductionAmount}`,
+              type: reason || 'KOT Sent',
+            },
+          });
+
+          deductedCount++;
+        }
+      }
+
+      return { success: true, count: deductedCount };
+    });
+  }
+
+  async revertStockForItems(items: Array<{ menuItemId: number; quantity: number }>, reason?: string) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      let revertedCount = 0;
+
+      for (const item of items) {
+        const menuItemId = Number(item.menuItemId);
+        const quantity = Number(item.quantity) || 0;
+        if (!menuItemId || quantity <= 0) continue;
+
+        const recipeIngredients = await tx.recipeIngredient.findMany({
+          where: { menuItemId },
+          include: { inventory: true },
+        });
+
+        for (const recipe of recipeIngredients) {
+          if (!recipe.inventory) continue;
+          const revertAmount = parseFloat((recipe.quantity * quantity).toFixed(4));
+          const newStock = parseFloat((recipe.inventory.stock + revertAmount).toFixed(4));
+          const newStatus =
+            newStock <= recipe.inventory.threshold
+              ? newStock <= 0
+                ? 'Out of Stock'
+                : 'Low Stock'
+              : 'Good';
+
+          await tx.inventoryItem.update({
+            where: { id: recipe.inventoryId },
+            data: {
+              stock: newStock,
+              status: newStatus,
+            },
+          });
+
+          await tx.inventoryHistory.create({
+            data: {
+              inventoryId: recipe.inventoryId,
+              change: `+${revertAmount}`,
+              type: reason || 'KOT Cancelled',
+            },
+          });
+
+          revertedCount++;
+        }
+      }
+
+      return { success: true, count: revertedCount };
+    });
+  }
 }

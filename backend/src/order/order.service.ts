@@ -118,9 +118,12 @@ export class OrderService {
         }
       }
 
-      // 2. Deduct inventory according to recipes (only for non-cancelled orders)
-      if (!isCancelled) {
+      // 2. Deduct inventory according to recipes (only for non-cancelled orders & non-KOT-deducted items)
+      if (!isCancelled && !data.skipInventoryDeduction) {
         for (const orderItem of items) {
+          if (orderItem.skipInventoryDeduction) {
+            continue;
+          }
           const menuItemId = orderItem.menuItemId || orderItem.id;
           
           const recipeIngredients = await tx.recipeIngredient.findMany({

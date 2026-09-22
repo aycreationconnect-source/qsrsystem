@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { usePOS } from '../../context/POSContext';
 import { CafeBrandBadge, Button, Tooltip } from '../ui';
@@ -10,6 +11,7 @@ import {
   X,
   LayoutGrid,
   List,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export interface POSTopNavProps {
@@ -22,6 +24,7 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
   onOpenMobileCart,
   onOpenStoreProfile,
 }) => {
+  const navigate = useNavigate();
   const { posMode, storeProfile } = useApp();
   const {
     selectedTableId,
@@ -287,6 +290,20 @@ export const POSTopNav: React.FC<POSTopNavProps> = ({
           >
             <span className="hidden xl:inline">Order History</span>
             <span className="xl:hidden">History</span>
+          </Button>
+        </Tooltip>
+
+        <Tooltip content="Return to Admin Dashboard" position="bottom">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/dashboard')}
+            leftIcon={<LayoutDashboard className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+            className="font-bold cursor-pointer rounded-2xl bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/50 border-amber-200/80 dark:border-amber-900/40 text-stone-900 dark:text-stone-100"
+          >
+            <span className="hidden xl:inline">Dashboard</span>
+            <span className="xl:hidden">Admin</span>
           </Button>
         </Tooltip>
       </div>
