@@ -19,44 +19,44 @@ export const PageTitleUpdater: React.FC = () => {
 
     if (pathname === '/dashboard') {
       meta = {
-        title: 'Velora | Admin-panel - Management Dashboard',
+        title: 'ORDELL | Admin-panel - Management Dashboard',
         description:
-          'Velora Cafe & QSR Admin Panel - Real-time metrics, live analytics, sales overview, and operations.',
+          'ORDELL Cafe & QSR Admin Panel - Real-time metrics, live analytics, sales overview, and operations.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/menu') {
       meta = {
-        title: 'Velora | Menu Management - Dishes, Recipes & Categories',
+        title: 'ORDELL | Menu Management - Dishes, Recipes & Categories',
         description:
-          'Velora Menu Management - Manage dishes, beverages, categories, recipes, and add-ons.',
+          'ORDELL Menu Management - Manage dishes, beverages, categories, recipes, and add-ons.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/inventory') {
       meta = {
-        title: 'Velora | Inventory Management - Stock Tracking & Alerts',
+        title: 'ORDELL | Inventory Management - Stock Tracking & Alerts',
         description:
-          'Velora Inventory Management - Track raw ingredients, real-time stock levels, wastage, and movement history.',
+          'ORDELL Inventory Management - Track raw ingredients, real-time stock levels, wastage, and movement history.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/tables') {
       meta = {
-        title: 'Velora | Table Setup - Floor Plans & Seating Architecture',
+        title: 'ORDELL | Table Setup - Floor Plans & Seating Architecture',
         description:
-          'Velora Floor & Table Setup - Manage dine-in sections, seating layouts, and live table status.',
+          'ORDELL Floor & Table Setup - Manage dine-in sections, seating layouts, and live table status.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/reports' || pathname === '/report') {
       meta = {
-        title: 'Velora | Reports & Analytics - Sales, Orders & Performance',
+        title: 'ORDELL | Reports & Analytics - Sales, Orders & Performance',
         description:
-          'Velora Reports & Analytics - Comprehensive sales audit, daily totals, order history, inventory logs and menu analytics.',
+          'ORDELL Reports & Analytics - Comprehensive sales audit, daily totals, order history, inventory logs and menu analytics.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/settings') {
       meta = {
-        title: 'Velora | Settings - Store Identity & System Configuration',
+        title: 'ORDELL | Settings - Store Identity & System Configuration',
         description:
-          'Velora System Settings - Store profile, tax rates, payment gateways, printers, and system configurations.',
+          'ORDELL System Settings - Store profile, tax rates, payment gateways, printers, and system configurations.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/pos') {
@@ -69,29 +69,29 @@ export const PageTitleUpdater: React.FC = () => {
           ? 'Self-Ordering Kiosk Terminal'
           : 'Fast Counter Order & Express Billing';
       meta = {
-        title: `Velora | POS | ${formattedMode} - ${modeDesc}`,
-        description: `Velora POS Terminal (${formattedMode}) - ${modeDesc}. High-speed order entry, fast billing, and kitchen dispatch.`,
+        title: `ORDELL | POS | ${formattedMode} - ${modeDesc}`,
+        description: `ORDELL POS Terminal (${formattedMode}) - ${modeDesc}. High-speed order entry, fast billing, and kitchen dispatch.`,
         favicon: '/favicon-pos.svg',
       };
     } else if (pathname === '/login') {
       meta = {
-        title: 'Velora | Staff Login - Secure Authentication Portal',
+        title: 'ORDELL | Staff Login - Secure Authentication Portal',
         description:
-          'Velora POS - High-performance QSR & Restaurant Management System secure staff login.',
+          'ORDELL POS - High-performance QSR & Restaurant Management System secure staff login.',
         favicon: '/favicon.svg',
       };
     } else if (pathname === '/activate') {
       meta = {
-        title: 'Velora | Station Activation - Terminal License Verification',
+        title: 'ORDELL | Station Activation - Terminal License Verification',
         description:
-          'Velora POS - Terminal license verification and station database initialization portal.',
+          'ORDELL POS - Terminal license verification and station database initialization portal.',
         favicon: '/favicon.svg',
       };
     } else {
       meta = {
-        title: 'Velora | Next-Gen QSR & Restaurant Management',
+        title: 'ORDELL | Next-Gen QSR & Restaurant Management',
         description:
-          'Velora is a modern, ultra-responsive, offline-capable QSR and Cafe Management POS system.',
+          'ORDELL is a modern, ultra-responsive, offline-capable QSR and Cafe Management POS system.',
         favicon: '/favicon.svg',
       };
     }

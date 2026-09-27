@@ -92,20 +92,20 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({
         <div className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
 
         <div className="p-6 sm:p-8">
-          {/* Vidhara Official Brand Header */}
+          {/* ORDELL Official Brand Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-100 dark:border-stone-800">
             <div className="flex items-center gap-3">
               <img
-                src="/velora-logo.png"
-                alt="Velora POS"
+                src="/ordell-logo.png"
+                alt="ORDELL POS"
                 className="h-9 w-auto object-contain dark:hidden"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
               <img
-                src="/velora-logo-dark.png"
-                alt="Velora POS"
+                src="/ordell-logo-dark.png"
+                alt="ORDELL POS"
                 className="h-9 w-auto object-contain hidden dark:block"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -113,7 +113,7 @@ export const ActivateLicenseView: React.FC<ActivateLicenseViewProps> = ({
               />
               <div>
                 <h1 className="text-base font-extrabold text-stone-900 dark:text-stone-100 leading-tight flex items-center gap-1.5">
-                  <span>VELORA POS ACTIVATION</span>
+                  <span>ORDELL POS ACTIVATION</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold">
                     OFFLINE
                   </span>

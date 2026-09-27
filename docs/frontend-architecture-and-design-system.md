@@ -1,6 +1,6 @@
 # 🎨 Frontend Architecture & Multi-Device Design System
 
-Comprehensive architectural guide and styling specification for the **Vidhara QSR POS & Restaurant Management Frontend**. This document outlines the modern design system built on **React 19**, **Vite**, **Tailwind CSS v4**, and **Shadcn UI design patterns**, specifically engineered for pixel-perfect responsiveness across all restaurant hardware devices.
+Comprehensive architectural guide and styling specification for the **ORDELL QSR POS & Restaurant Management Frontend**. This document outlines the modern design system built on **React 19**, **Vite**, **Tailwind CSS v4**, and **Shadcn UI design patterns**, specifically engineered for pixel-perfect responsiveness across all restaurant hardware devices.
 
 ---
 
@@ -204,7 +204,7 @@ graph LR
   - Created production-grade touch primitives in `frontend/src/components/ui/` (`Button`, `Input`, `Badge`, `Card`, `Modal`, `Drawer`, `Numpad`, `Tooltip`, `Select`, `CafeBrandBadge`).
   - Verified TypeScript and Vite build with 0 errors.
 - ✅ **Phase 3 (Completed)**: Complete Multi-Device UI Redesign:
-  - **Auth & Activation**: `LoginView.tsx` (PIN & Password, cafe badge, Vidhara logo) & `ActivateLicenseView.tsx` (Vidhara brand header, paste token, store initialization).
+  - **Auth & Activation**: `LoginView.tsx` (PIN & Password, cafe badge, ORDELL logo) & `ActivateLicenseView.tsx` (ORDELL brand header, paste token, store initialization).
   - **Point of Sale (POS)**: `POSLayout.tsx` (responsive engine with mobile Waiter drawer), `POSTopNav.tsx`, `POSCategoryTabs.tsx`, `POSProductGrid.tsx`, `POSCartSidebar.tsx`, `POSTableSidebar.tsx`, and all 5 POS modals (`CheckoutModal`, `AddonSelectModal`, `ShiftTableModal`, `AddTablePOSModal`, `OrderSuccessModal`).
   - **Admin Panel & Dashboard**: `AdminLayout.tsx` (responsive mobile drawer navigation), `Sidebar.tsx`, `Header.tsx`, `DashboardView.tsx`, `StatCards.tsx`, `RevenueChart.tsx`, `RecentActivity.tsx`, `QuickActions.tsx`.
   - **Management Modules**: `MenuView.tsx`, `CategorySidebar.tsx`, `MenuItemsGrid.tsx`, `FloorManagement.tsx`, `InventoryView.tsx`, `InventoryTable.tsx`, `SettingsView.tsx` with Cafe Branding & Store Profile modal.
@@ -212,4 +212,4 @@ graph LR
 - ⏳ **Phase 4**: KDS screen, dark mode toggle, and offline thermal receipt print styling.
 
 ---
-*Created by AyCreationConnect Engineering Team for Vidhara QSR Platform.*
+*Created by AyCreationConnect Engineering Team for ORDELL QSR Platform.*

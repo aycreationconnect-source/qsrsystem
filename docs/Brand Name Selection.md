@@ -1,83 +1,84 @@
-# 🍽️ Velora — Brand Identity, Name Selection & Architectural Roadmap
+# 🍽️ ORDELL — Brand Identity, Name Selection & Architectural Roadmap
 
 ---
 
 ## 📌 Executive Summary
 
-**Velora** (/vəˈlɔː.rə/) is an enterprise-grade food-service ecosystem engineered for specialty cafes, fine-dining restaurants, quick-service eateries (QSR), and modern hospitality operations.
+**ORDELL** (/ɔːrˈdɛl/) is an enterprise-grade food-service ecosystem engineered for specialty cafes, fine-dining restaurants, quick-service eateries (QSR), cloud kitchens, and modern hospitality operations.
 
-This document records the foundational brand strategy, phonetic profile, etymological roots, visual guidelines, product architecture, and official raster graphic asset catalog for the **Velora** platform suite.
+This document records the foundational brand strategy, phonetic profile, etymological roots, visual guidelines, product architecture, and official graphic asset catalog for the **ORDELL** platform suite.
 
 ---
 
-## 📖 1. What is Velora?
+## 📖 1. What is ORDELL?
 
 ### 1.1 Phonetics & Pronunciation
 
 | Attribute | Specification | Notes |
 | :--- | :--- | :--- |
-| **Written Form** | **Velora** | Roman script, title case |
-| **IPA Transcription** | `/vəˈlɔː.rə/` or `/vɛˈlɔː.rə/` | Standard International Phonetic Alphabet |
-| **Syllable Breakdown** | **Ve · Lo · Ra** | 3 melodic, fluid syllables |
-| **Phonetic Pronunciation**| **"Veh - LOR - ah"** | `Ve` as in *velocity/velvet*, `Lor` as in *allure/aurora*, `Ah` open elegant vowel |
+| **Written Form** | **ORDELL** | Roman script, all caps / title case |
+| **IPA Transcription** | `/ɔːrˈdɛl/` | Standard International Phonetic Alphabet |
+| **Syllable Breakdown** | **Or · Dell** | 2 punchy, memorable syllables |
+| **Phonetic Pronunciation**| **"Or - DELL"** | `Or` as in *Order/Origin*, `Dell` as in *Deliver/Excel* |
 
 ---
 
 ### 1.2 Etymology & Brand Essence
 
-The name **Velora** synthesizes classical elegance with high-speed modern hospitality engineering:
+The name **ORDELL** directly conveys mastery over hospitality throughput:
 
 ```
-      VELOCITY (Speed & Flow)              ALLURE / AURORA (Beauty & Warmth)
-   [Frictionless QSR Efficiency]      +      [Elevated Dining Ambiance]
-               \                                   /
-                \                                 /
-                 =================================
-                          VELORA
-                "Where Culinary Craft Meets
-                 Effortless Digital Elegance"
+       ORDER (Flow & Precision)             EXCELLENCE & OPERATIONS (Execution)
+    [Frictionless POS Checkout]       +      [Recipe Inventory & High Throughput]
+                \                                   /
+                 \                                 /
+                  =================================
+                               ORDELL
+                  "Order, Operations and Billing"
 ```
 
-1. **Velocity & Flow (*Vel-*)**:
-   - Represents rapid table-turnover, 3-tap counter checkout, instantaneous kitchen routing, and zero cloud latency.
-2. **Allure & Prestige (*-Lora*)**:
-   - Evokes golden light (*aurora*), warmth, and the sensory refinement of artisanal cafes and luxury bistros.
-3. **Simplicity & Global Recognition**:
-   - Short, memorable, and globally recognized without language barriers.
+1. **Order & Flow (*Ord-*)**:
+   - Rapid order creation, instant 0ms offline dispatch, split settlements, and kitchen order routing.
+2. **Operations & Billing (*-Dell*)**:
+   - Robust restaurant management, inventory deduction, ledger analytics, and fiscal compliance.
+3. **The Signature Accent**:
+   - The letter **"R"** features a vibrant solar orange diagonal kick, serving as the visual anchor of momentum and energetic hospitality service.
 
 ---
 
-## 🎯 2. Why the Name "Velora" Was Selected
+## 🎯 2. Why the Name "ORDELL" Was Selected
 
-1. **Modern, Minimalist & Timeless**:
-   - Eliminates complex or localized jargon in favor of an upscale, international hospitality brand identity.
-2. **No Clutter / Pure Brand Mark**:
-   - Clean, standalone wordmark without forced taglines, allowing the brand to scale from boutique coffee bars to multinational franchises.
-3. **Harmonious Geometric Visual Anchor**:
-   - The initial **"V"** forms the iconic geometric monogram seamlessly holding a clean culinary fork.
+1. **Modern, Authoritative & Memorable**:
+   - Direct, crisp, two-syllable name that commands trust and clarity at the billing counter.
+2. **Seamless Subtitle Hierarchy**:
+   - Accompanied by the clean descriptive subtitle: **"Order, Operations and Billing"**.
+3. **Dynamic 3D Ribbon 'O' Visual Anchor**:
+   - The initial **"O"** is styled as an isometric, continuous dimensional ribbon loop transitioning from solar orange to electric royal blue.
 4. **Effortless Multi-Theme Legibility**:
-   - High-contrast visual balance in both dark mode (satin champagne gold on obsidian charcoal) and light mode (rich charcoal and warm gold on crisp white/cream).
+   - High-contrast visual balance in both dark mode (crisp off-white typography with solar orange 'R' kick on obsidian navy) and light mode (midnight navy typography with solar orange 'R' kick on clean cream).
 
 ---
 
 ## 🎨 3. Visual Identity & Color Palette
 
-Velora moves away from heavy 3D bevels to an **elegant, minimalist, modern 2D flat-luxury aesthetic**:
+ORDELL features a vibrant, modern dimensional aesthetic:
 
 ```
 +---------------------------------------------------------------------------------+
-|  CHAMPAGNE GOLD      OBSIDIAN CHARCOAL       WARM IVORY        SLATE ACCENT     |
-|     #D4AF37               #1E232A              #FAF8F5           #2C3440        |
-|  (Craft & Brass)      (Primary Base)        (Clean Light)     (Bevel Depth)     |
+|  SOLAR ORANGE         ELECTRIC BLUE         MIDNIGHT NAVY       CLEAN SLATE     |
+|     #FF6D00              #0070F3               #0B1528            #F8FAFC       |
+|  (Energy & Kick)     (Speed & Logic)       (Dark Base Text)    (Light Base Text)|
 +---------------------------------------------------------------------------------+
 ```
 
-- **Satin Champagne Gold (`#D4AF37` / `#E5C27C`)**:
-  - Highlights culinary warmth, premium cutlery, and refined dining service.
-- **Obsidian Charcoal (`#1E232A`)**:
-  - Deep matte tone for the left arm of the 'V' and primary light-mode typography.
-- **Warm Ivory / Cream (`#FAF8F5`)**:
-  - Pristine light-mode background ensuring comfortable, glare-free reading on POS touchscreens and guest digital bills.
+- **Solar Orange (`#FF6D00` / `#FFA000`)**:
+   - Highlights order velocity, warmth, appetite appeal, and the iconic signature diagonal leg of the 'R'.
+- **Electric Royal Blue (`#0070F3` / `#00B0FF`)**:
+   - Represents cloudless local speed, database integrity, and modern engineering.
+- **Midnight Navy (`#0B1528` / `#0F172A`)**:
+   - Deep structural foundation for typography in light mode and container frames.
+- **Crisp Off-White (`#F8FAFC`)**:
+   - High-contrast typography on dark mode dashboards and POS terminals.
 
 ---
 
@@ -85,9 +86,9 @@ Velora moves away from heavy 3D bevels to an **elegant, minimalist, modern 2D fl
 
 | Application | Primary Typeface | Characteristics |
 | :--- | :--- | :--- |
-| **Brand Wordmark** | **Montserrat Bold / ExtraBold** (Geometric Sans) | Clean, architectural, modern cafe aesthetic with generous tracking (`0.24em`). Solid champagne gold in dark mode, deep obsidian charcoal in light mode. |
-| **Brand Glyph** | **Geometric 'V' Fork Monogram** | Asymmetrical dual-diagonal: Left arm in matte charcoal (`#1E232A`), right arm extending cleanly into a 3-tine culinary fork in champagne gold (`#D4AF37`). Pure and uncluttered (no spoon, no silver elements). |
-| **Tagline Rule** | **Strictly No Tagline** | Wordmark stands cleanly as pure `VELORA`. Subtext such as `POS - KOS - QSR` or `Cafe & Restaurant` is completely omitted. |
+| **Brand Wordmark** | **Geometric Rounded Sans (All Caps)** | Bold, rounded geometry. Midnight navy in light mode, crisp white in dark mode. The 'R' lower-right leg is an isolated vibrant solar orange slash. |
+| **Brand Glyph** | **3D Ribbon 'O' Loop** | Continuous fluid ribbon ring transitioning from golden-orange on the outer curve to electric royal blue on the inner loop with negative space separation. |
+| **Official Subtitle**| **"Order, Operations and Billing"** | Balanced, medium tracking beneath the ORDELL wordmark. |
 
 ---
 
@@ -95,41 +96,43 @@ Velora moves away from heavy 3D bevels to an **elegant, minimalist, modern 2D fl
 
 ```mermaid
 graph TD
-    V_CORE["🍽️ VELORA CORE"] --> V_POS["🖥️ Velora POS (Dine-In & Table Management)"]
-    V_CORE --> V_QSR["⚡ Velora QSR (Counter Billing & Kiosks)"]
-    V_CORE --> V_KDS["🍳 Velora Kitchen (KDS & Bump Bars)"]
-    V_CORE --> V_INV["📦 Velora Inventory (Recipe & Stock Engine)"]
-    V_CORE --> V_PAY["💳 Velora Pay (Dynamic QR & Contactless)"]
-    V_CORE --> V_PULSE["📊 Velora Pulse (Live Executive Analytics)"]
-    V_CORE --> V_CHAIN["🌐 Velora Chain (Multi-Branch Cloud)"]
+    O_CORE["🍽️ ORDELL CORE"] --> O_POS["🖥️ ORDELL POS (Dine-In & Table Management)"]
+    O_CORE --> O_QSR["⚡ ORDELL QSR (Counter Billing & Kiosks)"]
+    O_CORE --> O_KDS["🍳 ORDELL Kitchen (KDS & Bump Bars)"]
+    O_CORE --> O_INV["📦 ORDELL Inventory (Recipe & Stock Engine)"]
+    O_CORE --> O_PAY["💳 ORDELL Pay (Dynamic QR & Contactless)"]
+    O_CORE --> O_PULSE["📊 ORDELL Pulse (Live Executive Analytics)"]
+    O_CORE --> O_CHAIN["🌐 ORDELL Chain (Multi-Branch Cloud)"]
 ```
 
 ---
 
-## 📂 6. Official Raster Graphic Asset Catalog
+## 📂 6. Official Graphic Asset Catalog
 
-All vector SVGs and previous assets have been deleted. The official brand suite consists of **high-resolution transparent Raster PNGs** located in [`frontend/public/`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/):
+The official brand suite consists of **high-resolution transparent Raster PNGs & SVGs** located in [`frontend/public/`](file:///c:/Learning/projects/qsrsystem/frontend/public/):
 
 | # | Asset Type | File Name | Mode | Dimensions | Best Use Case |
 | :- | :--- | :--- | :--- | :--- | :--- |
-| **1** | **Master Horizontal Logo** | [`velora-logo-dark.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-logo-dark.png) | 🌙 Dark | `1080 × 360 px` | Dark navbars, dark POS headers, storefront signboards |
-| **2** | **Master Horizontal Logo** | [`velora-logo-light.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-logo-light.png) | ☀️ Light | `1080 × 360 px` | White/cream invoices, bills, guest receipts, menus |
-| **3** | **Standalone Wordmark** | [`velora-wordmark-dark.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-wordmark-dark.png) | 🌙 Dark | `750 × 240 px` | Clean minimal header, ambient glowing text |
-| **4** | **Standalone Wordmark** | [`velora-wordmark-light.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-wordmark-light.png) | ☀️ Light | `750 × 240 px` | Print receipts, crisp light storefront glass |
-| **5** | **App Icon & Symbol** | [`velora-icon-dark.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-icon-dark.png) | 🌙 Dark | `460 × 660 px` | Mobile app shortcut, social avatar, stamps |
-| **6** | **App Icon & Symbol** | [`velora-icon-light.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-icon-light.png) | ☀️ Light | `460 × 660 px` | Light app interfaces, watermark stamp |
-| **7** | **Square 1:1 App Canvas** | [`velora-icon-square.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-icon-square.png) | Universal | `1024 × 1024 px` | App Store submissions, PWA manifest |
-| **8** | **Circular Restaurant Medallion** | [`velora-emblem-dark.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-emblem-dark.png) | 🌙 Dark | `960 × 960 px` | Beverage coasters, uniform embroidery, seals |
-| **9** | **Circular Restaurant Medallion** | [`velora-emblem-light.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/velora-emblem-light.png) | ☀️ Light | `960 × 960 px` | Coasters on light surfaces, stamps on napkins |
-| **10**| **Browser Favicon** | [`favicon.png`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/favicon.png) | Universal | `64 × 64 px` | Browser tab icon |
+| **1** | **Master Horizontal Logo** | [`ordell-logo-dark.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-logo-dark.png) | 🌙 Dark | `1200 × 360 px` | Dark navbars, dark POS headers, storefront signboards |
+| **2** | **Master Horizontal Logo** | [`ordell-logo-light.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-logo-light.png) | ☀️ Light | `1200 × 360 px` | White/cream invoices, bills, guest receipts, menus |
+| **3** | **Standalone Wordmark** | [`ordell-wordmark-dark.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-wordmark-dark.png) | 🌙 Dark | `850 × 400 px` | Clean minimal header, ambient glowing text |
+| **4** | **Standalone Wordmark** | [`ordell-wordmark-light.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-wordmark-light.png) | ☀️ Light | `850 × 400 px` | Print receipts, crisp light storefront glass |
+| **5** | **App Icon & Symbol** | [`ordell-icon-dark.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-icon-dark.png) | 🌙 Dark | `512 × 512 px` | Mobile app shortcut, social avatar, stamps |
+| **6** | **App Icon & Symbol** | [`ordell-icon-light.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-icon-light.png) | ☀️ Light | `512 × 512 px` | Light app interfaces, watermark stamp |
+| **7** | **Square 1:1 App Canvas** | [`ordell-icon-square.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-icon-square.png) | Universal | `1024 × 1024 px` | App Store submissions, PWA manifest |
+| **8** | **Circular Restaurant Medallion** | [`ordell-emblem-dark.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-emblem-dark.png) | 🌙 Dark | `648 × 648 px` | Beverage coasters, uniform embroidery, seals |
+| **9** | **Circular Restaurant Medallion** | [`ordell-emblem-light.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/ordell-emblem-light.png) | ☀️ Light | `648 × 648 px` | Coasters on light surfaces, stamps on napkins |
+| **10**| **Browser Favicon (PNG)** | [`favicon.png`](file:///c:/Learning/projects/qsrsystem/frontend/public/favicon.png) | Universal | `64 × 64 px` | Browser tab icon |
+| **11**| **Browser Favicon (SVG)** | [`favicon.svg`](file:///c:/Learning/projects/qsrsystem/frontend/public/favicon.svg) | Universal | Vector | Scalable browser favicon |
+| **12**| **POS Favicon (SVG)** | [`favicon-pos.svg`](file:///c:/Learning/projects/qsrsystem/frontend/public/favicon-pos.svg) | Universal | Vector | POS terminal favicon |
 
 ---
 
 ### 🖥️ Interactive Showcase
 
-Open [`frontend/public/logo-showcase.html`](file:///c:/Learning/projects/vidhara-qsr/frontend/public/logo-showcase.html) in your browser to inspect all raster assets, toggle between Dark and Light mode, and download any asset with one click.
+Open [`frontend/public/logo-showcase.html`](file:///c:/Learning/projects/qsrsystem/frontend/public/logo-showcase.html) in your browser to inspect all raster assets, toggle between Dark and Light mode, and download any asset with one click.
 
 ---
 
-*Document Author: Velora Brand Engineering & Design System*  
-*Last Updated: 2026-09-04*
+*Document Author: ORDELL Brand Engineering & Design System*  
+*Last Updated: September 2026*

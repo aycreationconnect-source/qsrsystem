@@ -264,9 +264,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const brandNewOrders = orders.filter((o) => !knownOrderIdsRef.current.has(o.id));
           brandNewOrders.forEach((o) => {
             knownOrderIdsRef.current.add(o.id);
-            window.dispatchEvent(
-              new CustomEvent('velora-order-completed', { detail: o })
-            );
+            window.dispatchEvent(new CustomEvent('ordell-order-completed', { detail: o }));
+            window.dispatchEvent(new CustomEvent('velora-order-completed', { detail: o }));
           });
         } else {
           orders.forEach((o) => knownOrderIdsRef.current.add(o.id));
@@ -376,9 +375,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const brandNewOrders = orders.filter((o) => !knownOrderIdsRef.current.has(o.id));
           brandNewOrders.forEach((o) => {
             knownOrderIdsRef.current.add(o.id);
-            window.dispatchEvent(
-              new CustomEvent('velora-order-completed', { detail: o })
-            );
+            window.dispatchEvent(new CustomEvent('ordell-order-completed', { detail: o }));
+            window.dispatchEvent(new CustomEvent('velora-order-completed', { detail: o }));
           });
         } else {
           orders.forEach((o) => knownOrderIdsRef.current.add(o.id));

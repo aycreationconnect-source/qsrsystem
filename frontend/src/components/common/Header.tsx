@@ -23,7 +23,7 @@ export interface HeaderProps {
   onOpenStoreProfile?: () => void;
 }
 
-const NOTIFICATIONS_STORAGE_KEY = 'velora_read_notifications';
+const NOTIFICATIONS_STORAGE_KEY = 'ordell_read_notifications';
 
 const formatRelativeTime = (dateStr?: string | Date): string => {
   if (!dateStr) return '';
@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileNav }) => {
   // Read notification IDs persisted in localStorage so washed-out orders stay washed out across reloads
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     try {
-      const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+      const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY) || localStorage.getItem('velora_read_notifications');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {

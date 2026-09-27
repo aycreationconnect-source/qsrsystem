@@ -1,4 +1,4 @@
-# 🚀 Velora QSR POS System — Release Notes v1.0.0
+# 🚀 ORDELL QSR POS System — Release Notes v1.0.0
 
 **Release Tag:** `v1.0.0`  
 **Milestone:** Build 1 — General Availability (GA)  
@@ -10,9 +10,9 @@
 
 ## 🌟 Executive Overview: What We Are Serving
 
-The **Velora QSR POS System v1.0.0** is an enterprise-grade, offline-first restaurant management and point-of-sale platform specifically architected for cafes, quick-service restaurants (QSR), cloud kitchens, and dine-in bistros. 
+The **ORDELL QSR POS System v1.0.0** is an enterprise-grade, offline-first restaurant management and point-of-sale platform specifically architected for cafes, quick-service restaurants (QSR), cloud kitchens, and dine-in bistros. 
 
-In hospitality, every second at the billing counter matters. A dropped internet connection or cloud latency can stall counter lines and frustrate guests. **Velora v1.0.0 eliminates cloud dependency for daily operations** by running an ultra-responsive local engine directly on the store terminal. It delivers instant 0ms billing, table management, live kitchen order ticket (KOT) routing, recipe-level inventory tracking, split payments, thermal receipt printing, automated daily disaster recovery, and dynamic multi-cafe database provisioning.
+In hospitality, every second at the billing counter matters. A dropped internet connection or cloud latency can stall counter lines and frustrate guests. **ORDELL v1.0.0 eliminates cloud dependency for daily operations** by running an ultra-responsive local engine directly on the store terminal. It delivers instant 0ms billing, table management, live kitchen order ticket (KOT) routing, recipe-level inventory tracking, split payments, thermal receipt printing, automated daily disaster recovery, and dynamic multi-cafe database provisioning.
 
 ---
 

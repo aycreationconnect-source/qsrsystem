@@ -47,7 +47,7 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
     return str.substring(0, 2).toUpperCase();
   };
 
-  const initials = getInitials(name || 'Velora Cafe');
+  const initials = getInitials(name || 'ORDELL Cafe');
 
   const avatarSizes = {
     sm: 'w-8 h-8 text-xs rounded-xl',
@@ -112,7 +112,7 @@ export const CafeBrandBadge: React.FC<CafeBrandBadgeProps> = ({
                 nameSizes[size]
               )}
             >
-              {name || 'Velora Cafe'}
+              {name || 'ORDELL Cafe'}
             </span>
           </div>
 

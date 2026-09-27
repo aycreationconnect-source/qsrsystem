@@ -1,5 +1,5 @@
 // ==========================================================================
-// ☕ VELORA QSR - CAFE-FRIENDLY AUDIO ENGINE (WEB AUDIO API)
+// ☕ ORDELL QSR - CAFE-FRIENDLY AUDIO ENGINE (WEB AUDIO API)
 // 3s - 5s Non-Irritating, Soothing Harmonic Chimes & Service Bells
 // ==========================================================================
 

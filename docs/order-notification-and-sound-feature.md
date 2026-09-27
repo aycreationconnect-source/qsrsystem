@@ -1,10 +1,10 @@
-# Velora POS — Order Notification, Sound Alerts & Owner Configuration System
+# ORDELL POS — Order Notification, Sound Alerts & Owner Configuration System
 
 ## 1. Executive Summary
 
 In fast-paced Quick Service Restaurant (QSR) and cafe environments, order awareness and operational fluidity are paramount. Cashiers, baristas, and cafe managers often operate in multi-tasking environments where looking at a screen continuously is impractical.
 
-The **Velora Order Notification & Alert System** delivers an end-to-end, multi-sensory notification pipeline designed specifically for hospitality spaces:
+The **ORDELL Order Notification & Alert System** delivers an end-to-end, multi-sensory notification pipeline designed specifically for hospitality spaces:
 1. **Auditory Notification Engine**: Synthesizes 4 pleasant, cafe-friendly harmonic chimes (3s to 5s) directly in the browser via HTML5 Web Audio API — eliminating harsh buzzer noises, network audio latency, and broken asset links.
 2. **Visual Order Popup Toast**: Provides an onscreen notification displaying order totals, payment method badges, item previews, and an animated progress auto-dismiss bar.
 3. **Navbar Order Management & Wash-Out**: Live notification bell in the Admin Header displaying only today's unread orders with single-click individual and bulk "Wash Out" clearing mechanisms.
@@ -37,7 +37,7 @@ The **Velora Order Notification & Alert System** delivers an end-to-end, multi-s
 - Located in the Admin Panel Header ([`Header.tsx`](file:///c:/Learning/projects/vidhara-qsr/frontend/src/components/common/Header.tsx)).
 - **Strict "Today" Filter**: Evaluates `order.date` against local calendar date (`d.toDateString() === today.toDateString()`). Prior days' orders never populate the active badge.
 - **Individual Wash-Out**: Each order card has a checkmark action button to mark as read and clear immediately.
-- **Bulk Wash-Out ("Mark all read")**: Instantly commits all today's orders to persistent read storage (`localStorage: velora_read_notifications`) and resets the bell badge to 0.
+- **Bulk Wash-Out ("Mark all read")**: Instantly commits all today's orders to persistent read storage (`localStorage: ordell_read_notifications`) and resets the bell badge to 0.
 - **Persistent State**: Read order IDs persist across page reloads and tab closures.
 - **Today's Cleared Orders Drawer**: Expandable accordion at the bottom of the popover allowing cashiers to review cleared orders from earlier today if needed.
 
@@ -66,7 +66,7 @@ The **Velora Order Notification & Alert System** delivers an end-to-end, multi-s
 ```mermaid
 flowchart TD
     subgraph POS["POS Station (Checkout)"]
-        A[Cashier Completes Order] -->|Dispatches| B[window.dispatchEvent\n'velora-order-completed']
+        A[Cashier Completes Order] -->|Dispatches| B[window.dispatchEvent\n'ordell-order-completed']
     end
 
     subgraph Background["Background Polling (Cross-Terminal)"]
@@ -179,11 +179,11 @@ Content-Type: application/json
 ## 6. Duplicate Prevention & Cross-Terminal Reliability
 
 To ensure sound and notifications behave predictably across multiple tabs, cashier stations, and background syncs:
-1. **Order Completion in POS**: When an order is placed locally via `confirmPaymentAndOrder()`, the order payload is attached to `velora-order-completed` and flagged in `handledOrderIds`.
+1. **Order Completion in POS**: When an order is placed locally via `confirmPaymentAndOrder()`, the order payload is attached to `ordell-order-completed` and flagged in `handledOrderIds`.
 2. **Background Polling Detection**: When `syncRelatableData()` or `refreshOrders()` pulls fresh orders from the database:
    - Evaluates whether `isOrdersInitializedRef` is true (preventing chimes on initial page boot).
    - Identifies any incoming order whose ID is absent from `knownOrderIdsRef`.
-   - Fires `velora-order-completed` so other screens (e.g., Admin dashboard, Kitchen station) receive the alert.
+   - Fires `ordell-order-completed` so other screens (e.g., Admin dashboard, Kitchen station) receive the alert.
 3. **Double-Play Guard**: `OrderNotificationToast` tracks `handledOrderIds` in a React ref, preventing repeated sounds or duplicate toasts if multiple poll events arrive concurrently.
 
 ---

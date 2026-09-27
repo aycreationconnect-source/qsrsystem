@@ -81,7 +81,7 @@ export const OrderNotificationToast: React.FC = () => {
     }
   };
 
-  // Listen to custom 'velora-order-completed' events dispatched on order completion
+  // Listen to custom 'ordell-order-completed' events dispatched on order completion
   useEffect(() => {
     const onOrderCompleted = (e: CustomEvent<Order>) => {
       if (e.detail) {
@@ -89,8 +89,10 @@ export const OrderNotificationToast: React.FC = () => {
       }
     };
 
+    window.addEventListener('ordell-order-completed' as any, onOrderCompleted as EventListener);
     window.addEventListener('velora-order-completed' as any, onOrderCompleted as EventListener);
     return () => {
+      window.removeEventListener('ordell-order-completed' as any, onOrderCompleted as EventListener);
       window.removeEventListener('velora-order-completed' as any, onOrderCompleted as EventListener);
       if (timerRef.current) clearTimeout(timerRef.current);
       if (progressRef.current) clearInterval(progressRef.current);

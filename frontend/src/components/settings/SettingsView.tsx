@@ -170,20 +170,18 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleSimulateToast = () => {
-    window.dispatchEvent(
-      new CustomEvent('velora-order-completed', {
-        detail: {
-          id: 999,
-          orderNumber: 108,
-          totalAmount: 480,
-          paymentMethod: 'Cash',
-          items: [
-            { item: { name: 'Cappuccino Special' }, quantity: 1, finalPrice: 160 },
-            { item: { name: 'Classic Paneer Wrap' }, quantity: 2, finalPrice: 320 },
-          ],
-        },
-      })
-    );
+    const payload = {
+      id: 999,
+      orderNumber: 108,
+      totalAmount: 480,
+      paymentMethod: 'Cash',
+      items: [
+        { item: { name: 'Cappuccino Special' }, quantity: 1, finalPrice: 160 },
+        { item: { name: 'Classic Paneer Wrap' }, quantity: 2, finalPrice: 320 },
+      ],
+    };
+    window.dispatchEvent(new CustomEvent('ordell-order-completed', { detail: payload }));
+    window.dispatchEvent(new CustomEvent('velora-order-completed', { detail: payload }));
   };
 
   const totalTaxRate = customTaxes.reduce(
@@ -281,7 +279,7 @@ export const SettingsView: React.FC = () => {
     return str.substring(0, 2).toUpperCase();
   };
 
-  const initials = getInitials(storeProfile?.businessName || 'Velora Cafe');
+  const initials = getInitials(storeProfile?.businessName || 'ORDELL Cafe');
 
   // Grouped Categories Configuration
   // Rule for future additions:
@@ -578,7 +576,7 @@ export const SettingsView: React.FC = () => {
                       {storeProfile?.logoUrl ? (
                         <img
                           src={storeProfile.logoUrl}
-                          alt={storeProfile?.businessName || 'Velora Cafe'}
+                          alt={storeProfile?.businessName || 'ORDELL Cafe'}
                           className="w-14 h-14 object-cover rounded-2xl border-2 border-amber-500/40 shadow-md"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = 'none';
@@ -595,7 +593,7 @@ export const SettingsView: React.FC = () => {
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2.5 flex-wrap">
                         <h4 className="text-lg sm:text-xl font-black tracking-tight text-white">
-                          {storeProfile?.businessName || 'Velora Cafe'}
+                          {storeProfile?.businessName || 'ORDELL Cafe'}
                         </h4>
                         <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono text-xs font-bold">
                           {storeProfile?.cafeCode || 'CF-NAG-001'}

@@ -599,7 +599,7 @@ export const CheckoutModal: React.FC = () => {
       setTablePrinted((prev) => ({ ...prev, [selectedTableId]: true }));
     }
 
-    const storeName = storeProfile?.businessName || appData?.settings?.storeName || 'Velora Cafe';
+    const storeName = storeProfile?.businessName || appData?.settings?.storeName || 'ORDELL Cafe';
     const cafeCode = storeProfile?.cafeCode || '';
     const address = storeProfile?.address || appData?.settings?.address || '';
     const cityState = [storeProfile?.city, storeProfile?.state].filter(Boolean).join(', ');
@@ -876,7 +876,7 @@ export const CheckoutModal: React.FC = () => {
 
         <div class="footer">
           <div class="bold">${escapeXml(receiptFooter)}</div>
-          <div style="margin-top: 4px; font-size: 9px; opacity: 0.7;">*** Velora QSR POS ***</div>
+          <div style="margin-top: 4px; font-size: 9px; opacity: 0.7;">*** ORDELL QSR POS ***</div>
         </div>
       </body>
       </html>
@@ -1640,7 +1640,7 @@ export const CheckoutModal: React.FC = () => {
       <div id="thermal-receipt" className="hidden print:block">
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
           <div style={{ fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            {storeProfile?.businessName || appData?.settings?.storeName || 'VELORA QSR'}
+            {storeProfile?.businessName || appData?.settings?.storeName || 'ORDELL QSR'}
           </div>
           {storeProfile?.cafeCode && (
             <div style={{ fontSize: '10px' }}>Code: {storeProfile.cafeCode}</div>
@@ -1796,7 +1796,7 @@ export const CheckoutModal: React.FC = () => {
 
         <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '6px' }}>
           <div style={{ fontWeight: 'bold' }}>{storeProfile?.receiptFooter || 'THANK YOU FOR DINING WITH US!'}</div>
-          <div style={{ fontStyle: 'italic', marginTop: '2px' }}>*** Velora QSR POS Terminal ***</div>
+          <div style={{ fontStyle: 'italic', marginTop: '2px' }}>*** ORDELL QSR POS Terminal ***</div>
         </div>
       </div>
     </>

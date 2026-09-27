@@ -24,7 +24,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
   const roundedTotal = roundPOSAmount(order.total || 0);
 
-  const cafeName = storeProfile?.businessName || 'Velora Cafe & POS';
+  const cafeName = storeProfile?.businessName || 'ORDELL Cafe & POS';
   const cafeCode = storeProfile?.cafeCode || 'CF-001';
   const address = storeProfile?.address || '';
   const cityState = [storeProfile?.city, storeProfile?.state].filter(Boolean).join(', ');

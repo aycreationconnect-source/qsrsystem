@@ -1,4 +1,4 @@
-# Velora POS — Partial Payment & Split Settlement Feature Specification
+# ORDELL POS — Partial Payment & Split Settlement Feature Specification
 
 ## 1. Executive Summary
 In high-volume Quick Service Restaurants (QSR) and dine-in cafes, modern billing expectations demand flexible settlement workflows. Customers routinely request:
@@ -6,7 +6,7 @@ In high-volume Quick Service Restaurants (QSR) and dine-in cafes, modern billing
 2. **Multi-Party Split Billing**: Dividing a bill equally or unequally among guests at a table.
 3. **Partial Advance Payments / Table Deposits**: Paying part of a running bill during an ongoing dining session, leaving an outstanding balance to be settled prior to departure.
 
-The **Partial Payment Feature** provides an end-to-end ledger-backed payment engine across the Velora POS station node, NestJS backend, and MySQL database.
+The **Partial Payment Feature** provides an end-to-end ledger-backed payment engine across the ORDELL POS station node, NestJS backend, and MySQL database.
 
 ---
 
@@ -169,7 +169,7 @@ Thermal 80mm/58mm receipts format multi-tender settlements clearly:
 
 ```text
 ================================================
-               VELORA CAFE & QSR
+               ORDELL CAFE & QSR
              Station #1 - Dine-In
 ================================================
 Table: Couple A                     Order #1042
@@ -193,7 +193,7 @@ PAYMENT BREAKDOWN:
 TOTAL PAID:                             ₹610.00
 BALANCE DUE:                              ₹0.00
 ================================================
-     Thank you for visiting Velora Cafe!
+     Thank you for visiting ORDELL Cafe!
 ```
 
 ---

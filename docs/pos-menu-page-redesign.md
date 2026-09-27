@@ -1,4 +1,4 @@
-# Velora POS — Menu Page Redesign (Ordering View) Feature Specification
+# ORDELL POS — Menu Page Redesign (Ordering View) Feature Specification
 
 ---
 

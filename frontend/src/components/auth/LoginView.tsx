@@ -84,27 +84,27 @@ export const LoginView: React.FC = () => {
         {/* ==================================================== */}
         <div className="md:col-span-5 p-6 sm:p-8 bg-stone-50/70 dark:bg-stone-950/40 border-b md:border-b-0 md:border-r border-stone-200/80 dark:border-stone-800 flex flex-col justify-between">
           <div>
-            {/* Vidhara Brand Header */}
+            {/* ORDELL Brand Header */}
             <div className="flex items-center justify-between pb-6 border-b border-stone-200/60 dark:border-stone-800">
               <div className="flex items-center gap-2">
                 <img
-                  src="/velora-logo.png"
-                  alt="Velora POS"
+                  src="/ordell-logo.png"
+                  alt="ORDELL POS"
                   className="h-7 w-auto object-contain dark:hidden"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
                 <img
-                  src="/velora-logo-dark.png"
-                  alt="Velora POS"
+                  src="/ordell-logo-dark.png"
+                  alt="ORDELL POS"
                   className="h-7 w-auto object-contain hidden dark:block"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
                 <span className="font-extrabold text-sm tracking-tight text-stone-900 dark:text-stone-100">
-                  VELORA <span className="text-amber-500 font-medium text-xs">POS</span>
+                  ORDELL <span className="text-amber-500 font-medium text-xs">POS</span>
                 </span>
               </div>
 

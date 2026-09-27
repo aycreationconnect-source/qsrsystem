@@ -1079,7 +1079,7 @@ export const PrinterSettingsPanel: React.FC = () => {
                     <div className="text-center space-y-0.5">
                       <div className="text-[10px] font-bold tracking-wider">{billHeaderTitle || 'TAX INVOICE'}</div>
                       <div className="text-xs font-black uppercase tracking-tight">
-                        {storeProfile?.businessName || 'Velora Artisan Cafe'}
+                        {storeProfile?.businessName || 'ORDELL Artisan Cafe'}
                       </div>
                       {billShowLogo && (
                         <div className="text-[9px] text-stone-600 font-semibold">
@@ -1205,7 +1205,7 @@ export const PrinterSettingsPanel: React.FC = () => {
                     {/* Footer */}
                     <div className="text-center pt-2 space-y-0.5 text-[9px] text-stone-800">
                       <div className="font-bold">{billFooterMsg}</div>
-                      <div className="text-[8px] text-stone-500">*** Powered by Velora QSR POS ***</div>
+                      <div className="text-[8px] text-stone-500">*** Powered by ORDELL QSR POS ***</div>
                     </div>
                   </div>
                 )}
@@ -1302,7 +1302,7 @@ export const PrinterSettingsPanel: React.FC = () => {
                     {/* Top Header */}
                     <div>
                       <div className="flex justify-between items-center text-[8px] uppercase tracking-wider text-stone-600 font-bold">
-                        <span>{storeProfile?.businessName || 'Velora Cafe'}</span>
+                        <span>{storeProfile?.businessName || 'ORDELL Cafe'}</span>
                         {itemShowToken && (
                           <span className="border border-black px-1 rounded font-black text-black">
                             #TOKEN 42

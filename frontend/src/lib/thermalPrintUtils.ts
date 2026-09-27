@@ -31,7 +31,7 @@ export function printThermalReceipt({
 }: PrintReceiptOptions): void {
   if (!order) return;
 
-  const storeName = storeProfile?.businessName || settings?.storeName || 'Velora Cafe';
+  const storeName = storeProfile?.businessName || settings?.storeName || 'ORDELL Cafe';
   const cafeCode = storeProfile?.cafeCode || '';
   const address = storeProfile?.address || settings?.address || '';
   const cityState = [storeProfile?.city, storeProfile?.state].filter(Boolean).join(', ');
@@ -334,7 +334,7 @@ export function printThermalReceipt({
 
       <div class="footer">
         <div class="bold">${escapeXml(receiptFooter)}</div>
-        <div style="margin-top: 4px; font-size: 9px; opacity: 0.7;">*** Velora QSR POS ***</div>
+        <div style="margin-top: 4px; font-size: 9px; opacity: 0.7;">*** ORDELL QSR POS ***</div>
       </div>
     </body>
     </html>
@@ -410,7 +410,7 @@ export function printTestThermalBill({
   const bodyWidthMm = is58 ? 50 : 74;
   const baseFontSize = is58 ? '10px' : '11px';
 
-  const storeName = storeProfile?.businessName || 'Velora Artisan Cafe';
+  const storeName = storeProfile?.businessName || 'ORDELL Artisan Cafe';
   const headerTitle = config.headerTitle || 'TAX INVOICE';
   const address = storeProfile?.address || '102 High Street, Bandra West';
   const phone = storeProfile?.phone || '+91 98765 43210';
@@ -592,7 +592,7 @@ export function printTestKOT({
   const is58 = config.paperWidth === '58mm';
   const paperWidthMm = is58 ? 58 : 80;
   const bodyWidthMm = is58 ? 50 : 74;
-  const storeName = storeProfile?.businessName || 'Velora Cafe';
+  const storeName = storeProfile?.businessName || 'ORDELL Cafe';
 
   const html = `
     <!DOCTYPE html>
@@ -706,7 +706,7 @@ export function printTestItemLabel({
   };
   storeProfile?: any;
 }): void {
-  const storeName = storeProfile?.businessName || 'Velora Cafe';
+  const storeName = storeProfile?.businessName || 'ORDELL Cafe';
   const widthMm = config.labelSize === '40x30' ? 40 : 50;
   const heightMm = config.labelSize === '40x30' ? 30 : 25;
 

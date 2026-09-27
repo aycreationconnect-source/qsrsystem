@@ -155,7 +155,7 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
             <div>
               <span className="text-stone-400 dark:text-stone-500 text-[11px]">Business Name</span>
               <div className="font-bold text-stone-900 dark:text-stone-100 truncate">
-                {storeProfile?.businessName || 'Velora Cafe'}
+                {storeProfile?.businessName || 'ORDELL Cafe'}
               </div>
             </div>
 

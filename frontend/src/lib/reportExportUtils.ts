@@ -32,7 +32,7 @@ export interface ExportReportOptions {
 export function exportReportToXls(options: ExportReportOptions) {
   const { fileName, reportTitle, dateRangeText, storeProfile, columns, rows, summaryRow } = options;
 
-  const cafeName = storeProfile?.businessName || 'Velora Cafe & POS';
+  const cafeName = storeProfile?.businessName || 'ORDELL Cafe & POS';
   const cafeCode = storeProfile?.cafeCode || 'CF-001';
   const addressParts = [
     storeProfile?.address,
@@ -142,7 +142,7 @@ export function exportReportToXls(options: ExportReportOptions) {
 export function printReportToPdf(options: ExportReportOptions) {
   const { reportTitle, dateRangeText, storeProfile, columns, rows, summaryRow } = options;
 
-  const cafeName = storeProfile?.businessName || 'Velora Cafe & POS';
+  const cafeName = storeProfile?.businessName || 'ORDELL Cafe & POS';
   const cafeCode = storeProfile?.cafeCode || 'CF-001';
   const addressParts = [
     storeProfile?.address,

@@ -1,7 +1,7 @@
 # QSR POS System v1.0.0 — Production Build, Release, Database Initialization & Onboarding Architecture Guide
 
 ## Executive Summary
-This document defines the production release architecture, GitHub distribution workflow, dynamic database initialization, disaster recovery backup engine, and onboarding lifecycle for the **Velora / QSR POS System (Build 1, v1.0.0)**. 
+This document defines the production release architecture, GitHub distribution workflow, dynamic database initialization, disaster recovery backup engine, and onboarding lifecycle for the **ORDELL / QSR POS System (Build 1, v1.0.0)**. 
 
 ---
 

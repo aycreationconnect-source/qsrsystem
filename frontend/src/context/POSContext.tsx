@@ -985,9 +985,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
           const placedOrder = await orderApi.placeOrder(orderDetails);
           if (placedOrder && placedOrder.id) {
-            window.dispatchEvent(
-              new CustomEvent('velora-order-completed', { detail: placedOrder })
-            );
+            window.dispatchEvent(new CustomEvent('ordell-order-completed', { detail: placedOrder }));
+            window.dispatchEvent(new CustomEvent('velora-order-completed', { detail: placedOrder }));
           }
           await Promise.allSettled([
             refreshOrders(),
@@ -1221,9 +1220,8 @@ export const POSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       try {
         const placedOrder = await orderApi.placeOrder(orderDetails);
         if (placedOrder && placedOrder.id) {
-          window.dispatchEvent(
-            new CustomEvent('velora-order-completed', { detail: placedOrder })
-          );
+          window.dispatchEvent(new CustomEvent('ordell-order-completed', { detail: placedOrder }));
+          window.dispatchEvent(new CustomEvent('velora-order-completed', { detail: placedOrder }));
         }
         await Promise.allSettled([
           refreshOrders(),

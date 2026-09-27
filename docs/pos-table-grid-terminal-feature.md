@@ -1,4 +1,4 @@
-# Velora POS — Table Grid & Floor Terminal Feature Specification
+# ORDELL POS — Table Grid & Floor Terminal Feature Specification
 
 ---
 

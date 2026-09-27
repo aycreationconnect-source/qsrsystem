@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return str.substring(0, 2).toUpperCase();
   };
 
-  const initials = getInitials(storeProfile?.businessName || 'Velora Cafe');
+  const initials = getInitials(storeProfile?.businessName || 'ORDELL Cafe');
 
   return (
     <aside
@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-16 border-b border-stone-200/80 dark:border-stone-800 flex items-center shrink-0 relative overflow-hidden">
         {/* Monogram / Logo Slot: Fixed in 72px slot (centered at x=36px) */}
         <Tooltip
-          content={isCollapsed ? (storeProfile?.businessName || 'Velora Cafe') : null}
+          content={isCollapsed ? (storeProfile?.businessName || 'ORDELL Cafe') : null}
           position="right"
           offset={10}
         >
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {storeProfile?.logoUrl ? (
                 <img
                   src={storeProfile.logoUrl}
-                  alt={storeProfile?.businessName || 'Velora Cafe'}
+                  alt={storeProfile?.businessName || 'ORDELL Cafe'}
                   className="w-10 h-10 object-cover rounded-xl border border-amber-500/30 shadow-sm"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         >
           <span className="truncate font-extrabold text-sm text-stone-900 dark:text-stone-100 leading-tight">
-            {storeProfile?.businessName || 'Velora Cafe'}
+            {storeProfile?.businessName || 'ORDELL Cafe'}
           </span>
           <span className="text-[11px] font-medium text-stone-400 dark:text-stone-500 truncate">
             {storeProfile?.cafeCode || 'CF-MUM-001'}
